@@ -1,0 +1,595 @@
+"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Access Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        night: "#020617",
+                        panel: "rgba(15, 23, 42, 0.78)",
+                        neon: "#3b82f6",
+                        neonRed: "#ef4444",
+                        neonYellow: "#facc15",
+                        neonGreen: "#22c55e"
+                    },
+                    fontFamily: {
+                        display: ["Orbitron", "sans-serif"],
+                        body: ["Rajdhani", "sans-serif"]
+                    },
+                    boxShadow: {
+                        neon: "0 0 0 1px rgba(59,130,246,0.35), 0 0 28px rgba(59,130,246,0.18)",
+                        danger: "0 0 0 1px rgba(239,68,68,0.35), 0 0 28px rgba(239,68,68,0.2)"
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.12), transparent 20%),
+                linear-gradient(180deg, #020617 0%, #071124 46%, #020617 100%);
+        }
+        .grid-fx {
+            background-image:
+                linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+        .view-panel { transition: opacity .28s ease, transform .28s ease, filter .28s ease; }
+        .view-panel.hidden-panel {
+            opacity: 0; transform: translateY(18px); pointer-events: none;
+            position: absolute; inset: 0; filter: blur(10px);
+        }
+        .view-panel.visible-panel { opacity: 1; transform: translateY(0); position: relative; filter: blur(0); }
+        .thin-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.28); border-radius: 999px; }
+    </style>
+</head>
+<body class="min-h-screen font-body text-slate-100">
+    <div class="grid-fx min-h-screen px-4 py-5 md:px-8 md:py-8">
+        <div class="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col gap-6">
+            <header class="rounded-[28px] border border-neon/30 bg-panel px-6 py-6 shadow-neon backdrop-blur-xl">
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <p class="font-display text-xs uppercase tracking-[0.45em] text-neon/80">Realtime Cyber Access Control</p>
+                        <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-[0.08em] text-white md:text-5xl">Admin And Security Operations Console</h1>
+                        <p class="mt-3 max-w-3xl text-lg text-slate-300">Live monitoring, AI access control, graduate cleanup, and searchable logs inside one Tailwind-powered SPA.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div id="cameraBadge" class="rounded-full border border-neon/40 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-slate-200 shadow-neon">Camera status: checking</div>
+                        <div class="rounded-full border border-neon/40 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-neon">Frame skip: 10</div>
+                        <div class="rounded-full border border-neon/40 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-neonYellow">Cooldown: 10s</div>
+                    </div>
+                </div>
+            </header>
+
+            <nav class="flex flex-wrap gap-3">
+                <button data-view="security" class="view-toggle rounded-full border border-neon/40 bg-slate-950/70 px-5 py-3 font-display text-sm uppercase tracking-[0.22em] text-slate-200 transition hover:border-neon hover:text-white">Security View</button>
+                <button data-view="admin" class="view-toggle rounded-full border border-neon/40 bg-slate-950/70 px-5 py-3 font-display text-sm uppercase tracking-[0.22em] text-slate-200 transition hover:border-neon hover:text-white">Admin View</button>
+            </nav>
+
+            <main class="relative flex-1">
+                <section id="securityView" class="view-panel visible-panel space-y-6">
+                    <div class="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+                        <div class="space-y-6">
+                            <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                                <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
+                                        <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Security Feed</p>
+                                        <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Live Stream</h2>
+                                    </div>
+                                    <div id="decisionBadge" class="rounded-full border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-slate-300">Awaiting detections</div>
+                                </div>
+                                <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/20 bg-slate-950 shadow-neon">
+                                    <img id="videoStream" src="{{ url_for('video_feed') }}" alt="Live video stream" class="aspect-video w-full object-cover">
+                                </div>
+                            </section>
+
+                            <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                                <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 xl:flex-row xl:items-end xl:justify-between">
+                                    <div>
+                                        <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Searchable Audit Trail</p>
+                                        <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Access Logs</h2>
+                                    </div>
+                                    <div class="grid gap-3 sm:grid-cols-3">
+                                        <input id="logDateInput" type="date" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-neon">
+                                        <input id="logSearchInput" type="search" placeholder="Search ID, name, label" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-neon">
+                                        <select id="logStatusInput" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-neon">
+                                            <option value="">All statuses</option>
+                                            <option value="Allowed">Allowed</option>
+                                            <option value="Unknown">Unknown</option>
+                                            <option value="Denied">Denied</option>
+                                            <option value="Manual ID Required">Manual ID Required</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex flex-wrap items-center gap-3">
+                                    <button id="refreshLogsButton" class="rounded-full border border-neon/30 bg-neon px-4 py-2 text-sm font-bold uppercase tracking-[0.16em] text-slate-950 transition hover:brightness-110">Refresh Logs</button>
+                                    <span id="logsSummary" class="text-sm text-slate-400">No logs loaded yet.</span>
+                                </div>
+                                <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/15">
+                                    <div class="thin-scroll max-h-[420px] overflow-auto">
+                                        <table class="min-w-full text-left text-sm">
+                                            <thead class="sticky top-0 bg-slate-950/95 text-slate-300 backdrop-blur">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">ID</th>
+                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Name</th>
+                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Status</th>
+                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Label</th>
+                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Timestamp</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="logsTableBody" class="divide-y divide-neon/10 bg-slate-900/60"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <aside class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                            <div class="flex items-center justify-between border-b border-neon/15 pb-5">
+                                <div>
+                                    <p class="font-display text-xs uppercase tracking-[0.4em] text-neonRed/90">Threat Sidebar</p>
+                                    <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Live Alerts</h2>
+                                </div>
+                                <span id="alertsCount" class="rounded-full border border-neonRed/40 bg-neonRed/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-neonRed">0 Alerts</span>
+                            </div>
+                            <div id="alertsContainer" class="thin-scroll mt-5 space-y-4 overflow-auto pb-2"></div>
+                        </aside>
+                    </div>
+                </section>
+                <section id="adminView" class="view-panel hidden-panel space-y-6">
+                    <div class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                        <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                            <div class="border-b border-neon/15 pb-5">
+                                <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Enrollment Control</p>
+                                <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Register Faceprint</h2>
+                            </div>
+                            <form id="registerForm" class="mt-5 grid gap-4">
+                                <input id="studentNameInput" type="text" placeholder="Full name" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-neon" required>
+                                <input id="studentIdInput" type="text" placeholder="University ID" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-neon" required>
+                                <select id="studentRoleInput" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-neon">
+                                    <option>Student</option>
+                                    <option>Staff</option>
+                                    <option>Admin</option>
+                                    <option>Security</option>
+                                </select>
+                                <button type="submit" class="rounded-2xl bg-neon px-5 py-3 font-display text-sm uppercase tracking-[0.2em] text-slate-950 transition hover:brightness-110">Capture And Register</button>
+                            </form>
+                            <div id="registerStatus" class="mt-4 rounded-2xl border border-neon/20 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">Waiting for a live frame from the camera.</div>
+                        </section>
+
+                        <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                            <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 lg:flex-row lg:items-end lg:justify-between">
+                                <div>
+                                    <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Active Database</p>
+                                    <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Registered Students</h2>
+                                </div>
+                                <span id="studentsSummary" class="text-sm text-slate-400">0 students loaded</span>
+                            </div>
+                            <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/15">
+                                <div class="thin-scroll max-h-[420px] overflow-auto">
+                                    <table class="min-w-full text-left text-sm">
+                                        <thead class="sticky top-0 bg-slate-950/95 text-slate-300">
+                                            <tr>
+                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Name</th>
+                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">ID</th>
+                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Role</th>
+                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="studentsTableBody" class="divide-y divide-neon/10 bg-slate-900/60"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                        <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div>
+                                <p class="font-display text-xs uppercase tracking-[0.4em] text-neonYellow/90">Bulk Graduate Cleanup</p>
+                                <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Graduated Students</h2>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="inline-flex items-center gap-2 rounded-full border border-neon/20 bg-slate-950/70 px-4 py-2 text-sm text-slate-200">
+                                    <input id="selectAllGraduates" type="checkbox" class="h-4 w-4 accent-[#3b82f6]">
+                                    Select all
+                                </label>
+                                <button id="deleteSelectedGraduates" class="rounded-full border border-neonRed/30 bg-neonRed px-4 py-2 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:brightness-110">Delete Selected</button>
+                                <span id="graduatesSummary" class="text-sm text-slate-400">0 graduates loaded</span>
+                            </div>
+                        </div>
+                        <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/15">
+                            <div class="thin-scroll max-h-[360px] overflow-auto">
+                                <table class="min-w-full text-left text-sm">
+                                    <thead class="sticky top-0 bg-slate-950/95 text-slate-300">
+                                        <tr>
+                                            <th class="px-4 py-3"><span class="sr-only">Select</span></th>
+                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Name</th>
+                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">ID</th>
+                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Role</th>
+                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Graduated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="graduatesTableBody" class="divide-y divide-neon/10 bg-slate-900/60"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const state = {
+            view: "security",
+            students: [],
+            graduates: [],
+            logs: [],
+            alerts: [],
+            selectedGraduateIds: new Set(),
+            systemStatus: null
+        };
+
+        const elements = {
+            securityView: document.getElementById("securityView"),
+            adminView: document.getElementById("adminView"),
+            cameraBadge: document.getElementById("cameraBadge"),
+            decisionBadge: document.getElementById("decisionBadge"),
+            registerForm: document.getElementById("registerForm"),
+            registerStatus: document.getElementById("registerStatus"),
+            studentsSummary: document.getElementById("studentsSummary"),
+            studentsTableBody: document.getElementById("studentsTableBody"),
+            graduatesSummary: document.getElementById("graduatesSummary"),
+            graduatesTableBody: document.getElementById("graduatesTableBody"),
+            selectAllGraduates: document.getElementById("selectAllGraduates"),
+            deleteSelectedGraduates: document.getElementById("deleteSelectedGraduates"),
+            alertsContainer: document.getElementById("alertsContainer"),
+            alertsCount: document.getElementById("alertsCount"),
+            logsTableBody: document.getElementById("logsTableBody"),
+            logsSummary: document.getElementById("logsSummary"),
+            logDateInput: document.getElementById("logDateInput"),
+            logSearchInput: document.getElementById("logSearchInput"),
+            logStatusInput: document.getElementById("logStatusInput"),
+            refreshLogsButton: document.getElementById("refreshLogsButton")
+        };
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        async function fetchJson(url, options) {
+            const response = await fetch(url, options);
+            const contentType = response.headers.get("content-type") || "";
+            const payload = contentType.includes("application/json") ? await response.json() : { error: "Server did not return JSON." };
+            if (!response.ok) {
+                throw new Error(payload.error || "Request failed.");
+            }
+            return payload;
+        }
+
+        function setView(view) {
+            state.view = view;
+            const showSecurity = view === "security";
+            elements.securityView.className = `view-panel ${showSecurity ? "visible-panel" : "hidden-panel"} space-y-6`;
+            elements.adminView.className = `view-panel ${showSecurity ? "hidden-panel" : "visible-panel"} space-y-6`;
+            document.querySelectorAll(".view-toggle").forEach((button) => {
+                const active = button.dataset.view === view;
+                button.classList.toggle("bg-neon", active);
+                button.classList.toggle("text-slate-950", active);
+                button.classList.toggle("border-neon", active);
+                button.classList.toggle("shadow-neon", active);
+                button.classList.toggle("bg-slate-950/70", !active);
+                button.classList.toggle("text-slate-200", !active);
+            });
+        }
+
+        function renderSystemStatus() {
+            const status = state.systemStatus;
+            if (!status) {
+                return;
+            }
+            const ready = status.camera_ready;
+            elements.cameraBadge.textContent = ready ? "Camera status: online" : `Camera status: ${status.camera_error || "offline"}`;
+            elements.cameraBadge.className = `rounded-full border px-4 py-2 text-sm font-semibold ${ready ? "border-neon/40 bg-slate-950/70 text-neon shadow-neon" : "border-neonRed/40 bg-neonRed/10 text-neonRed shadow-danger"}`;
+            elements.decisionBadge.textContent = status.current_decision ? `${status.current_decision.status}: ${status.current_decision.label}` : "Awaiting detections";
+        }
+
+        function renderStudents() {
+            elements.studentsSummary.textContent = `${state.students.length} students loaded`;
+            if (state.students.length === 0) {
+                elements.studentsTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-10 text-center text-slate-400">No active students registered yet.</td></tr>`;
+                return;
+            }
+            elements.studentsTableBody.innerHTML = state.students.map((student) => `
+                <tr>
+                    <td class="px-4 py-3 text-white">${escapeHtml(student.name)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(student.id)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(student.role)}</td>
+                    <td class="px-4 py-3"><button data-graduate-id="${escapeHtml(student.id)}" class="graduate-button rounded-full border border-neon/30 bg-slate-950/70 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-neon transition hover:bg-neon hover:text-slate-950">Move To Graduates</button></td>
+                </tr>
+            `).join("");
+        }
+
+        function renderGraduates() {
+            const graduates = state.graduates;
+            elements.graduatesSummary.textContent = `${graduates.length} graduates loaded`;
+            elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
+            elements.selectAllGraduates.checked = graduates.length > 0 && graduates.every((graduate) => state.selectedGraduateIds.has(graduate.id));
+            if (graduates.length === 0) {
+                elements.graduatesTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No graduated students available for deletion.</td></tr>`;
+                return;
+            }
+            elements.graduatesTableBody.innerHTML = graduates.map((graduate) => `
+                <tr>
+                    <td class="px-4 py-3"><input data-graduate-check="${escapeHtml(graduate.id)}" type="checkbox" class="graduate-checkbox h-4 w-4 accent-[#3b82f6]" ${state.selectedGraduateIds.has(graduate.id) ? "checked" : ""}></td>
+                    <td class="px-4 py-3 text-white">${escapeHtml(graduate.name)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(graduate.id)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(graduate.role)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(graduate.graduated_at || "-")}</td>
+                </tr>
+            `).join("");
+        }
+        function statusPill(status) {
+            if (status === "Allowed") {
+                return "border-neonGreen/30 bg-neonGreen/10 text-neonGreen";
+            }
+            if (status === "Manual ID Required") {
+                return "border-neonYellow/30 bg-neonYellow/10 text-neonYellow";
+            }
+            return "border-neonRed/30 bg-neonRed/10 text-neonRed";
+        }
+
+        function renderLogs() {
+            elements.logsSummary.textContent = `${state.logs.length} log entries shown`;
+            if (state.logs.length === 0) {
+                elements.logsTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No logs match the current filters.</td></tr>`;
+                return;
+            }
+            elements.logsTableBody.innerHTML = state.logs.map((log) => `
+                <tr>
+                    <td class="px-4 py-3 text-slate-200">${escapeHtml(log.student_id || "-")}</td>
+                    <td class="px-4 py-3 text-slate-200">${escapeHtml(log.student_name || "-")}</td>
+                    <td class="px-4 py-3"><span class="rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${statusPill(log.status)}">${escapeHtml(log.status)}</span></td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(log.label)}</td>
+                    <td class="px-4 py-3 text-slate-400">${escapeHtml(log.timestamp)}</td>
+                </tr>
+            `).join("");
+        }
+
+        function renderAlerts() {
+            elements.alertsCount.textContent = `${state.alerts.length} Alerts`;
+            if (state.alerts.length === 0) {
+                elements.alertsContainer.innerHTML = `<div class="rounded-[24px] border border-neon/15 bg-slate-950/60 px-5 py-10 text-center text-slate-400">No alerts have been emitted by the backend yet.</div>`;
+                return;
+            }
+            elements.alertsContainer.innerHTML = state.alerts.map((alert) => {
+                const yellow = alert.status === "Manual ID Required";
+                return `
+                    <article class="overflow-hidden rounded-[24px] border ${yellow ? "border-neonYellow/35 bg-neonYellow/10" : "border-neonRed/35 bg-neonRed/10"} p-4 ${yellow ? "shadow-neon" : "shadow-danger"}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="font-display text-xs uppercase tracking-[0.24em] ${yellow ? "text-neonYellow" : "text-neonRed"}">${escapeHtml(alert.event_type || alert.status)}</p>
+                                <p class="mt-2 text-sm text-slate-200">${escapeHtml(alert.label)}</p>
+                                <p class="mt-1 text-xs text-slate-400">${escapeHtml(alert.timestamp)}</p>
+                            </div>
+                            <span class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${yellow ? "border-neonYellow/40 text-neonYellow" : "border-neonRed/40 text-neonRed"}">${yellow ? "Yellow Box" : "Red Alert"}</span>
+                        </div>
+                        <img src="${escapeHtml(alert.image_path)}?t=${Date.now()}" alt="Alert capture" class="mt-4 aspect-video w-full rounded-2xl object-cover">
+                    </article>
+                `;
+            }).join("");
+        }
+
+        async function refreshSystemStatus() {
+            state.systemStatus = await fetchJson("/api/system/status");
+            renderSystemStatus();
+        }
+
+        async function refreshStudents() {
+            const payload = await fetchJson("/api/students");
+            state.students = payload.items || [];
+            renderStudents();
+        }
+
+        async function refreshGraduates() {
+            const payload = await fetchJson("/api/graduates");
+            state.graduates = payload.items || [];
+            const validIds = new Set(state.graduates.map((graduate) => graduate.id));
+            state.selectedGraduateIds = new Set([...state.selectedGraduateIds].filter((id) => validIds.has(id)));
+            renderGraduates();
+        }
+
+        async function refreshLogs() {
+            const params = new URLSearchParams();
+            if (elements.logDateInput.value) params.set("date", elements.logDateInput.value);
+            if (elements.logSearchInput.value.trim()) params.set("search", elements.logSearchInput.value.trim());
+            if (elements.logStatusInput.value) params.set("status", elements.logStatusInput.value);
+            const payload = await fetchJson(`/api/logs?${params.toString()}`);
+            state.logs = payload.items || [];
+            renderLogs();
+        }
+
+        async function initializeDashboard() {
+            const today = new Date().toISOString().slice(0, 10);
+            elements.logDateInput.value = today;
+            await Promise.all([refreshSystemStatus(), refreshStudents(), refreshGraduates(), refreshLogs()]);
+            renderAlerts();
+        }
+
+        document.querySelectorAll(".view-toggle").forEach((button) => {
+            button.addEventListener("click", () => setView(button.dataset.view));
+        });
+
+        elements.registerForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            elements.registerStatus.textContent = "Capturing current frame and saving embedding...";
+            try {
+                const payload = await fetchJson("/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        student_id: document.getElementById("studentIdInput").value.trim(),
+                        name: document.getElementById("studentNameInput").value.trim(),
+                        role: document.getElementById("studentRoleInput").value
+                    })
+                });
+                state.students = payload.students || state.students;
+                state.graduates = payload.graduates || state.graduates;
+                renderStudents();
+                renderGraduates();
+                elements.registerForm.reset();
+                elements.registerStatus.textContent = payload.message;
+            } catch (error) {
+                elements.registerStatus.textContent = error.message;
+            }
+        });
+
+        document.addEventListener("click", async (event) => {
+            const graduateButton = event.target.closest(".graduate-button");
+            if (!graduateButton) return;
+            const studentId = graduateButton.dataset.graduateId;
+            graduateButton.disabled = true;
+            try {
+                const payload = await fetchJson(`/api/students/${encodeURIComponent(studentId)}/graduate`, { method: "POST" });
+                state.students = payload.students || [];
+                state.graduates = payload.graduates || [];
+                renderStudents();
+                renderGraduates();
+                elements.registerStatus.textContent = payload.message;
+            } catch (error) {
+                elements.registerStatus.textContent = error.message;
+            }
+        });
+
+        elements.selectAllGraduates.addEventListener("change", (event) => {
+            if (event.target.checked) {
+                state.graduates.forEach((graduate) => state.selectedGraduateIds.add(graduate.id));
+            } else {
+                state.selectedGraduateIds.clear();
+            }
+            renderGraduates();
+        });
+
+        document.addEventListener("change", (event) => {
+            const checkbox = event.target.closest(".graduate-checkbox");
+            if (!checkbox) return;
+            const graduateId = checkbox.dataset.graduateCheck;
+            if (checkbox.checked) state.selectedGraduateIds.add(graduateId);
+            else state.selectedGraduateIds.delete(graduateId);
+            renderGraduates();
+        });
+
+        elements.deleteSelectedGraduates.addEventListener("click", async () => {
+            const ids = [...state.selectedGraduateIds];
+            if (ids.length === 0) {
+                elements.registerStatus.textContent = "Select at least one graduate before deleting.";
+                return;
+            }
+            elements.deleteSelectedGraduates.disabled = true;
+            try {
+                const payload = await fetchJson("/api/graduates/delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ student_ids: ids })
+                });
+                state.selectedGraduateIds.clear();
+                state.graduates = payload.graduates || [];
+                renderGraduates();
+                elements.registerStatus.textContent = payload.message;
+            } catch (error) {
+                elements.registerStatus.textContent = error.message;
+            } finally {
+                elements.deleteSelectedGraduates.disabled = false;
+            }
+        });
+
+        elements.refreshLogsButton.addEventListener("click", async () => {
+            elements.refreshLogsButton.disabled = true;
+            try { await refreshLogs(); }
+            catch (error) { elements.logsSummary.textContent = error.message; }
+            finally { elements.refreshLogsButton.disabled = false; }
+        });
+
+        [elements.logSearchInput, elements.logStatusInput, elements.logDateInput].forEach((input) => {
+            input.addEventListener("change", refreshLogs);
+        });
+        elements.logSearchInput.addEventListener("input", () => {
+            clearTimeout(window.logSearchTimer);
+            window.logSearchTimer = setTimeout(refreshLogs, 250);
+        });
+
+        const socket = io();
+        socket.on("security_event", (payload) => {
+            state.alerts.unshift(payload);
+            state.alerts = state.alerts.slice(0, 20);
+            renderAlerts();
+            refreshLogs().catch(() => {});
+            refreshSystemStatus().catch(() => {});
+        });
+
+        setInterval(() => { refreshSystemStatus().catch(() => {}); }, 5000);
+
+        setView("security");
+        initializeDashboard().catch((error) => {
+            elements.registerStatus.textContent = error.message;
+            elements.logsSummary.textContent = error.message;
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+ </aside>
+                    </div>
+                </section>
+                <section id="adminView" class="view-panel hidden-panel absolute inset-0 space-y-6">
+                <section id="adminView" class="view-panel hidden-panel space-y-6">
+                    <div class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                        <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
+                            <div class="border-b border-neon/15 pb-5">
+            state.view = view;
+            const showSecurity = view === "security";
+            elements.securityView.className = `view-panel ${showSecurity ? "visible-panel" : "hidden-panel"} space-y-6`;
+            elements.adminView.className = `view-panel ${showSecurity ? "hidden-panel" : "visible-panel"} absolute inset-0 space-y-6`;
+            elements.adminView.className = `view-panel ${showSecurity ? "hidden-panel" : "visible-panel"} space-y-6`;
+            document.querySelectorAll(".view-toggle").forEach((button) => {
+                const active = button.dataset.view === view;
+                button.classList.toggle("bg-neon", active);
+        function renderGraduates() {
+            const graduates = state.graduates;
+            elements.graduatesSummary.textContent = `${graduates.length} graduates loaded`;
+            elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
+            elements.selectAllGraduates.checked = graduates.length > 0 && graduates.every((graduate) => state.selectedGraduateIds.has(graduate.id));
+            if (graduates.length === 0) {
+                elements.graduatesTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No graduated students available for deletion.</td></tr>`;
+
+
+
+
+
+
+
+
+
+
