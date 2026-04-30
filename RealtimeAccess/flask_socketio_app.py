@@ -5,13 +5,15 @@ import sqlite3
 import threading
 import time
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
 from typing import Any, Optional
 
 import cv2
 import numpy as np
-from flask import Flask, Response, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, jsonify, render_template, request, send_from_directory, session
 from flask_socketio import SocketIO
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from realtime_face_access import (
     DATABASE_PATH,
@@ -31,6 +33,9 @@ STREAM_JPEG_QUALITY = 72
 CAPTURE_MAX_WIDTH = 960
 FRAME_SKIP_INTERVAL = 10
 VALID_ROLES = {"Student", "Staff", "Admin", "Security"}
+ACCOUNT_ROLES = {"admin", "security"}
+ADMISSION_SYNC_INTERVAL_SECONDS = 15
+ADMISSION_SYNC_BATCH_SIZE = 25
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "university-face-access"
@@ -68,17 +73,22 @@ def ensure_database_schema() -> None:
                     name TEXT NOT NULL,
                     role TEXT NOT NULL CHECK(role IN ('Student', 'Staff', 'Admin', 'Security')),
                     embedding BLOB NOT NULL,
+                    image_path TEXT,
                     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
                 """
             )
-        elif "created_at" not in _column_names(connection, "students"):
-            connection.execute(
-                """
-                ALTER TABLE students
-                ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-                """
-            )
+        else:
+            student_columns = _column_names(connection, "students")
+            if "created_at" not in student_columns:
+                connection.execute(
+                    """
+                    ALTER TABLE students
+                    ADD COLUMN created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    """
+                )
+            if "image_path" not in student_columns:
+                connection.execute("ALTER TABLE students ADD COLUMN image_path TEXT")
 
         connection.execute(
             """
@@ -86,7 +96,48 @@ def ensure_database_schema() -> None:
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 role TEXT NOT NULL,
+                requirements_completed INTEGER NOT NULL DEFAULT 1,
+                reason TEXT NOT NULL DEFAULT 'Graduated',
                 graduated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        graduate_columns = _column_names(connection, "graduated_students")
+        if "requirements_completed" not in graduate_columns:
+            connection.execute(
+                "ALTER TABLE graduated_students ADD COLUMN requirements_completed INTEGER NOT NULL DEFAULT 1"
+            )
+        if "reason" not in graduate_columns:
+            connection.execute(
+                "ALTER TABLE graduated_students ADD COLUMN reason TEXT NOT NULL DEFAULT 'Graduated'"
+            )
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS app_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('admin', 'security')),
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_login_at TEXT,
+                UNIQUE(username, role)
+            )
+            """
+        )
+
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS admission_students (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'Student',
+                image_path TEXT,
+                image_blob BLOB,
+                is_graduated INTEGER NOT NULL DEFAULT 0,
+                synced_at TEXT,
+                sync_error TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
@@ -174,6 +225,77 @@ def ensure_database_schema() -> None:
         connection.close()
 
 
+def get_current_user() -> Optional[dict[str, Any]]:
+    user = session.get("user")
+    return user if isinstance(user, dict) else None
+
+
+def require_auth(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if get_current_user() is None:
+            return jsonify({"error": "Authentication required"}), 401
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+def require_role(*allowed_roles: str):
+    normalized_roles = {role.lower() for role in allowed_roles}
+
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            user = get_current_user()
+            if user is None:
+                return jsonify({"error": "Authentication required"}), 401
+            if user.get("role") not in normalized_roles:
+                return jsonify({"error": "You do not have permission for this area"}), 403
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+def authenticate_or_create_user(role: str, username: str, password: str) -> tuple[dict[str, Any], bool]:
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            """
+            SELECT id, username, role, password_hash
+            FROM app_users
+            WHERE username = ? AND role = ?
+            """,
+            (username, role),
+        ).fetchone()
+
+        now = datetime.now().isoformat(timespec="seconds")
+        if row is None:
+            password_hash = generate_password_hash(password)
+            cursor = connection.execute(
+                """
+                INSERT INTO app_users (username, role, password_hash, created_at, last_login_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (username, role, password_hash, now, now),
+            )
+            connection.commit()
+            return {"id": cursor.lastrowid, "username": username, "role": role}, True
+
+        if not check_password_hash(row["password_hash"], password):
+            raise ValueError("Invalid username or password")
+
+        connection.execute(
+            "UPDATE app_users SET last_login_at = ? WHERE id = ?",
+            (now, row["id"]),
+        )
+        connection.commit()
+        return {"id": row["id"], "username": row["username"], "role": row["role"]}, False
+    finally:
+        connection.close()
+
+
 def optimize_image_for_web(frame: np.ndarray, max_width: int = CAPTURE_MAX_WIDTH) -> np.ndarray:
     height, width = frame.shape[:2]
     if width <= max_width:
@@ -185,7 +307,8 @@ def optimize_image_for_web(frame: np.ndarray, max_width: int = CAPTURE_MAX_WIDTH
 def capture_screenshot(frame: np.ndarray, prefix: str) -> str:
     SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    filename = f"{prefix}_{timestamp}.jpg"
+    safe_prefix = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in prefix).strip("_")
+    filename = f"{safe_prefix or 'capture'}_{timestamp}.jpg"
     full_path = SCREENSHOT_DIR / filename
     cv2.imwrite(
         str(full_path),
@@ -195,17 +318,151 @@ def capture_screenshot(frame: np.ndarray, prefix: str) -> str:
     return f"/captures/{filename}"
 
 
-def insert_student_record(student_id: str, name: str, role: str, embedding: np.ndarray) -> None:
+def decode_image_bytes(image_bytes: bytes) -> np.ndarray:
+    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
+    frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
+    if frame is None:
+        raise ValueError("The uploaded image could not be read.")
+    return frame
+
+
+def load_admission_image(row: sqlite3.Row) -> np.ndarray:
+    if row["image_blob"]:
+        return decode_image_bytes(row["image_blob"])
+
+    raw_path = str(row["image_path"] or "").strip()
+    if not raw_path:
+        raise ValueError("Admission record has no image_path or image_blob.")
+
+    image_path = Path(raw_path)
+    if not image_path.is_absolute():
+        image_path = DATABASE_PATH.parent / raw_path
+    if not image_path.exists():
+        raise ValueError(f"Admission image was not found: {image_path}")
+
+    frame = cv2.imread(str(image_path))
+    if frame is None:
+        raise ValueError(f"Admission image could not be read: {image_path}")
+    return frame
+
+
+def admission_sync_status() -> dict[str, Any]:
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN synced_at IS NULL AND COALESCE(is_graduated, 0) = 0 THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN synced_at IS NOT NULL THEN 1 ELSE 0 END) AS synced,
+                SUM(CASE WHEN sync_error IS NOT NULL AND sync_error != '' THEN 1 ELSE 0 END) AS errors
+            FROM admission_students
+            """
+        ).fetchone()
+        return {
+            "connected": True,
+            "table": "admission_students",
+            "total": int(row["total"] or 0),
+            "pending": int(row["pending"] or 0),
+            "synced": int(row["synced"] or 0),
+            "errors": int(row["errors"] or 0),
+            "sync_interval_seconds": ADMISSION_SYNC_INTERVAL_SECONDS,
+        }
+    finally:
+        connection.close()
+
+
+def sync_admission_students(limit: int = ADMISSION_SYNC_BATCH_SIZE) -> dict[str, Any]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            """
+            SELECT id, name, role, image_path, image_blob
+            FROM admission_students
+            WHERE synced_at IS NULL
+              AND COALESCE(is_graduated, 0) = 0
+            ORDER BY datetime(created_at) ASC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    imported = 0
+    failed = 0
+    errors: list[dict[str, str]] = []
+
+    for row in rows:
+        student_id = str(row["id"]).strip()
+        role = str(row["role"] or "Student").strip().title()
+        if role not in VALID_ROLES:
+            role = "Student"
+
+        try:
+            frame = load_admission_image(row)
+            embedding, _ = extract_embedding(frame)
+            image_path = capture_screenshot(frame, f"admission_{student_id}")
+            insert_student_record(student_id, str(row["name"]).strip(), role, embedding, image_path)
+
+            connection = get_connection()
+            try:
+                connection.execute(
+                    """
+                    UPDATE admission_students
+                    SET synced_at = ?, sync_error = NULL
+                    WHERE id = ?
+                    """,
+                    (datetime.now().isoformat(timespec="seconds"), student_id),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+            imported += 1
+        except Exception as error:
+            failed += 1
+            message = str(error)
+            errors.append({"student_id": student_id, "error": message})
+            connection = get_connection()
+            try:
+                connection.execute(
+                    "UPDATE admission_students SET sync_error = ? WHERE id = ?",
+                    (message, student_id),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+    if imported:
+        processor.refresh_students()
+
+    status = admission_sync_status()
+    return {
+        "imported": imported,
+        "failed": failed,
+        "errors": errors,
+        "status": status,
+    }
+
+
+def insert_student_record(
+    student_id: str,
+    name: str,
+    role: str,
+    embedding: np.ndarray,
+    image_path: Optional[str] = None,
+) -> None:
     connection = get_connection()
     try:
         connection.execute(
             """
-            INSERT INTO students (id, name, role, embedding, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO students (id, name, role, embedding, image_path, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 role = excluded.role,
                 embedding = excluded.embedding,
+                image_path = COALESCE(excluded.image_path, students.image_path),
                 created_at = excluded.created_at
             """,
             (
@@ -213,6 +470,7 @@ def insert_student_record(student_id: str, name: str, role: str, embedding: np.n
                 name,
                 role,
                 pickle.dumps(embedding.tolist()),
+                image_path,
                 datetime.now().isoformat(timespec="seconds"),
             ),
         )
@@ -254,7 +512,7 @@ def list_students() -> list[dict[str, Any]]:
     try:
         rows = connection.execute(
             """
-            SELECT id, name, role, created_at
+            SELECT id, name, role, image_path, created_at
             FROM students
             ORDER BY datetime(created_at) DESC, name COLLATE NOCASE ASC
             """
@@ -269,7 +527,7 @@ def list_graduated_students() -> list[dict[str, Any]]:
     try:
         rows = connection.execute(
             """
-            SELECT id, name, role, graduated_at
+            SELECT id, name, role, requirements_completed, reason, graduated_at
             FROM graduated_students
             ORDER BY datetime(graduated_at) DESC, name COLLATE NOCASE ASC
             """
@@ -291,17 +549,21 @@ def move_student_to_graduated(student_id: str) -> bool:
 
         connection.execute(
             """
-            INSERT INTO graduated_students (id, name, role, graduated_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO graduated_students (id, name, role, requirements_completed, reason, graduated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 role = excluded.role,
+                requirements_completed = excluded.requirements_completed,
+                reason = excluded.reason,
                 graduated_at = excluded.graduated_at
             """,
             (
                 row["id"],
                 row["name"],
                 row["role"],
+                1,
+                "Graduated - all requirements completed",
                 datetime.now().isoformat(timespec="seconds"),
             ),
         )
@@ -330,6 +592,7 @@ def bulk_delete_graduates(student_ids: list[str]) -> int:
 
 
 def emit_security_event(decision: FrameDecision, image_path: str) -> None:
+    severity = "orange" if decision.log_status == "Manual ID Required" else "red"
     payload = {
         "event_type": decision.event_type,
         "status": decision.log_status,
@@ -337,6 +600,9 @@ def emit_security_event(decision: FrameDecision, image_path: str) -> None:
         "student_id": decision.student_id,
         "student_name": decision.student_name,
         "role": decision.role,
+        "accessory_state": decision.accessory_state,
+        "severity": severity,
+        "alarm": decision.should_alarm,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "image_path": image_path,
     }
@@ -525,6 +791,14 @@ class WebFaceProcessor:
                 "label": decision.label,
                 "status": decision.log_status,
                 "outcome": decision.outcome,
+                "accessory_state": decision.accessory_state,
+                "severity": (
+                    "green"
+                    if decision.log_status == "Allowed"
+                    else "orange"
+                    if decision.log_status == "Manual ID Required"
+                    else "red"
+                ),
             },
         }
 
@@ -532,6 +806,18 @@ class WebFaceProcessor:
 ensure_database_schema()
 processor = WebFaceProcessor()
 processor.start()
+
+
+def admissions_sync_loop() -> None:
+    while True:
+        try:
+            sync_admission_students()
+        except Exception as error:
+            print(f"ADMISSION_SYNC_ERROR: {error}")
+        time.sleep(ADMISSION_SYNC_INTERVAL_SECONDS)
+
+
+threading.Thread(target=admissions_sync_loop, daemon=True).start()
 
 
 @app.errorhandler(404)
@@ -553,7 +839,62 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/api/auth/me")
+def auth_me():
+    return jsonify({"user": get_current_user()})
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    payload = request.get_json(silent=True) or {}
+    role = str(payload.get("role", "")).strip().lower()
+    username = str(payload.get("username", "")).strip()
+    password = str(payload.get("password", ""))
+
+    if role not in ACCOUNT_ROLES or not username or not password:
+        return jsonify({"error": "role, username, and password are required"}), 400
+
+    try:
+        user, created = authenticate_or_create_user(role, username, password)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 401
+
+    session.clear()
+    session["user"] = user
+    return jsonify({
+        "user": user,
+        "created": created,
+        "message": "Account created and signed in." if created else "Signed in successfully.",
+    })
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+@require_auth
+def auth_logout():
+    session.clear()
+    return jsonify({"message": "Signed out successfully."})
+
+
+@app.route("/api/bootstrap")
+@require_auth
+def bootstrap():
+    user = get_current_user()
+    payload: dict[str, Any] = {"user": user}
+    if user and user.get("role") == "admin":
+        payload.update({
+            "students": list_students(),
+            "graduates": list_graduated_students(),
+            "admissions": admission_sync_status(),
+        })
+    if user and user.get("role") == "security":
+        payload.update({
+            "system": processor.system_status(),
+        })
+    return jsonify(payload)
+
+
 @app.route("/video_feed")
+@require_role("security")
 def video_feed():
     return Response(
         processor.generate_stream(),
@@ -562,21 +903,37 @@ def video_feed():
 
 
 @app.route("/captures/<path:filename>")
+@require_auth
 def get_capture(filename: str):
     return send_from_directory(SCREENSHOT_DIR, filename)
 
 
 @app.route("/api/system/status")
+@require_role("security")
 def get_system_status():
     return jsonify(processor.system_status())
 
 
+@app.route("/api/admissions/status")
+@require_role("admin")
+def get_admissions_status():
+    return jsonify(admission_sync_status())
+
+
+@app.route("/api/admissions/sync", methods=["POST"])
+@require_role("admin")
+def sync_admissions_now():
+    return jsonify(sync_admission_students())
+
+
 @app.route("/api/students")
+@require_role("admin")
 def get_students():
     return jsonify({"items": list_students()})
 
 
 @app.route("/api/students/<student_id>/graduate", methods=["POST"])
+@require_role("admin")
 def graduate_student(student_id: str):
     if not move_student_to_graduated(student_id):
         return jsonify({"error": "Student not found"}), 404
@@ -589,11 +946,13 @@ def graduate_student(student_id: str):
 
 
 @app.route("/api/graduates")
+@require_role("admin")
 def get_graduates():
     return jsonify({"items": list_graduated_students()})
 
 
 @app.route("/api/graduates/delete", methods=["POST"])
+@require_role("admin")
 def delete_graduates():
     payload = request.get_json(silent=True) or {}
     student_ids = [
@@ -614,6 +973,7 @@ def delete_graduates():
 
 
 @app.route("/api/logs")
+@require_auth
 def get_logs():
     date_value = str(request.args.get("date", "")).strip()
     search_value = str(request.args.get("search", "")).strip().lower()
@@ -656,11 +1016,19 @@ def get_logs():
 
 
 @app.route("/api/register", methods=["POST"])
+@require_role("admin")
 def register():
-    payload = request.get_json(silent=True) or {}
-    student_id = str(payload.get("student_id", "")).strip()
-    name = str(payload.get("name", "")).strip()
-    role = str(payload.get("role", "")).strip().title()
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        student_id = str(request.form.get("student_id", "")).strip()
+        name = str(request.form.get("name", "")).strip()
+        role = str(request.form.get("role", "")).strip().title()
+        image_file = request.files.get("image")
+    else:
+        payload = request.get_json(silent=True) or {}
+        student_id = str(payload.get("student_id", "")).strip()
+        name = str(payload.get("name", "")).strip()
+        role = str(payload.get("role", "")).strip().title()
+        image_file = None
 
     if not student_id or not name or role not in VALID_ROLES:
         return (
@@ -671,13 +1039,16 @@ def register():
         )
 
     try:
-        frame = processor.capture_current_frame()
+        if image_file is not None and image_file.filename:
+            frame = decode_image_bytes(image_file.read())
+        else:
+            frame = processor.capture_current_frame()
         embedding, _ = extract_embedding(frame)
     except Exception as error:
         return jsonify({"error": str(error)}), 400
 
     capture_path = capture_screenshot(frame, f"register_{student_id}")
-    insert_student_record(student_id, name, role, embedding)
+    insert_student_record(student_id, name, role, embedding, capture_path)
     processor.refresh_students()
 
     return jsonify({
@@ -692,4 +1063,4 @@ def register():
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)

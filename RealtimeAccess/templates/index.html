@@ -1,271 +1,1038 @@
-"""<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Access Control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        night: "#020617",
-                        panel: "rgba(15, 23, 42, 0.78)",
-                        neon: "#3b82f6",
-                        neonRed: "#ef4444",
-                        neonYellow: "#facc15",
-                        neonGreen: "#22c55e"
-                    },
-                    fontFamily: {
-                        display: ["Orbitron", "sans-serif"],
-                        body: ["Rajdhani", "sans-serif"]
-                    },
-                    boxShadow: {
-                        neon: "0 0 0 1px rgba(59,130,246,0.35), 0 0 28px rgba(59,130,246,0.18)",
-                        danger: "0 0 0 1px rgba(239,68,68,0.35), 0 0 28px rgba(239,68,68,0.2)"
-                    }
-                }
-            }
-        };
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>University Access Control</title>
     <style>
+        :root {
+            color-scheme: light;
+            --bg: #eefaff;
+            --surface: rgba(255, 255, 255, 0.86);
+            --surface-muted: rgba(226, 246, 255, 0.8);
+            --border: rgba(0, 168, 255, 0.28);
+            --text: #092033;
+            --muted: #4f6c80;
+            --primary: #008cff;
+            --primary-strong: #006fca;
+            --accent: #7c3aed;
+            --success: #00a873;
+            --danger: #e91e63;
+            --warning: #ff9800;
+            --grid-line: rgba(0, 140, 255, 0.12);
+            --glow: 0 0 0 1px rgba(0, 140, 255, 0.18), 0 18px 50px rgba(0, 140, 255, 0.16);
+            --shadow: 0 14px 34px rgba(0, 50, 85, 0.12);
+        }
+
+        body[data-theme="dark"] {
+            color-scheme: dark;
+            --bg: #050b14;
+            --surface: rgba(9, 18, 31, 0.86);
+            --surface-muted: rgba(15, 31, 51, 0.86);
+            --border: rgba(0, 229, 255, 0.26);
+            --text: #eefbff;
+            --muted: #9db7c8;
+            --primary: #00e5ff;
+            --primary-strong: #68f2ff;
+            --accent: #a78bfa;
+            --success: #39ffb6;
+            --danger: #ff3d81;
+            --warning: #ffbf3d;
+            --grid-line: rgba(0, 229, 255, 0.09);
+            --glow: 0 0 0 1px rgba(0, 229, 255, 0.16), 0 18px 60px rgba(0, 229, 255, 0.12);
+            --shadow: 0 20px 55px rgba(0, 0, 0, 0.38);
+        }
+
+        * { box-sizing: border-box; }
+
         body {
+            margin: 0;
+            min-height: 100vh;
             background:
-                radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.12), transparent 20%),
-                linear-gradient(180deg, #020617 0%, #071124 46%, #020617 100%);
+                radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 28%),
+                radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 30%),
+                linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 82%, #000 18%));
+            color: var(--text);
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            letter-spacing: 0;
         }
-        .grid-fx {
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
             background-image:
-                linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px);
-            background-size: 36px 36px;
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95), transparent 88%);
         }
-        .view-panel { transition: opacity .28s ease, transform .28s ease, filter .28s ease; }
-        .view-panel.hidden-panel {
-            opacity: 0; transform: translateY(18px); pointer-events: none;
-            position: absolute; inset: 0; filter: blur(10px);
+
+        button, input, select {
+            font: inherit;
         }
-        .view-panel.visible-panel { opacity: 1; transform: translateY(0); position: relative; filter: blur(0); }
-        .thin-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
-        .thin-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.28); border-radius: 999px; }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.56;
+        }
+
+        .hidden { display: none !important; }
+
+        .login-shell {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .login-panel {
+            width: min(980px, 100%);
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--surface);
+            box-shadow: var(--glow);
+            backdrop-filter: blur(18px);
+        }
+
+        .login-intro {
+            padding: 42px;
+            background:
+                linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), transparent 46%),
+                linear-gradient(225deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 48%),
+                var(--surface-muted);
+            border-inline-end: 1px solid var(--border);
+        }
+
+        .login-form-panel {
+            padding: 32px;
+        }
+
+        .brand-row, .app-header, .row, .toolbar, .role-switch, .summary-grid {
+            display: flex;
+            align-items: center;
+        }
+
+        .brand-row {
+            gap: 14px;
+            margin-bottom: 34px;
+        }
+
+        .seal {
+            width: 104px;
+            height: 104px;
+            border-radius: 20px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-weight: 800;
+            box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 45%, transparent);
+        }
+
+        .seal img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.94);
+            transform: scale(1.24);
+        }
+
+        .brand-row .seal {
+            width: 172px;
+            height: 172px;
+            border-radius: 32px;
+        }
+
+        .header-title .seal {
+            width: 104px;
+            height: 104px;
+            border-radius: 24px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-shadow: 0 0 14px color-mix(in srgb, var(--primary) 34%, transparent);
+        }
+
+        h1, h2, h3, p { margin-top: 0; }
+
+        h1 {
+            margin-bottom: 14px;
+            font-size: clamp(28px, 4vw, 44px);
+            line-height: 1.12;
+        }
+
+        h2 {
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+
+        h3 {
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .muted {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .settings-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        input, select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            padding: 12px 13px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(31, 95, 139, 0.14);
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .role-switch {
+            gap: 8px;
+            margin: 16px 0 20px;
+            padding: 4px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-muted);
+        }
+
+        .role-button {
+            flex: 1;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 12px;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .role-button.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 38%, transparent);
+        }
+
+        .primary-button, .secondary-button, .danger-button, .ghost-button {
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-weight: 800;
+        }
+
+        .primary-button {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 30%, transparent);
+        }
+
+        .primary-button:hover {
+            background: var(--primary-strong);
+        }
+
+        .secondary-button {
+            border-color: var(--border);
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .danger-button {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .ghost-button {
+            border-color: var(--border);
+            background: transparent;
+            color: var(--text);
+        }
+
+        .status-text {
+            min-height: 22px;
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: color-mix(in srgb, var(--surface) 92%, transparent);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-badge {
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 7px 12px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .main {
+            width: min(1320px, 100%);
+            margin: 0 auto;
+            padding: 22px;
+        }
+
+        .grid-admin {
+            display: grid;
+            grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.5fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .admin-page {
+            display: grid;
+            gap: 18px;
+        }
+
+        .admin-page .stack {
+            display: contents;
+        }
+
+        .admin-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--surface);
+            box-shadow: var(--glow);
+            padding: 10px;
+            backdrop-filter: blur(16px);
+        }
+
+        .admin-tab {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface-muted);
+            color: var(--text);
+            padding: 11px 14px;
+            font-weight: 800;
+        }
+
+        .admin-tab.active {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 30%, transparent);
+        }
+
+        .admin-panel {
+            display: none;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .grid-security {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) 390px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .stack {
+            display: grid;
+            gap: 18px;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--surface);
+            box-shadow: var(--glow);
+            padding: 18px;
+            backdrop-filter: blur(16px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-grid {
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .metric {
+            min-width: 120px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface-muted);
+            padding: 12px;
+        }
+
+        .metric-value {
+            display: block;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .form-grid .full { grid-column: 1 / -1; }
+
+        .table-wrap {
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: start;
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--muted);
+            background: color-mix(in srgb, var(--surface-muted) 92%, var(--primary) 8%);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .student-photo {
+            width: 48px;
+            height: 36px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            background: var(--surface-muted);
+        }
+
+        .live-panel {
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .live-header {
+            padding: 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .video-frame {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            display: block;
+            background: #0b1220;
+            object-fit: cover;
+            border-block: 1px solid var(--border);
+        }
+
+        .decision-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 6px 10px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .pill.success { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+        .pill.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+        .pill.warning { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); }
+
+        .alerts-list {
+            display: grid;
+            gap: 12px;
+            max-height: calc(100vh - 220px);
+            overflow: auto;
+        }
+
+        .alert-card {
+            border: 1px solid var(--border);
+            border-inline-start-width: 5px;
+            border-radius: 12px;
+            background: var(--surface);
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .alert-card.red { border-inline-start-color: var(--danger); }
+        .alert-card.orange { border-inline-start-color: var(--warning); }
+
+        .alert-card img {
+            width: 100%;
+            margin-top: 10px;
+            aspect-ratio: 16 / 9;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+        }
+
+        .empty-state {
+            padding: 28px 14px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        @media (max-width: 980px) {
+            .login-panel, .grid-admin, .grid-security {
+                grid-template-columns: 1fr;
+            }
+
+            .login-intro {
+                border-inline-end: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .app-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main, .login-shell {
+                padding: 14px;
+            }
+
+            .login-intro, .login-form-panel, .card {
+                padding: 18px;
+            }
+
+            .settings-row, .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-row .seal {
+                width: 132px;
+                height: 132px;
+                border-radius: 26px;
+            }
+
+            .header-title .seal {
+                width: 86px;
+                height: 86px;
+                border-radius: 20px;
+            }
+        }
     </style>
 </head>
-<body class="min-h-screen font-body text-slate-100">
-    <div class="grid-fx min-h-screen px-4 py-5 md:px-8 md:py-8">
-        <div class="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col gap-6">
-            <header class="rounded-[28px] border border-neon/30 bg-panel px-6 py-6 shadow-neon backdrop-blur-xl">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <p class="font-display text-xs uppercase tracking-[0.45em] text-neon/80">Realtime Cyber Access Control</p>
-                        <h1 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-[0.08em] text-white md:text-5xl">Admin And Security Operations Console</h1>
-                        <p class="mt-3 max-w-3xl text-lg text-slate-300">Live monitoring, AI access control, graduate cleanup, and searchable logs inside one Tailwind-powered SPA.</p>
+<body data-theme="light">
+    <div id="loginScreen" class="login-shell">
+        <section class="login-panel">
+            <div class="login-intro">
+                <div class="brand-row">
+                    <div class="seal">
+                        <img src="{{ url_for('static', filename='university-logo.png') }}" alt="University logo" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+                        <span hidden>UA</span>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div id="cameraBadge" class="rounded-full border border-neon/40 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-slate-200 shadow-neon">Camera status: checking</div>
-                        <div class="rounded-full border border-neon/40 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-neon">Frame skip: 10</div>
-                        <div class="rounded-full border border-neon/40 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-neonYellow">Cooldown: 10s</div>
+                    <div>
+                        <p class="eyebrow" data-i18n="systemLabel">نظام الدخول الجامعي</p>
+                        <h1 data-i18n="loginTitle">SMART FACE RECOGNITION SYSTEM</h1>
                     </div>
                 </div>
-            </header>
+            </div>
 
-            <nav class="flex flex-wrap gap-3">
-                <button data-view="security" class="view-toggle rounded-full border border-neon/40 bg-slate-950/70 px-5 py-3 font-display text-sm uppercase tracking-[0.22em] text-slate-200 transition hover:border-neon hover:text-white">Security View</button>
-                <button data-view="admin" class="view-toggle rounded-full border border-neon/40 bg-slate-950/70 px-5 py-3 font-display text-sm uppercase tracking-[0.22em] text-slate-200 transition hover:border-neon hover:text-white">Admin View</button>
-            </nav>
-
-            <main class="relative flex-1">
-                <section id="securityView" class="view-panel visible-panel space-y-6">
-                    <div class="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-                        <div class="space-y-6">
-                            <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                                <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 lg:flex-row lg:items-center lg:justify-between">
-                                    <div>
-                                        <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Security Feed</p>
-                                        <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Live Stream</h2>
-                                    </div>
-                                    <div id="decisionBadge" class="rounded-full border border-slate-700 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-slate-300">Awaiting detections</div>
-                                </div>
-                                <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/20 bg-slate-950 shadow-neon">
-                                    <img id="videoStream" src="{{ url_for('video_feed') }}" alt="Live video stream" class="aspect-video w-full object-cover">
-                                </div>
-                            </section>
-
-                            <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                                <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 xl:flex-row xl:items-end xl:justify-between">
-                                    <div>
-                                        <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Searchable Audit Trail</p>
-                                        <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Access Logs</h2>
-                                    </div>
-                                    <div class="grid gap-3 sm:grid-cols-3">
-                                        <input id="logDateInput" type="date" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-neon">
-                                        <input id="logSearchInput" type="search" placeholder="Search ID, name, label" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-neon">
-                                        <select id="logStatusInput" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-neon">
-                                            <option value="">All statuses</option>
-                                            <option value="Allowed">Allowed</option>
-                                            <option value="Unknown">Unknown</option>
-                                            <option value="Denied">Denied</option>
-                                            <option value="Manual ID Required">Manual ID Required</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="mt-4 flex flex-wrap items-center gap-3">
-                                    <button id="refreshLogsButton" class="rounded-full border border-neon/30 bg-neon px-4 py-2 text-sm font-bold uppercase tracking-[0.16em] text-slate-950 transition hover:brightness-110">Refresh Logs</button>
-                                    <span id="logsSummary" class="text-sm text-slate-400">No logs loaded yet.</span>
-                                </div>
-                                <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/15">
-                                    <div class="thin-scroll max-h-[420px] overflow-auto">
-                                        <table class="min-w-full text-left text-sm">
-                                            <thead class="sticky top-0 bg-slate-950/95 text-slate-300 backdrop-blur">
-                                                <tr>
-                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">ID</th>
-                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Name</th>
-                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Status</th>
-                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Label</th>
-                                                    <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Timestamp</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="logsTableBody" class="divide-y divide-neon/10 bg-slate-900/60"></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </section>
-                        </div>
-
-                        <aside class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                            <div class="flex items-center justify-between border-b border-neon/15 pb-5">
-                                <div>
-                                    <p class="font-display text-xs uppercase tracking-[0.4em] text-neonRed/90">Threat Sidebar</p>
-                                    <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Live Alerts</h2>
-                                </div>
-                                <span id="alertsCount" class="rounded-full border border-neonRed/40 bg-neonRed/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-neonRed">0 Alerts</span>
-                            </div>
-                            <div id="alertsContainer" class="thin-scroll mt-5 space-y-4 overflow-auto pb-2"></div>
-                        </aside>
+            <div class="login-form-panel">
+                <div class="settings-row">
+                    <div>
+                        <label for="languageSelect" data-i18n="language">اللغة</label>
+                        <select id="languageSelect">
+                            <option value="ar">العربية</option>
+                            <option value="en">English</option>
+                        </select>
                     </div>
-                </section>
-                <section id="adminView" class="view-panel hidden-panel space-y-6">
-                    <div class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-                        <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                            <div class="border-b border-neon/15 pb-5">
-                                <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Enrollment Control</p>
-                                <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Register Faceprint</h2>
+                    <div>
+                        <label for="themeSelect" data-i18n="theme">الوضع</label>
+                        <select id="themeSelect">
+                            <option value="light" data-i18n="light">فاتح</option>
+                            <option value="dark" data-i18n="dark">داكن</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="role-switch" aria-label="Role">
+                    <button class="role-button active" type="button" data-role="admin" data-i18n="adminRole">القبول والتسجيل</button>
+                    <button class="role-button" type="button" data-role="security" data-i18n="securityRole">الأمن الجامعي</button>
+                </div>
+
+                <form id="loginForm">
+                    <div class="field">
+                        <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
+                        <input id="usernameInput" type="text" autocomplete="username" required>
+                    </div>
+                    <div class="field">
+                        <label for="passwordInput" data-i18n="password">كلمة المرور</label>
+                        <input id="passwordInput" type="password" autocomplete="current-password" required>
+                    </div>
+                    <button class="primary-button" type="submit" style="width: 100%;" data-i18n="signIn">دخول</button>
+                    <p id="loginStatus" class="status-text"></p>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+        <header class="app-header">
+            <div class="header-title">
+                <div class="seal">
+                    <img src="{{ url_for('static', filename='university-logo.png') }}" alt="University logo" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+                    <span hidden>UA</span>
+                </div>
+                <div>
+                    <p class="eyebrow" id="areaEyebrow">Admin</p>
+                    <h2 id="areaTitle">Dashboard</h2>
+                </div>
+            </div>
+            <div class="toolbar">
+                <span id="userBadge" class="user-badge"></span>
+                <button id="logoutButton" class="ghost-button" type="button" data-i18n="logout">تسجيل خروج</button>
+            </div>
+        </header>
+
+        <main class="main">
+            <section id="adminView" class="admin-page hidden">
+                <nav class="admin-tabs" aria-label="Admissions sections">
+                    <button class="admin-tab active" type="button" data-admin-tab="sync" data-i18n="tabSync">المزامنة</button>
+                    <button class="admin-tab" type="button" data-admin-tab="register" data-i18n="tabRegister">تسجيل طالب جديد</button>
+                    <button class="admin-tab" type="button" data-admin-tab="students" data-i18n="tabStudents">الطلاب المسجلون</button>
+                    <button class="admin-tab" type="button" data-admin-tab="graduates" data-i18n="tabGraduates">الخريجون</button>
+                </nav>
+                <div class="stack">
+                    <section class="card admin-panel active" data-admin-panel="sync">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="defaultConnection">الخيار الأساسي</p>
+                                <h3 data-i18n="admissionSync">مزامنة القبول والتسجيل</h3>
                             </div>
-                            <form id="registerForm" class="mt-5 grid gap-4">
-                                <input id="studentNameInput" type="text" placeholder="Full name" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-neon" required>
-                                <input id="studentIdInput" type="text" placeholder="University ID" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-neon" required>
-                                <select id="studentRoleInput" class="rounded-2xl border border-neon/20 bg-slate-950/80 px-4 py-3 text-base text-slate-100 outline-none transition focus:border-neon">
+                            <span id="admissionConnected" class="pill success" data-i18n="connected">متصل</span>
+                        </div>
+                        <div class="summary-grid">
+                            <div class="metric">
+                                <span id="admissionTotal" class="metric-value">0</span>
+                                <span class="metric-label" data-i18n="totalRecords">كل السجلات</span>
+                            </div>
+                            <div class="metric">
+                                <span id="admissionPending" class="metric-value">0</span>
+                                <span class="metric-label" data-i18n="pendingSync">بانتظار المزامنة</span>
+                            </div>
+                            <div class="metric">
+                                <span id="admissionErrors" class="metric-value">0</span>
+                                <span class="metric-label" data-i18n="syncErrors">أخطاء</span>
+                            </div>
+                        </div>
+                        <p class="muted" style="margin: 14px 0;" data-i18n="admissionNote">
+                            أي طالب جديد يضاف إلى جدول القبول والتسجيل مع صورته يتم استيراده تلقائيًا للنظام.
+                        </p>
+                        <button id="syncNowButton" class="primary-button" type="button" data-i18n="syncNow">مزامنة الآن</button>
+                        <p id="syncStatus" class="status-text"></p>
+                    </section>
+
+                    <section class="card admin-panel" data-admin-panel="register">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="manualEnrollment">تسجيل يدوي</p>
+                                <h3 data-i18n="registerStudent">تسجيل طالب جديد</h3>
+                            </div>
+                        </div>
+                        <form id="registerForm" class="form-grid">
+                            <div>
+                                <label for="studentNameInput" data-i18n="studentName">اسم الطالب</label>
+                                <input id="studentNameInput" name="name" type="text" required>
+                            </div>
+                            <div>
+                                <label for="studentIdInput" data-i18n="studentId">الرقم الجامعي</label>
+                                <input id="studentIdInput" name="student_id" type="text" required>
+                            </div>
+                            <div>
+                                <label for="studentRoleInput" data-i18n="role">الدور</label>
+                                <select id="studentRoleInput" name="role">
                                     <option>Student</option>
                                     <option>Staff</option>
                                     <option>Admin</option>
                                     <option>Security</option>
                                 </select>
-                                <button type="submit" class="rounded-2xl bg-neon px-5 py-3 font-display text-sm uppercase tracking-[0.2em] text-slate-950 transition hover:brightness-110">Capture And Register</button>
-                            </form>
-                            <div id="registerStatus" class="mt-4 rounded-2xl border border-neon/20 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">Waiting for a live frame from the camera.</div>
-                        </section>
-
-                        <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                            <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 lg:flex-row lg:items-end lg:justify-between">
-                                <div>
-                                    <p class="font-display text-xs uppercase tracking-[0.4em] text-neon/80">Active Database</p>
-                                    <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Registered Students</h2>
-                                </div>
-                                <span id="studentsSummary" class="text-sm text-slate-400">0 students loaded</span>
                             </div>
-                            <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/15">
-                                <div class="thin-scroll max-h-[420px] overflow-auto">
-                                    <table class="min-w-full text-left text-sm">
-                                        <thead class="sticky top-0 bg-slate-950/95 text-slate-300">
-                                            <tr>
-                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Name</th>
-                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">ID</th>
-                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Role</th>
-                                                <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="studentsTableBody" class="divide-y divide-neon/10 bg-slate-900/60"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                        <div class="flex flex-col gap-4 border-b border-neon/15 pb-5 lg:flex-row lg:items-end lg:justify-between">
                             <div>
-                                <p class="font-display text-xs uppercase tracking-[0.4em] text-neonYellow/90">Bulk Graduate Cleanup</p>
-                                <h2 class="mt-2 font-display text-2xl uppercase tracking-[0.08em] text-white">Graduated Students</h2>
+                                <label for="studentImageInput" data-i18n="studentImage">صورة الطالب</label>
+                                <input id="studentImageInput" name="image" type="file" accept="image/*" required>
                             </div>
-                            <div class="flex flex-wrap items-center gap-3">
-                                <label class="inline-flex items-center gap-2 rounded-full border border-neon/20 bg-slate-950/70 px-4 py-2 text-sm text-slate-200">
-                                    <input id="selectAllGraduates" type="checkbox" class="h-4 w-4 accent-[#3b82f6]">
-                                    Select all
-                                </label>
-                                <button id="deleteSelectedGraduates" class="rounded-full border border-neonRed/30 bg-neonRed px-4 py-2 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:brightness-110">Delete Selected</button>
-                                <span id="graduatesSummary" class="text-sm text-slate-400">0 graduates loaded</span>
+                            <div class="full">
+                                <button class="primary-button" type="submit" data-i18n="saveStudent">حفظ الطالب</button>
+                                <p id="registerStatus" class="status-text"></p>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+
+                <div class="stack">
+                    <section class="card admin-panel" data-admin-panel="students">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="registeredStudents">الطلاب المسجلون</p>
+                                <h3><span id="studentsCount">0</span> <span data-i18n="students">طلاب</span></h3>
                             </div>
                         </div>
-                        <div class="mt-5 overflow-hidden rounded-[24px] border border-neon/15">
-                            <div class="thin-scroll max-h-[360px] overflow-auto">
-                                <table class="min-w-full text-left text-sm">
-                                    <thead class="sticky top-0 bg-slate-950/95 text-slate-300">
-                                        <tr>
-                                            <th class="px-4 py-3"><span class="sr-only">Select</span></th>
-                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Name</th>
-                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">ID</th>
-                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Role</th>
-                                            <th class="px-4 py-3 font-display uppercase tracking-[0.16em]">Graduated</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="graduatesTableBody" class="divide-y divide-neon/10 bg-slate-900/60"></tbody>
-                                </table>
-                            </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="photo">الصورة</th>
+                                        <th data-i18n="studentName">اسم الطالب</th>
+                                        <th data-i18n="studentId">الرقم الجامعي</th>
+                                        <th data-i18n="role">الدور</th>
+                                        <th data-i18n="createdAt">تاريخ التسجيل</th>
+                                        <th data-i18n="action">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTableBody"></tbody>
+                            </table>
                         </div>
                     </section>
+
+                    <section class="card admin-panel" data-admin-panel="graduates">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="graduatesComplete">الخريجون المنتهية متطلباتهم</p>
+                                <h3><span id="graduatesCount">0</span> <span data-i18n="graduates">خريجون</span></h3>
+                            </div>
+                            <div class="toolbar">
+                                <button id="selectAllGraduatesButton" class="secondary-button" type="button" data-i18n="selectAll">تحديد الكل</button>
+                                <button id="deleteSelectedGraduates" class="danger-button" type="button" data-i18n="deleteSelected">حذف المحدد</button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th data-i18n="studentName">اسم الطالب</th>
+                                        <th data-i18n="studentId">الرقم الجامعي</th>
+                                        <th data-i18n="role">الدور</th>
+                                        <th data-i18n="completed">أنهى المتطلبات</th>
+                                        <th data-i18n="graduatedAt">تاريخ التخرج</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="graduatesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <p id="graduatesStatus" class="status-text"></p>
+                    </section>
+                </div>
+            </section>
+
+            <section id="securityView" class="grid-security hidden">
+                <section class="card live-panel">
+                    <div class="live-header">
+                        <div class="card-header" style="margin: 0; padding: 0; border: 0;">
+                            <div>
+                                <p class="eyebrow" data-i18n="securityLive">شاشة الأمن</p>
+                                <h3 data-i18n="liveCamera">الكاميرا المباشرة</h3>
+                            </div>
+                            <span id="cameraBadge" class="pill" data-i18n="checking">جاري الفحص</span>
+                        </div>
+                    </div>
+                    <img id="videoStream" class="video-frame" alt="Live security camera">
+                    <div class="decision-row">
+                        <span id="decisionBadge" class="pill" data-i18n="waitingDecision">بانتظار القراءة</span>
+                        <span id="cooldownBadge" class="pill">10s</span>
+                    </div>
                 </section>
-            </main>
-        </div>
+
+                <aside class="card">
+                    <div class="card-header">
+                        <div>
+                            <p class="eyebrow" data-i18n="alertPanel">لوحة الإنذارات</p>
+                            <h3><span id="alertsCount">0</span> <span data-i18n="alerts">إنذارات</span></h3>
+                        </div>
+                    </div>
+                    <div id="alertsContainer" class="alerts-list"></div>
+                </aside>
+            </section>
+        </main>
     </div>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
+        const translations = {
+            ar: {
+                systemLabel: "نظام الدخول الجامعي",
+                loginTitle: "SMART FACE RECOGNITION SYSTEM",
+                language: "اللغة",
+                theme: "الوضع",
+                light: "فاتح",
+                dark: "داكن",
+                adminRole: "القبول والتسجيل",
+                securityRole: "الأمن الجامعي",
+                tabSync: "المزامنة",
+                tabRegister: "تسجيل طالب جديد",
+                tabStudents: "الطلاب المسجلون",
+                tabGraduates: "الخريجون",
+                username: "اسم المستخدم",
+                password: "كلمة المرور",
+                signIn: "دخول",
+                logout: "تسجيل خروج",
+                adminTitle: "لوحة القبول والتسجيل",
+                securityTitle: "شاشة الأمن المباشرة",
+                defaultConnection: "الخيار الأساسي",
+                admissionSync: "مزامنة القبول والتسجيل",
+                connected: "متصل",
+                totalRecords: "كل السجلات",
+                pendingSync: "بانتظار المزامنة",
+                syncErrors: "أخطاء",
+                admissionNote: "أي طالب جديد يضاف إلى جدول القبول والتسجيل مع صورته يتم استيراده تلقائيًا للنظام.",
+                syncNow: "مزامنة الآن",
+                manualEnrollment: "تسجيل يدوي",
+                registerStudent: "تسجيل طالب جديد",
+                studentName: "اسم الطالب",
+                studentId: "الرقم الجامعي",
+                role: "الدور",
+                studentImage: "صورة الطالب",
+                saveStudent: "حفظ الطالب",
+                registeredStudents: "الطلاب المسجلون",
+                students: "طلاب",
+                photo: "الصورة",
+                createdAt: "تاريخ التسجيل",
+                action: "إجراء",
+                moveGraduate: "نقل للخريجين",
+                graduatesComplete: "الخريجون المنتهية متطلباتهم",
+                graduates: "خريجون",
+                selectAll: "تحديد الكل",
+                clearSelection: "إلغاء التحديد",
+                deleteSelected: "حذف المحدد",
+                completed: "أنهى المتطلبات",
+                graduatedAt: "تاريخ التخرج",
+                securityLive: "شاشة الأمن",
+                liveCamera: "الكاميرا المباشرة",
+                checking: "جاري الفحص",
+                cameraOnline: "الكاميرا تعمل",
+                cameraOffline: "الكاميرا غير متاحة",
+                waitingDecision: "بانتظار القراءة",
+                alertPanel: "لوحة الإنذارات",
+                alerts: "إنذارات",
+                noStudents: "لا يوجد طلاب مسجلون.",
+                noGraduates: "لا يوجد خريجون للحذف.",
+                noAlerts: "لا توجد إنذارات حتى الآن.",
+                saved: "تم الحفظ بنجاح.",
+                synced: "تمت المزامنة.",
+                deleted: "تم حذف السجلات المحددة.",
+                selectGraduateFirst: "اختر طالبًا واحدًا على الأقل.",
+                accountCreated: "تم إنشاء الحساب وتسجيل الدخول.",
+                signedIn: "تم تسجيل الدخول.",
+                signedOut: "تم تسجيل الخروج."
+            },
+            en: {
+                systemLabel: "University Access System",
+                loginTitle: "SMART FACE RECOGNITION SYSTEM",
+                language: "Language",
+                theme: "Theme",
+                light: "Light",
+                dark: "Dark",
+                adminRole: "Admissions",
+                securityRole: "Campus Security",
+                tabSync: "Sync",
+                tabRegister: "Register Student",
+                tabStudents: "Registered Students",
+                tabGraduates: "Graduates",
+                username: "Username",
+                password: "Password",
+                signIn: "Sign In",
+                logout: "Sign Out",
+                adminTitle: "Admissions And Registration",
+                securityTitle: "Live Security Monitor",
+                defaultConnection: "Default Option",
+                admissionSync: "Admissions Sync",
+                connected: "Connected",
+                totalRecords: "Total Records",
+                pendingSync: "Pending Sync",
+                syncErrors: "Errors",
+                admissionNote: "New admissions records with photos are imported automatically into this access system.",
+                syncNow: "Sync Now",
+                manualEnrollment: "Manual Enrollment",
+                registerStudent: "Register New Student",
+                studentName: "Student Name",
+                studentId: "University ID",
+                role: "Role",
+                studentImage: "Student Photo",
+                saveStudent: "Save Student",
+                registeredStudents: "Registered Students",
+                students: "Students",
+                photo: "Photo",
+                createdAt: "Created At",
+                action: "Action",
+                moveGraduate: "Move To Graduates",
+                graduatesComplete: "Graduates With Completed Requirements",
+                graduates: "Graduates",
+                selectAll: "Select All",
+                clearSelection: "Clear",
+                deleteSelected: "Delete Selected",
+                completed: "Completed",
+                graduatedAt: "Graduated At",
+                securityLive: "Security Screen",
+                liveCamera: "Live Camera",
+                checking: "Checking",
+                cameraOnline: "Camera Online",
+                cameraOffline: "Camera Offline",
+                waitingDecision: "Waiting For Reading",
+                alertPanel: "Alert Panel",
+                alerts: "Alerts",
+                noStudents: "No registered students.",
+                noGraduates: "No graduates available for deletion.",
+                noAlerts: "No alerts yet.",
+                saved: "Saved successfully.",
+                synced: "Sync completed.",
+                deleted: "Selected records deleted.",
+                selectGraduateFirst: "Select at least one graduate.",
+                accountCreated: "Account created and signed in.",
+                signedIn: "Signed in.",
+                signedOut: "Signed out."
+            }
+        };
+
         const state = {
-            view: "security",
+            language: localStorage.getItem("accessLanguage") || "ar",
+            theme: localStorage.getItem("accessTheme") || "light",
+            selectedRole: "admin",
+            adminPanel: "sync",
+            user: null,
             students: [],
             graduates: [],
-            logs: [],
-            alerts: [],
             selectedGraduateIds: new Set(),
-            systemStatus: null
+            alerts: [],
+            socket: null,
+            statusTimer: null
         };
 
         const elements = {
-            securityView: document.getElementById("securityView"),
+            loginScreen: document.getElementById("loginScreen"),
+            appShell: document.getElementById("appShell"),
+            loginForm: document.getElementById("loginForm"),
+            loginStatus: document.getElementById("loginStatus"),
+            languageSelect: document.getElementById("languageSelect"),
+            themeSelect: document.getElementById("themeSelect"),
+            areaEyebrow: document.getElementById("areaEyebrow"),
+            areaTitle: document.getElementById("areaTitle"),
+            userBadge: document.getElementById("userBadge"),
+            logoutButton: document.getElementById("logoutButton"),
             adminView: document.getElementById("adminView"),
-            cameraBadge: document.getElementById("cameraBadge"),
-            decisionBadge: document.getElementById("decisionBadge"),
+            securityView: document.getElementById("securityView"),
+            admissionTotal: document.getElementById("admissionTotal"),
+            admissionPending: document.getElementById("admissionPending"),
+            admissionErrors: document.getElementById("admissionErrors"),
+            syncNowButton: document.getElementById("syncNowButton"),
+            syncStatus: document.getElementById("syncStatus"),
             registerForm: document.getElementById("registerForm"),
             registerStatus: document.getElementById("registerStatus"),
-            studentsSummary: document.getElementById("studentsSummary"),
+            studentsCount: document.getElementById("studentsCount"),
             studentsTableBody: document.getElementById("studentsTableBody"),
-            graduatesSummary: document.getElementById("graduatesSummary"),
+            graduatesCount: document.getElementById("graduatesCount"),
             graduatesTableBody: document.getElementById("graduatesTableBody"),
-            selectAllGraduates: document.getElementById("selectAllGraduates"),
+            selectAllGraduatesButton: document.getElementById("selectAllGraduatesButton"),
             deleteSelectedGraduates: document.getElementById("deleteSelectedGraduates"),
-            alertsContainer: document.getElementById("alertsContainer"),
+            graduatesStatus: document.getElementById("graduatesStatus"),
+            videoStream: document.getElementById("videoStream"),
+            cameraBadge: document.getElementById("cameraBadge"),
+            decisionBadge: document.getElementById("decisionBadge"),
+            cooldownBadge: document.getElementById("cooldownBadge"),
             alertsCount: document.getElementById("alertsCount"),
-            logsTableBody: document.getElementById("logsTableBody"),
-            logsSummary: document.getElementById("logsSummary"),
-            logDateInput: document.getElementById("logDateInput"),
-            logSearchInput: document.getElementById("logSearchInput"),
-            logStatusInput: document.getElementById("logStatusInput"),
-            refreshLogsButton: document.getElementById("refreshLogsButton")
+            alertsContainer: document.getElementById("alertsContainer")
         };
+
+        function t(key) {
+            return translations[state.language][key] || translations.en[key] || key;
+        }
 
         function escapeHtml(value) {
             return String(value ?? "")
@@ -276,188 +1043,313 @@
                 .replaceAll("'", "&#39;");
         }
 
-        async function fetchJson(url, options) {
+        async function fetchJson(url, options = {}) {
             const response = await fetch(url, options);
             const contentType = response.headers.get("content-type") || "";
-            const payload = contentType.includes("application/json") ? await response.json() : { error: "Server did not return JSON." };
+            const payload = contentType.includes("application/json") ? await response.json() : { error: "Unexpected server response." };
             if (!response.ok) {
+                if (response.status === 401) showLogin();
                 throw new Error(payload.error || "Request failed.");
             }
             return payload;
         }
 
-        function setView(view) {
-            state.view = view;
-            const showSecurity = view === "security";
-            elements.securityView.className = `view-panel ${showSecurity ? "visible-panel" : "hidden-panel"} space-y-6`;
-            elements.adminView.className = `view-panel ${showSecurity ? "hidden-panel" : "visible-panel"} space-y-6`;
-            document.querySelectorAll(".view-toggle").forEach((button) => {
-                const active = button.dataset.view === view;
-                button.classList.toggle("bg-neon", active);
-                button.classList.toggle("text-slate-950", active);
-                button.classList.toggle("border-neon", active);
-                button.classList.toggle("shadow-neon", active);
-                button.classList.toggle("bg-slate-950/70", !active);
-                button.classList.toggle("text-slate-200", !active);
+        function applyPreferences() {
+            document.documentElement.lang = state.language;
+            document.documentElement.dir = state.language === "ar" ? "rtl" : "ltr";
+            document.body.dataset.theme = state.theme;
+            elements.languageSelect.value = state.language;
+            elements.themeSelect.value = state.theme;
+
+            document.querySelectorAll("[data-i18n]").forEach((node) => {
+                const key = node.dataset.i18n;
+                if (key) node.textContent = t(key);
+            });
+
+            document.querySelectorAll(".role-button").forEach((button) => {
+                button.classList.toggle("active", button.dataset.role === state.selectedRole);
+            });
+            setAdminPanel(state.adminPanel);
+
+            renderAdmin();
+            renderAlerts();
+            updateHeader();
+        }
+
+        function showLogin() {
+            state.user = null;
+            elements.loginScreen.classList.remove("hidden");
+            elements.appShell.classList.add("hidden");
+            elements.adminView.classList.add("hidden");
+            elements.securityView.classList.add("hidden");
+            elements.videoStream.removeAttribute("src");
+            if (state.statusTimer) {
+                clearInterval(state.statusTimer);
+                state.statusTimer = null;
+            }
+        }
+
+        function updateHeader() {
+            if (!state.user) return;
+            const isAdmin = state.user.role === "admin";
+            elements.areaEyebrow.textContent = isAdmin ? t("adminRole") : t("securityRole");
+            elements.areaTitle.textContent = isAdmin ? t("adminTitle") : t("securityTitle");
+            elements.userBadge.textContent = `${state.user.username} · ${isAdmin ? t("adminRole") : t("securityRole")}`;
+        }
+
+        async function showApp(user) {
+            state.user = user;
+            elements.loginScreen.classList.add("hidden");
+            elements.appShell.classList.remove("hidden");
+            updateHeader();
+
+            if (user.role === "admin") {
+                elements.adminView.classList.remove("hidden");
+                elements.securityView.classList.add("hidden");
+                setAdminPanel("sync");
+                await refreshAdminData();
+            } else {
+                elements.adminView.classList.add("hidden");
+                elements.securityView.classList.remove("hidden");
+                startSecurityView();
+            }
+        }
+
+        async function refreshAdminData() {
+            const [studentsPayload, graduatesPayload, admissionsPayload] = await Promise.all([
+                fetchJson("/api/students"),
+                fetchJson("/api/graduates"),
+                fetchJson("/api/admissions/status")
+            ]);
+            state.students = studentsPayload.items || [];
+            state.graduates = graduatesPayload.items || [];
+            const validIds = new Set(state.graduates.map((graduate) => graduate.id));
+            state.selectedGraduateIds = new Set([...state.selectedGraduateIds].filter((id) => validIds.has(id)));
+            renderAdmissions(admissionsPayload);
+            renderAdmin();
+        }
+
+        function renderAdmissions(status) {
+            elements.admissionTotal.textContent = status.total ?? 0;
+            elements.admissionPending.textContent = status.pending ?? 0;
+            elements.admissionErrors.textContent = status.errors ?? 0;
+        }
+
+        function setAdminPanel(panel) {
+            state.adminPanel = panel;
+            document.querySelectorAll(".admin-tab").forEach((button) => {
+                button.classList.toggle("active", button.dataset.adminTab === panel);
+            });
+            document.querySelectorAll(".admin-panel").forEach((section) => {
+                section.classList.toggle("active", section.dataset.adminPanel === panel);
             });
         }
 
-        function renderSystemStatus() {
-            const status = state.systemStatus;
-            if (!status) {
-                return;
-            }
-            const ready = status.camera_ready;
-            elements.cameraBadge.textContent = ready ? "Camera status: online" : `Camera status: ${status.camera_error || "offline"}`;
-            elements.cameraBadge.className = `rounded-full border px-4 py-2 text-sm font-semibold ${ready ? "border-neon/40 bg-slate-950/70 text-neon shadow-neon" : "border-neonRed/40 bg-neonRed/10 text-neonRed shadow-danger"}`;
-            elements.decisionBadge.textContent = status.current_decision ? `${status.current_decision.status}: ${status.current_decision.label}` : "Awaiting detections";
-        }
+        function renderAdmin() {
+            if (!elements.studentsTableBody) return;
+            elements.studentsCount.textContent = state.students.length;
+            elements.graduatesCount.textContent = state.graduates.length;
 
-        function renderStudents() {
-            elements.studentsSummary.textContent = `${state.students.length} students loaded`;
             if (state.students.length === 0) {
-                elements.studentsTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-10 text-center text-slate-400">No active students registered yet.</td></tr>`;
-                return;
+                elements.studentsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">${t("noStudents")}</td></tr>`;
+            } else {
+                elements.studentsTableBody.innerHTML = state.students.map((student) => `
+                    <tr>
+                        <td>${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}" alt="">` : ""}</td>
+                        <td>${escapeHtml(student.name)}</td>
+                        <td>${escapeHtml(student.id)}</td>
+                        <td>${escapeHtml(student.role)}</td>
+                        <td>${escapeHtml(student.created_at || "-")}</td>
+                        <td><button class="secondary-button graduate-button" type="button" data-id="${escapeHtml(student.id)}">${t("moveGraduate")}</button></td>
+                    </tr>
+                `).join("");
             }
-            elements.studentsTableBody.innerHTML = state.students.map((student) => `
-                <tr>
-                    <td class="px-4 py-3 text-white">${escapeHtml(student.name)}</td>
-                    <td class="px-4 py-3 text-slate-300">${escapeHtml(student.id)}</td>
-                    <td class="px-4 py-3 text-slate-300">${escapeHtml(student.role)}</td>
-                    <td class="px-4 py-3"><button data-graduate-id="${escapeHtml(student.id)}" class="graduate-button rounded-full border border-neon/30 bg-slate-950/70 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-neon transition hover:bg-neon hover:text-slate-950">Move To Graduates</button></td>
-                </tr>
-            `).join("");
-        }
 
-        function renderGraduates() {
-            const graduates = state.graduates;
-            elements.graduatesSummary.textContent = `${graduates.length} graduates loaded`;
+            elements.selectAllGraduatesButton.textContent =
+                state.selectedGraduateIds.size === state.graduates.length && state.graduates.length > 0
+                    ? t("clearSelection")
+                    : t("selectAll");
             elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
-            elements.selectAllGraduates.checked = graduates.length > 0 && graduates.every((graduate) => state.selectedGraduateIds.has(graduate.id));
-            if (graduates.length === 0) {
-                elements.graduatesTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No graduated students available for deletion.</td></tr>`;
-                return;
+
+            if (state.graduates.length === 0) {
+                elements.graduatesTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">${t("noGraduates")}</td></tr>`;
+            } else {
+                elements.graduatesTableBody.innerHTML = state.graduates.map((graduate) => `
+                    <tr>
+                        <td><input class="graduate-checkbox" type="checkbox" data-id="${escapeHtml(graduate.id)}" ${state.selectedGraduateIds.has(graduate.id) ? "checked" : ""}></td>
+                        <td>${escapeHtml(graduate.name)}</td>
+                        <td>${escapeHtml(graduate.id)}</td>
+                        <td>${escapeHtml(graduate.role)}</td>
+                        <td>${graduate.requirements_completed ? t("completed") : "-"}</td>
+                        <td>${escapeHtml(graduate.graduated_at || "-")}</td>
+                    </tr>
+                `).join("");
             }
-            elements.graduatesTableBody.innerHTML = graduates.map((graduate) => `
-                <tr>
-                    <td class="px-4 py-3"><input data-graduate-check="${escapeHtml(graduate.id)}" type="checkbox" class="graduate-checkbox h-4 w-4 accent-[#3b82f6]" ${state.selectedGraduateIds.has(graduate.id) ? "checked" : ""}></td>
-                    <td class="px-4 py-3 text-white">${escapeHtml(graduate.name)}</td>
-                    <td class="px-4 py-3 text-slate-300">${escapeHtml(graduate.id)}</td>
-                    <td class="px-4 py-3 text-slate-300">${escapeHtml(graduate.role)}</td>
-                    <td class="px-4 py-3 text-slate-300">${escapeHtml(graduate.graduated_at || "-")}</td>
-                </tr>
-            `).join("");
-        }
-        function statusPill(status) {
-            if (status === "Allowed") {
-                return "border-neonGreen/30 bg-neonGreen/10 text-neonGreen";
-            }
-            if (status === "Manual ID Required") {
-                return "border-neonYellow/30 bg-neonYellow/10 text-neonYellow";
-            }
-            return "border-neonRed/30 bg-neonRed/10 text-neonRed";
         }
 
-        function renderLogs() {
-            elements.logsSummary.textContent = `${state.logs.length} log entries shown`;
-            if (state.logs.length === 0) {
-                elements.logsTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No logs match the current filters.</td></tr>`;
-                return;
-            }
-            elements.logsTableBody.innerHTML = state.logs.map((log) => `
-                <tr>
-                    <td class="px-4 py-3 text-slate-200">${escapeHtml(log.student_id || "-")}</td>
-                    <td class="px-4 py-3 text-slate-200">${escapeHtml(log.student_name || "-")}</td>
-                    <td class="px-4 py-3"><span class="rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${statusPill(log.status)}">${escapeHtml(log.status)}</span></td>
-                    <td class="px-4 py-3 text-slate-300">${escapeHtml(log.label)}</td>
-                    <td class="px-4 py-3 text-slate-400">${escapeHtml(log.timestamp)}</td>
-                </tr>
-            `).join("");
-        }
+        async function startSecurityView() {
+            elements.videoStream.src = `/video_feed?t=${Date.now()}`;
+            renderAlerts();
+            await refreshSystemStatus();
+            if (state.statusTimer) clearInterval(state.statusTimer);
+            state.statusTimer = setInterval(() => refreshSystemStatus().catch(() => {}), 4000);
 
-        function renderAlerts() {
-            elements.alertsCount.textContent = `${state.alerts.length} Alerts`;
-            if (state.alerts.length === 0) {
-                elements.alertsContainer.innerHTML = `<div class="rounded-[24px] border border-neon/15 bg-slate-950/60 px-5 py-10 text-center text-slate-400">No alerts have been emitted by the backend yet.</div>`;
-                return;
+            if (window.io && !state.socket) {
+                state.socket = io();
+                state.socket.on("security_event", (payload) => {
+                    state.alerts.unshift(payload);
+                    state.alerts = state.alerts.slice(0, 30);
+                    renderAlerts();
+                    playAlarm();
+                });
             }
-            elements.alertsContainer.innerHTML = state.alerts.map((alert) => {
-                const yellow = alert.status === "Manual ID Required";
-                return `
-                    <article class="overflow-hidden rounded-[24px] border ${yellow ? "border-neonYellow/35 bg-neonYellow/10" : "border-neonRed/35 bg-neonRed/10"} p-4 ${yellow ? "shadow-neon" : "shadow-danger"}">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="font-display text-xs uppercase tracking-[0.24em] ${yellow ? "text-neonYellow" : "text-neonRed"}">${escapeHtml(alert.event_type || alert.status)}</p>
-                                <p class="mt-2 text-sm text-slate-200">${escapeHtml(alert.label)}</p>
-                                <p class="mt-1 text-xs text-slate-400">${escapeHtml(alert.timestamp)}</p>
-                            </div>
-                            <span class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] ${yellow ? "border-neonYellow/40 text-neonYellow" : "border-neonRed/40 text-neonRed"}">${yellow ? "Yellow Box" : "Red Alert"}</span>
-                        </div>
-                        <img src="${escapeHtml(alert.image_path)}?t=${Date.now()}" alt="Alert capture" class="mt-4 aspect-video w-full rounded-2xl object-cover">
-                    </article>
-                `;
-            }).join("");
         }
 
         async function refreshSystemStatus() {
-            state.systemStatus = await fetchJson("/api/system/status");
-            renderSystemStatus();
+            const status = await fetchJson("/api/system/status");
+            elements.cooldownBadge.textContent = `${status.identification_cooldown_seconds || 10}s`;
+            if (status.camera_ready) {
+                elements.cameraBadge.textContent = t("cameraOnline");
+                elements.cameraBadge.className = "pill success";
+            } else {
+                elements.cameraBadge.textContent = status.camera_error || t("cameraOffline");
+                elements.cameraBadge.className = "pill danger";
+            }
+
+            if (status.current_decision) {
+                elements.decisionBadge.textContent = status.current_decision.label;
+                const severity = status.current_decision.severity;
+                elements.decisionBadge.className = `pill ${severity === "green" ? "success" : severity === "orange" ? "warning" : "danger"}`;
+            } else {
+                elements.decisionBadge.textContent = t("waitingDecision");
+                elements.decisionBadge.className = "pill";
+            }
         }
 
-        async function refreshStudents() {
-            const payload = await fetchJson("/api/students");
-            state.students = payload.items || [];
-            renderStudents();
+        function renderAlerts() {
+            elements.alertsCount.textContent = state.alerts.length;
+            if (state.alerts.length === 0) {
+                elements.alertsContainer.innerHTML = `<div class="empty-state">${t("noAlerts")}</div>`;
+                return;
+            }
+
+            elements.alertsContainer.innerHTML = state.alerts.map((alert) => `
+                <article class="alert-card ${alert.severity === "orange" ? "orange" : "red"}">
+                    <div class="row" style="justify-content: space-between; gap: 10px;">
+                        <strong>${escapeHtml(alert.status)}</strong>
+                        <span class="pill ${alert.severity === "orange" ? "warning" : "danger"}">${escapeHtml(alert.event_type || alert.status)}</span>
+                    </div>
+                    <p class="muted" style="margin: 8px 0 0;">${escapeHtml(alert.label)}</p>
+                    <p class="muted" style="margin: 4px 0 0; font-size: 12px;">${escapeHtml(alert.timestamp)}</p>
+                    ${alert.image_path ? `<img src="${escapeHtml(alert.image_path)}?t=${Date.now()}" alt="">` : ""}
+                </article>
+            `).join("");
         }
 
-        async function refreshGraduates() {
-            const payload = await fetchJson("/api/graduates");
-            state.graduates = payload.items || [];
-            const validIds = new Set(state.graduates.map((graduate) => graduate.id));
-            state.selectedGraduateIds = new Set([...state.selectedGraduateIds].filter((id) => validIds.has(id)));
-            renderGraduates();
+        function playAlarm() {
+            try {
+                const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextCtor) return;
+                const context = new AudioContextCtor();
+                const oscillator = context.createOscillator();
+                const gain = context.createGain();
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(780, context.currentTime);
+                oscillator.frequency.setValueAtTime(520, context.currentTime + 0.18);
+                gain.gain.setValueAtTime(0.001, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.25, context.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.7);
+                oscillator.connect(gain);
+                gain.connect(context.destination);
+                oscillator.start();
+                oscillator.stop(context.currentTime + 0.75);
+            } catch (error) {
+                console.warn("Alarm could not be played", error);
+            }
         }
 
-        async function refreshLogs() {
-            const params = new URLSearchParams();
-            if (elements.logDateInput.value) params.set("date", elements.logDateInput.value);
-            if (elements.logSearchInput.value.trim()) params.set("search", elements.logSearchInput.value.trim());
-            if (elements.logStatusInput.value) params.set("status", elements.logStatusInput.value);
-            const payload = await fetchJson(`/api/logs?${params.toString()}`);
-            state.logs = payload.items || [];
-            renderLogs();
-        }
+        document.querySelectorAll(".role-button").forEach((button) => {
+            button.addEventListener("click", () => {
+                state.selectedRole = button.dataset.role;
+                applyPreferences();
+            });
+        });
 
-        async function initializeDashboard() {
-            const today = new Date().toISOString().slice(0, 10);
-            elements.logDateInput.value = today;
-            await Promise.all([refreshSystemStatus(), refreshStudents(), refreshGraduates(), refreshLogs()]);
-            renderAlerts();
-        }
+        document.querySelectorAll(".admin-tab").forEach((button) => {
+            button.addEventListener("click", () => {
+                setAdminPanel(button.dataset.adminTab);
+            });
+        });
 
-        document.querySelectorAll(".view-toggle").forEach((button) => {
-            button.addEventListener("click", () => setView(button.dataset.view));
+        elements.languageSelect.addEventListener("change", (event) => {
+            state.language = event.target.value;
+            localStorage.setItem("accessLanguage", state.language);
+            applyPreferences();
+        });
+
+        elements.themeSelect.addEventListener("change", (event) => {
+            state.theme = event.target.value;
+            localStorage.setItem("accessTheme", state.theme);
+            applyPreferences();
+        });
+
+        elements.loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            elements.loginStatus.textContent = "";
+            const username = document.getElementById("usernameInput").value.trim();
+            const password = document.getElementById("passwordInput").value;
+            try {
+                const payload = await fetchJson("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ role: state.selectedRole, username, password })
+                });
+                elements.loginStatus.textContent = payload.created ? t("accountCreated") : t("signedIn");
+                await showApp(payload.user);
+            } catch (error) {
+                elements.loginStatus.textContent = error.message;
+            }
+        });
+
+        elements.logoutButton.addEventListener("click", async () => {
+            try {
+                await fetchJson("/api/auth/logout", { method: "POST" });
+            } catch (error) {
+                console.warn(error);
+            }
+            showLogin();
+            elements.loginStatus.textContent = t("signedOut");
+        });
+
+        elements.syncNowButton.addEventListener("click", async () => {
+            elements.syncNowButton.disabled = true;
+            elements.syncStatus.textContent = "";
+            try {
+                const payload = await fetchJson("/api/admissions/sync", { method: "POST" });
+                renderAdmissions(payload.status);
+                elements.syncStatus.textContent = `${t("synced")} ${payload.imported} / ${payload.failed}`;
+                await refreshAdminData();
+            } catch (error) {
+                elements.syncStatus.textContent = error.message;
+            } finally {
+                elements.syncNowButton.disabled = false;
+            }
         });
 
         elements.registerForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            elements.registerStatus.textContent = "Capturing current frame and saving embedding...";
+            elements.registerStatus.textContent = "";
+            const formData = new FormData(elements.registerForm);
             try {
                 const payload = await fetchJson("/api/register", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        student_id: document.getElementById("studentIdInput").value.trim(),
-                        name: document.getElementById("studentNameInput").value.trim(),
-                        role: document.getElementById("studentRoleInput").value
-                    })
+                    body: formData
                 });
-                state.students = payload.students || state.students;
-                state.graduates = payload.graduates || state.graduates;
-                renderStudents();
-                renderGraduates();
+                state.students = payload.students || [];
+                state.graduates = payload.graduates || [];
+                renderAdmin();
                 elements.registerForm.reset();
-                elements.registerStatus.textContent = payload.message;
+                elements.registerStatus.textContent = t("saved");
             } catch (error) {
                 elements.registerStatus.textContent = error.message;
             }
@@ -466,130 +1358,78 @@
         document.addEventListener("click", async (event) => {
             const graduateButton = event.target.closest(".graduate-button");
             if (!graduateButton) return;
-            const studentId = graduateButton.dataset.graduateId;
             graduateButton.disabled = true;
             try {
-                const payload = await fetchJson(`/api/students/${encodeURIComponent(studentId)}/graduate`, { method: "POST" });
+                const payload = await fetchJson(`/api/students/${encodeURIComponent(graduateButton.dataset.id)}/graduate`, {
+                    method: "POST"
+                });
                 state.students = payload.students || [];
                 state.graduates = payload.graduates || [];
-                renderStudents();
-                renderGraduates();
-                elements.registerStatus.textContent = payload.message;
+                renderAdmin();
             } catch (error) {
                 elements.registerStatus.textContent = error.message;
+            } finally {
+                graduateButton.disabled = false;
             }
-        });
-
-        elements.selectAllGraduates.addEventListener("change", (event) => {
-            if (event.target.checked) {
-                state.graduates.forEach((graduate) => state.selectedGraduateIds.add(graduate.id));
-            } else {
-                state.selectedGraduateIds.clear();
-            }
-            renderGraduates();
         });
 
         document.addEventListener("change", (event) => {
             const checkbox = event.target.closest(".graduate-checkbox");
             if (!checkbox) return;
-            const graduateId = checkbox.dataset.graduateCheck;
-            if (checkbox.checked) state.selectedGraduateIds.add(graduateId);
-            else state.selectedGraduateIds.delete(graduateId);
-            renderGraduates();
+            if (checkbox.checked) state.selectedGraduateIds.add(checkbox.dataset.id);
+            else state.selectedGraduateIds.delete(checkbox.dataset.id);
+            renderAdmin();
+        });
+
+        elements.selectAllGraduatesButton.addEventListener("click", () => {
+            if (state.selectedGraduateIds.size === state.graduates.length) {
+                state.selectedGraduateIds.clear();
+            } else {
+                state.graduates.forEach((graduate) => state.selectedGraduateIds.add(graduate.id));
+            }
+            renderAdmin();
         });
 
         elements.deleteSelectedGraduates.addEventListener("click", async () => {
-            const ids = [...state.selectedGraduateIds];
-            if (ids.length === 0) {
-                elements.registerStatus.textContent = "Select at least one graduate before deleting.";
+            const studentIds = [...state.selectedGraduateIds];
+            if (studentIds.length === 0) {
+                elements.graduatesStatus.textContent = t("selectGraduateFirst");
                 return;
             }
+
             elements.deleteSelectedGraduates.disabled = true;
             try {
                 const payload = await fetchJson("/api/graduates/delete", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ student_ids: ids })
+                    body: JSON.stringify({ student_ids: studentIds })
                 });
                 state.selectedGraduateIds.clear();
                 state.graduates = payload.graduates || [];
-                renderGraduates();
-                elements.registerStatus.textContent = payload.message;
+                renderAdmin();
+                elements.graduatesStatus.textContent = t("deleted");
             } catch (error) {
-                elements.registerStatus.textContent = error.message;
+                elements.graduatesStatus.textContent = error.message;
             } finally {
-                elements.deleteSelectedGraduates.disabled = false;
+                elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
             }
         });
 
-        elements.refreshLogsButton.addEventListener("click", async () => {
-            elements.refreshLogsButton.disabled = true;
-            try { await refreshLogs(); }
-            catch (error) { elements.logsSummary.textContent = error.message; }
-            finally { elements.refreshLogsButton.disabled = false; }
-        });
+        async function initialize() {
+            applyPreferences();
+            try {
+                const payload = await fetchJson("/api/auth/me");
+                if (payload.user) {
+                    await showApp(payload.user);
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                showLogin();
+            }
+        }
 
-        [elements.logSearchInput, elements.logStatusInput, elements.logDateInput].forEach((input) => {
-            input.addEventListener("change", refreshLogs);
-        });
-        elements.logSearchInput.addEventListener("input", () => {
-            clearTimeout(window.logSearchTimer);
-            window.logSearchTimer = setTimeout(refreshLogs, 250);
-        });
-
-        const socket = io();
-        socket.on("security_event", (payload) => {
-            state.alerts.unshift(payload);
-            state.alerts = state.alerts.slice(0, 20);
-            renderAlerts();
-            refreshLogs().catch(() => {});
-            refreshSystemStatus().catch(() => {});
-        });
-
-        setInterval(() => { refreshSystemStatus().catch(() => {}); }, 5000);
-
-        setView("security");
-        initializeDashboard().catch((error) => {
-            elements.registerStatus.textContent = error.message;
-            elements.logsSummary.textContent = error.message;
-        });
+        initialize();
     </script>
 </body>
 </html>
-
-
-
-
- </aside>
-                    </div>
-                </section>
-                <section id="adminView" class="view-panel hidden-panel absolute inset-0 space-y-6">
-                <section id="adminView" class="view-panel hidden-panel space-y-6">
-                    <div class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-                        <section class="rounded-[28px] border border-neon/25 bg-panel p-5 shadow-neon backdrop-blur-xl md:p-6">
-                            <div class="border-b border-neon/15 pb-5">
-            state.view = view;
-            const showSecurity = view === "security";
-            elements.securityView.className = `view-panel ${showSecurity ? "visible-panel" : "hidden-panel"} space-y-6`;
-            elements.adminView.className = `view-panel ${showSecurity ? "hidden-panel" : "visible-panel"} absolute inset-0 space-y-6`;
-            elements.adminView.className = `view-panel ${showSecurity ? "hidden-panel" : "visible-panel"} space-y-6`;
-            document.querySelectorAll(".view-toggle").forEach((button) => {
-                const active = button.dataset.view === view;
-                button.classList.toggle("bg-neon", active);
-        function renderGraduates() {
-            const graduates = state.graduates;
-            elements.graduatesSummary.textContent = `${graduates.length} graduates loaded`;
-            elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
-            elements.selectAllGraduates.checked = graduates.length > 0 && graduates.every((graduate) => state.selectedGraduateIds.has(graduate.id));
-            if (graduates.length === 0) {
-                elements.graduatesTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">No graduated students available for deletion.</td></tr>`;
-
-
-
-
-
-
-
-
-
-

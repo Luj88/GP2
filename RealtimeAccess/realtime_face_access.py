@@ -127,10 +127,12 @@ def analyze_accessory_state(face_region: np.ndarray) -> str:
         return "niqab"
     if has_eyes and not has_nose and not has_mouth:
         return "mask_only"
-    if not has_eyes and (has_nose or has_mouth):
-        return "sunglasses_only"
     if not has_eyes and not has_nose and has_mouth:
         return "mask_and_sunglasses"
+    if not has_eyes and (has_nose or has_mouth):
+        return "sunglasses_only"
+    if has_eyes and has_nose and has_mouth:
+        return "medical_glasses_or_clear"
     return "clear"
 
 
@@ -245,12 +247,13 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
             bbox=(x, y, w, h),
             now=now,
             outcome="manual_review",
-            label="Manual ID Required",
-            color=(0, 255, 255),
+            label="Face Covered - Manual ID Required",
+            color=(0, 165, 255),
             accessory_state=accessory_state,
             log_status="Manual ID Required",
             event_type="Manual ID Required",
             should_alert=True,
+            should_alarm=True,
             should_capture=True,
             cooldown_key="manual_review:niqab",
         )
@@ -276,7 +279,8 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
         accessory_label = {
             "mask_only": "Mask Only",
             "sunglasses_only": "Sunglasses Only",
-            "clear": "Face Verified",
+            "medical_glasses_or_clear": "Face / Medical Glasses Verified",
+            "clear": "Face / Medical Glasses Verified",
         }.get(accessory_state, "Face Verified")
         return _make_decision(
             bbox=(x, y, w, h),
@@ -323,6 +327,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
         log_status="Unknown",
         event_type="Intruder Alert",
         should_alert=True,
+        should_alarm=True,
         should_capture=True,
         cooldown_key="unknown:clear_face",
     )
