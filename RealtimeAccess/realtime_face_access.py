@@ -136,7 +136,7 @@ def analyze_accessory_state(face_region: np.ndarray) -> str:
     return "clear"
 
 
-def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+def extract_face_embeddings(frame: np.ndarray) -> list[tuple[np.ndarray, tuple[int, int, int, int]]]:
     representations = DeepFace.represent(
         img_path=frame,
         model_name=MODEL_NAME,
@@ -146,16 +146,26 @@ def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, in
     if not representations:
         raise ValueError("No face embedding returned by DeepFace.")
 
-    face = representations[0]
-    facial_area = face.get("facial_area", {})
-    bbox = (
-        int(facial_area.get("x", 0)),
-        int(facial_area.get("y", 0)),
-        int(facial_area.get("w", frame.shape[1])),
-        int(facial_area.get("h", frame.shape[0])),
-    )
-    embedding = np.array(face["embedding"], dtype=np.float32)
-    return embedding, bbox
+    if isinstance(representations, dict):
+        representations = [representations]
+
+    face_embeddings: list[tuple[np.ndarray, tuple[int, int, int, int]]] = []
+    for face in representations:
+        facial_area = face.get("facial_area", {})
+        bbox = (
+            int(facial_area.get("x", 0)),
+            int(facial_area.get("y", 0)),
+            int(facial_area.get("w", frame.shape[1])),
+            int(facial_area.get("h", frame.shape[0])),
+        )
+        embedding = np.array(face["embedding"], dtype=np.float32)
+        face_embeddings.append((embedding, bbox))
+
+    return face_embeddings
+
+
+def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    return extract_face_embeddings(frame)[0]
 
 
 def fallback_person_box(frame: np.ndarray) -> Optional[tuple[int, int, int, int]]:
@@ -222,17 +232,14 @@ def _make_decision(
     )
 
 
-def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional[FrameDecision]:
-    now = time.time()
-    bbox: Optional[tuple[int, int, int, int]] = None
-    embedding: Optional[np.ndarray] = None
-
-    try:
-        embedding, bbox = extract_embedding(frame)
-    except Exception:
-        bbox = fallback_person_box(frame)
-        embedding = None
-
+def evaluate_face_candidate(
+    frame: np.ndarray,
+    bbox: tuple[int, int, int, int],
+    embedding: Optional[np.ndarray],
+    students: list[StudentRecord],
+    now: Optional[float] = None,
+) -> Optional[FrameDecision]:
+    resolved_now = time.time() if now is None else now
     if bbox is None:
         return None
 
@@ -245,7 +252,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
     if accessory_state == "niqab":
         return _make_decision(
             bbox=(x, y, w, h),
-            now=now,
+            now=resolved_now,
             outcome="manual_review",
             label="Face Covered - Manual ID Required",
             color=(0, 165, 255),
@@ -261,7 +268,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
     if accessory_state == "mask_and_sunglasses":
         return _make_decision(
             bbox=(x, y, w, h),
-            now=now,
+            now=resolved_now,
             outcome="denied",
             label="Mask + Sunglasses - Access Denied",
             color=(0, 0, 255),
@@ -284,7 +291,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
         }.get(accessory_state, "Face Verified")
         return _make_decision(
             bbox=(x, y, w, h),
-            now=now,
+            now=resolved_now,
             outcome="allowed",
             label=f"{matched_student.name} - {accessory_label} - Access Allowed",
             color=(0, 255, 0),
@@ -296,7 +303,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
     if accessory_state == "mask_only":
         return _make_decision(
             bbox=(x, y, w, h),
-            now=now,
+            now=resolved_now,
             outcome="allowed",
             label="Mask Only - Access Allowed",
             color=(0, 255, 0),
@@ -308,7 +315,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
     if accessory_state == "sunglasses_only":
         return _make_decision(
             bbox=(x, y, w, h),
-            now=now,
+            now=resolved_now,
             outcome="allowed",
             label="Sunglasses Only - Access Allowed",
             color=(0, 255, 0),
@@ -319,7 +326,7 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
 
     return _make_decision(
         bbox=(x, y, w, h),
-        now=now,
+        now=resolved_now,
         outcome="unknown",
         label="Unknown Face - Intruder Alert",
         color=(0, 0, 255),
@@ -331,3 +338,20 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
         should_capture=True,
         cooldown_key="unknown:clear_face",
     )
+
+
+def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional[FrameDecision]:
+    now = time.time()
+    bbox: Optional[tuple[int, int, int, int]] = None
+    embedding: Optional[np.ndarray] = None
+
+    try:
+        embedding, bbox = extract_embedding(frame)
+    except Exception:
+        bbox = fallback_person_box(frame)
+        embedding = None
+
+    if bbox is None:
+        return None
+
+    return evaluate_face_candidate(frame, bbox, embedding, students, now)

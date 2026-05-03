@@ -2,6 +2,7 @@ import json
 import pickle
 import queue
 import sqlite3
+import tempfile
 import threading
 import time
 from datetime import datetime
@@ -20,8 +21,11 @@ from realtime_face_access import (
     IDENTIFICATION_COOLDOWN_SECONDS,
     TARGET_FPS,
     FrameDecision,
+    evaluate_face_candidate,
     evaluate_frame,
     extract_embedding,
+    extract_face_embeddings,
+    fallback_person_box,
     load_database,
     trigger_alarm,
 )
@@ -32,6 +36,11 @@ SCREENSHOT_DIR = REALTIME_DIR / "captures"
 STREAM_JPEG_QUALITY = 72
 CAPTURE_MAX_WIDTH = 960
 FRAME_SKIP_INTERVAL = 10
+MEDIA_SCAN_MAX_UPLOAD_BYTES = 250 * 1024 * 1024
+MEDIA_SCAN_MAX_VIDEO_FRAMES = 45
+MEDIA_SCAN_MIN_VIDEO_SAMPLE_SECONDS = 1.0
+MEDIA_SCAN_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+MEDIA_SCAN_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
 VALID_ROLES = {"Student", "Staff", "Admin", "Security"}
 ACCOUNT_ROLES = {"admin", "security"}
 ADMISSION_SYNC_INTERVAL_SECONDS = 15
@@ -39,6 +48,7 @@ ADMISSION_SYNC_BATCH_SIZE = 25
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = "university-face-access"
+app.config["MAX_CONTENT_LENGTH"] = MEDIA_SCAN_MAX_UPLOAD_BYTES
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -118,6 +128,9 @@ def ensure_database_schema() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
                 role TEXT NOT NULL CHECK(role IN ('admin', 'security')),
+                full_name TEXT,
+                email TEXT,
+                phone TEXT,
                 password_hash TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_login_at TEXT,
@@ -125,6 +138,13 @@ def ensure_database_schema() -> None:
             )
             """
         )
+        app_user_columns = _column_names(connection, "app_users")
+        if "full_name" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN full_name TEXT")
+        if "email" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN email TEXT")
+        if "phone" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN phone TEXT")
 
         connection.execute(
             """
@@ -258,12 +278,12 @@ def require_role(*allowed_roles: str):
     return decorator
 
 
-def authenticate_or_create_user(role: str, username: str, password: str) -> tuple[dict[str, Any], bool]:
+def authenticate_user(role: str, username: str, password: str) -> dict[str, Any]:
     connection = get_connection()
     try:
         row = connection.execute(
             """
-            SELECT id, username, role, password_hash
+            SELECT id, username, role, full_name, email, phone, password_hash
             FROM app_users
             WHERE username = ? AND role = ?
             """,
@@ -272,16 +292,7 @@ def authenticate_or_create_user(role: str, username: str, password: str) -> tupl
 
         now = datetime.now().isoformat(timespec="seconds")
         if row is None:
-            password_hash = generate_password_hash(password)
-            cursor = connection.execute(
-                """
-                INSERT INTO app_users (username, role, password_hash, created_at, last_login_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (username, role, password_hash, now, now),
-            )
-            connection.commit()
-            return {"id": cursor.lastrowid, "username": username, "role": role}, True
+            raise ValueError("Invalid username or password")
 
         if not check_password_hash(row["password_hash"], password):
             raise ValueError("Invalid username or password")
@@ -291,9 +302,70 @@ def authenticate_or_create_user(role: str, username: str, password: str) -> tupl
             (now, row["id"]),
         )
         connection.commit()
-        return {"id": row["id"], "username": row["username"], "role": row["role"]}, False
+        return {
+            "id": row["id"],
+            "username": row["username"],
+            "role": row["role"],
+            "full_name": row["full_name"],
+            "email": row["email"],
+            "phone": row["phone"],
+        }
     finally:
         connection.close()
+
+
+def create_app_user(
+    role: str,
+    full_name: str,
+    username: str,
+    password: str,
+    email: str,
+    phone: str,
+) -> dict[str, Any]:
+    if role not in ACCOUNT_ROLES:
+        raise ValueError("Unsupported account role")
+
+    connection = get_connection()
+    try:
+        existing = connection.execute(
+            "SELECT id FROM app_users WHERE username = ? AND role = ?",
+            (username, role),
+        ).fetchone()
+        if existing is not None:
+            if role == "admin":
+                raise ValueError("This username is already used by another admissions employee")
+            raise ValueError("This username is already used by another security employee")
+
+        now = datetime.now().isoformat(timespec="seconds")
+        password_hash = generate_password_hash(password)
+        cursor = connection.execute(
+            """
+            INSERT INTO app_users (username, role, full_name, email, phone, password_hash, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (username, role, full_name, email or None, phone or None, password_hash, now),
+        )
+        connection.commit()
+        return {
+            "id": cursor.lastrowid,
+            "username": username,
+            "role": role,
+            "full_name": full_name,
+            "email": email,
+            "phone": phone,
+        }
+    finally:
+        connection.close()
+
+
+def create_admissions_employee(
+    full_name: str,
+    username: str,
+    password: str,
+    email: str,
+    phone: str,
+) -> dict[str, Any]:
+    return create_app_user("admin", full_name, username, password, email, phone)
 
 
 def optimize_image_for_web(frame: np.ndarray, max_width: int = CAPTURE_MAX_WIDTH) -> np.ndarray:
@@ -618,6 +690,300 @@ def placeholder_frame(message: str) -> np.ndarray:
     return frame
 
 
+def detect_media_upload_type(media_file: Any) -> str:
+    filename = str(getattr(media_file, "filename", "") or "")
+    content_type = str(getattr(media_file, "mimetype", "") or "").lower()
+    extension = Path(filename).suffix.lower()
+
+    if content_type.startswith("image/") or extension in MEDIA_SCAN_IMAGE_EXTENSIONS:
+        return "image"
+    if content_type.startswith("video/") or extension in MEDIA_SCAN_VIDEO_EXTENSIONS:
+        return "video"
+    raise ValueError("Unsupported media type. Please upload an image or video file.")
+
+
+def media_decision_severity(decision: FrameDecision) -> str:
+    if decision.log_status in {"Unknown", "Denied"}:
+        return "red"
+    if decision.log_status == "Manual ID Required":
+        return "orange"
+    if decision.student_id is None:
+        return "orange"
+    return "green"
+
+
+def analyze_media_frame(frame: np.ndarray, students: list[Any]) -> list[FrameDecision]:
+    detections: list[tuple[Optional[np.ndarray], tuple[int, int, int, int]]] = []
+    try:
+        detections = [
+            (embedding, bbox)
+            for embedding, bbox in extract_face_embeddings(frame)
+        ]
+    except Exception:
+        fallback_bbox = fallback_person_box(frame)
+        if fallback_bbox is not None:
+            detections = [(None, fallback_bbox)]
+
+    now = time.time()
+    decisions: list[FrameDecision] = []
+    for embedding, bbox in detections:
+        decision = evaluate_face_candidate(frame, bbox, embedding, students, now)
+        if decision is not None:
+            decisions.append(decision)
+    return decisions
+
+
+def annotate_media_frame(frame: np.ndarray, decisions: list[FrameDecision]) -> np.ndarray:
+    annotated = frame.copy()
+    for decision in decisions:
+        x, y, w, h = decision.bbox
+        cv2.rectangle(annotated, (x, y), (x + w, y + h), decision.color, 2)
+        label = (decision.student_name or decision.label)[:48]
+        cv2.putText(
+            annotated,
+            label,
+            (x, max(28, y - 8)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.62,
+            decision.color,
+            2,
+        )
+    return annotated
+
+
+def add_media_scan_decisions(
+    *,
+    decisions: list[FrameDecision],
+    entered_by_id: dict[str, dict[str, Any]],
+    alerts_by_key: dict[str, dict[str, Any]],
+    frame_number: int,
+    second: Optional[float],
+) -> int:
+    detected_faces = 0
+    rounded_second = None if second is None else round(second, 2)
+
+    for decision in decisions:
+        detected_faces += 1
+        if decision.student_id:
+            entry = entered_by_id.setdefault(
+                decision.student_id,
+                {
+                    "student_id": decision.student_id,
+                    "name": decision.student_name,
+                    "role": decision.role,
+                    "first_frame": frame_number,
+                    "first_second": rounded_second,
+                    "detections": 0,
+                },
+            )
+            entry["detections"] += 1
+            continue
+
+        severity = media_decision_severity(decision)
+        alert_key = f"{decision.log_status}:{decision.accessory_state}:{decision.label}"
+        alert = alerts_by_key.setdefault(
+            alert_key,
+            {
+                "status": decision.log_status,
+                "label": decision.label,
+                "event_type": decision.event_type or decision.log_status,
+                "accessory_state": decision.accessory_state,
+                "severity": severity,
+                "first_frame": frame_number,
+                "first_second": rounded_second,
+                "detections": 0,
+            },
+        )
+        alert["detections"] += 1
+
+    return detected_faces
+
+
+def build_media_scan_payload(
+    *,
+    filename: str,
+    media_type: str,
+    students: list[Any],
+    entered_by_id: dict[str, dict[str, Any]],
+    alerts_by_key: dict[str, dict[str, Any]],
+    processed_frames: int,
+    detected_faces: int,
+    duration_seconds: Optional[float] = None,
+    snapshot_path: Optional[str] = None,
+) -> dict[str, Any]:
+    entered_ids = set(entered_by_id)
+    missing = [
+        {
+            "student_id": student.student_id,
+            "name": student.name,
+            "role": student.role,
+        }
+        for student in students
+        if student.student_id not in entered_ids
+    ]
+    entered = sorted(
+        entered_by_id.values(),
+        key=lambda item: (item["first_frame"], str(item["name"] or "").lower()),
+    )
+    alerts = sorted(
+        alerts_by_key.values(),
+        key=lambda item: (item["first_frame"], str(item["label"] or "").lower()),
+    )
+
+    return {
+        "message": "Media scan completed.",
+        "filename": filename,
+        "media_type": media_type,
+        "processed_frames": processed_frames,
+        "detected_faces": detected_faces,
+        "duration_seconds": None if duration_seconds is None else round(duration_seconds, 2),
+        "entered": entered,
+        "entered_count": len(entered),
+        "missing": missing,
+        "missing_count": len(missing),
+        "alerts": alerts,
+        "alert_count": len(alerts),
+        "snapshot_path": snapshot_path,
+    }
+
+
+def scan_image_media(frame: np.ndarray, filename: str, students: list[Any]) -> dict[str, Any]:
+    entered_by_id: dict[str, dict[str, Any]] = {}
+    alerts_by_key: dict[str, dict[str, Any]] = {}
+    decisions = analyze_media_frame(frame, students)
+    detected_faces = add_media_scan_decisions(
+        decisions=decisions,
+        entered_by_id=entered_by_id,
+        alerts_by_key=alerts_by_key,
+        frame_number=0,
+        second=0.0,
+    )
+    snapshot_path = capture_screenshot(annotate_media_frame(frame, decisions), "media_scan_image") if decisions else None
+
+    return build_media_scan_payload(
+        filename=filename,
+        media_type="image",
+        students=students,
+        entered_by_id=entered_by_id,
+        alerts_by_key=alerts_by_key,
+        processed_frames=1,
+        detected_faces=detected_faces,
+        duration_seconds=None,
+        snapshot_path=snapshot_path,
+    )
+
+
+def iter_video_sample_frames(video_path: Path):
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        capture.release()
+        raise ValueError("The uploaded video could not be opened.")
+
+    try:
+        fps = float(capture.get(cv2.CAP_PROP_FPS) or TARGET_FPS or 30)
+        if fps <= 0:
+            fps = float(TARGET_FPS or 30)
+        frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        sample_every = max(1, int(fps * MEDIA_SCAN_MIN_VIDEO_SAMPLE_SECONDS))
+        duration_seconds = frame_count / fps if frame_count > 0 else None
+
+        if frame_count > 0:
+            estimated_samples = max(1, (frame_count + sample_every - 1) // sample_every)
+            if estimated_samples > MEDIA_SCAN_MAX_VIDEO_FRAMES:
+                sample_every = max(sample_every, frame_count // MEDIA_SCAN_MAX_VIDEO_FRAMES)
+
+            emitted = 0
+            for frame_number in range(0, frame_count, sample_every):
+                if emitted >= MEDIA_SCAN_MAX_VIDEO_FRAMES:
+                    break
+                capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+                ok, frame = capture.read()
+                if not ok:
+                    continue
+                emitted += 1
+                yield frame, frame_number, frame_number / fps, duration_seconds
+            return
+
+        frame_number = 0
+        emitted = 0
+        while emitted < MEDIA_SCAN_MAX_VIDEO_FRAMES:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            if frame_number % sample_every == 0:
+                emitted += 1
+                yield frame, frame_number, frame_number / fps, duration_seconds
+            frame_number += 1
+    finally:
+        capture.release()
+
+
+def scan_video_media(video_path: Path, filename: str, students: list[Any]) -> dict[str, Any]:
+    entered_by_id: dict[str, dict[str, Any]] = {}
+    alerts_by_key: dict[str, dict[str, Any]] = {}
+    processed_frames = 0
+    detected_faces = 0
+    snapshot_path: Optional[str] = None
+    duration_seconds: Optional[float] = None
+
+    for frame, frame_number, second, video_duration in iter_video_sample_frames(video_path):
+        processed_frames += 1
+        duration_seconds = video_duration
+        decisions = analyze_media_frame(frame, students)
+        detected_faces += add_media_scan_decisions(
+            decisions=decisions,
+            entered_by_id=entered_by_id,
+            alerts_by_key=alerts_by_key,
+            frame_number=frame_number,
+            second=second,
+        )
+        if decisions and snapshot_path is None:
+            snapshot_path = capture_screenshot(annotate_media_frame(frame, decisions), "media_scan_video")
+
+    if processed_frames == 0:
+        raise ValueError("The uploaded video did not contain readable frames.")
+
+    return build_media_scan_payload(
+        filename=filename,
+        media_type="video",
+        students=students,
+        entered_by_id=entered_by_id,
+        alerts_by_key=alerts_by_key,
+        processed_frames=processed_frames,
+        detected_faces=detected_faces,
+        duration_seconds=duration_seconds,
+        snapshot_path=snapshot_path,
+    )
+
+
+def scan_uploaded_media(media_file: Any) -> dict[str, Any]:
+    filename = str(getattr(media_file, "filename", "") or "").strip()
+    if not filename:
+        raise ValueError("media file is required")
+
+    media_type = detect_media_upload_type(media_file)
+    students = load_database()
+    if not students:
+        raise ValueError("No registered students are available for matching.")
+
+    if media_type == "image":
+        frame = decode_image_bytes(media_file.read())
+        return scan_image_media(frame, filename, students)
+
+    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in MEDIA_SCAN_VIDEO_EXTENSIONS:
+        suffix = ".mp4"
+    with tempfile.NamedTemporaryFile(dir=SCREENSHOT_DIR, suffix=suffix, delete=False) as temp_file:
+        media_file.save(temp_file)
+        temp_path = Path(temp_file.name)
+
+    try:
+        return scan_video_media(temp_path, filename, students)
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
 class WebFaceProcessor:
     def __init__(self) -> None:
         self.students = load_database()
@@ -644,17 +1010,20 @@ class WebFaceProcessor:
     def start(self) -> None:
         if self.running:
             return
-        self._open_camera()
-        if self.capture is None or not self.capture.isOpened():
-            return
         self.running = True
         threading.Thread(target=self._reader_loop, daemon=True).start()
         threading.Thread(target=self._worker_loop, daemon=True).start()
 
     def _reader_loop(self) -> None:
         while self.running:
+            if self.capture is None or not self.capture.isOpened():
+                self._open_camera()
+                if self.capture is None or not self.capture.isOpened():
+                    time.sleep(1.0)
+                    continue
+
             if self.capture is None:
-                time.sleep(0.1)
+                time.sleep(0.2)
                 continue
 
             ok, frame = self.capture.read()
@@ -855,7 +1224,7 @@ def auth_login():
         return jsonify({"error": "role, username, and password are required"}), 400
 
     try:
-        user, created = authenticate_or_create_user(role, username, password)
+        user = authenticate_user(role, username, password)
     except ValueError as error:
         return jsonify({"error": str(error)}), 401
 
@@ -863,9 +1232,61 @@ def auth_login():
     session["user"] = user
     return jsonify({
         "user": user,
-        "created": created,
-        "message": "Account created and signed in." if created else "Signed in successfully.",
+        "created": False,
+        "message": "Signed in successfully.",
     })
+
+
+@app.route("/api/auth/register-admissions-employee", methods=["POST"])
+def register_admissions_employee():
+    payload = request.get_json(silent=True) or {}
+    full_name = str(payload.get("full_name", "")).strip()
+    username = str(payload.get("username", "")).strip()
+    password = str(payload.get("password", ""))
+    email = str(payload.get("email", "")).strip()
+    phone = str(payload.get("phone", "")).strip()
+
+    if not full_name or not username or not password:
+        return jsonify({"error": "full_name, username, and password are required"}), 400
+    if len(password) < 4:
+        return jsonify({"error": "Password must be at least 4 characters"}), 400
+
+    try:
+        user = create_admissions_employee(full_name, username, password, email, phone)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    return jsonify({
+        "user": user,
+        "message": "Admissions employee account created successfully.",
+    }), 201
+
+
+@app.route("/api/security-users", methods=["POST"])
+@require_auth
+@require_role("admin")
+def create_security_user():
+    payload = request.get_json(silent=True) or {}
+    full_name = str(payload.get("full_name", "")).strip()
+    username = str(payload.get("username", "")).strip()
+    password = str(payload.get("password", ""))
+    email = str(payload.get("email", "")).strip()
+    phone = str(payload.get("phone", "")).strip()
+
+    if not full_name or not username or not password:
+        return jsonify({"error": "full_name, username, and password are required"}), 400
+    if len(password) < 4:
+        return jsonify({"error": "Password must be at least 4 characters"}), 400
+
+    try:
+        user = create_app_user("security", full_name, username, password, email, phone)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    return jsonify({
+        "user": user,
+        "message": "Security employee account created successfully.",
+    }), 201
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -912,6 +1333,19 @@ def get_capture(filename: str):
 @require_role("security")
 def get_system_status():
     return jsonify(processor.system_status())
+
+
+@app.route("/api/security/media-scan", methods=["POST"])
+@require_role("security")
+def security_media_scan():
+    media_file = request.files.get("media")
+    if media_file is None or not media_file.filename:
+        return jsonify({"error": "media file is required"}), 400
+
+    try:
+        return jsonify(scan_uploaded_media(media_file))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
 
 
 @app.route("/api/admissions/status")

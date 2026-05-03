@@ -7,40 +7,59 @@
     <style>
         :root {
             color-scheme: light;
-            --bg: #eefaff;
-            --surface: rgba(255, 255, 255, 0.86);
-            --surface-muted: rgba(226, 246, 255, 0.8);
-            --border: rgba(0, 168, 255, 0.28);
-            --text: #092033;
-            --muted: #4f6c80;
-            --primary: #008cff;
-            --primary-strong: #006fca;
-            --accent: #7c3aed;
-            --success: #00a873;
-            --danger: #e91e63;
-            --warning: #ff9800;
-            --grid-line: rgba(0, 140, 255, 0.12);
-            --glow: 0 0 0 1px rgba(0, 140, 255, 0.18), 0 18px 50px rgba(0, 140, 255, 0.16);
-            --shadow: 0 14px 34px rgba(0, 50, 85, 0.12);
+            --bg: #f5efe6;
+            --surface: rgba(255, 251, 245, 0.84);
+            --surface-muted: rgba(250, 243, 234, 0.94);
+            --border: rgba(132, 95, 57, 0.16);
+            --text: #2a1d12;
+            --muted: #7b6653;
+            --primary: #b66a28;
+            --primary-strong: #95531d;
+            --accent: #1f8a70;
+            --success: #1b8f64;
+            --danger: #c64f4f;
+            --warning: #d48b1f;
+            --grid-line: rgba(182, 106, 40, 0.07);
+            --glow: 0 0 0 1px rgba(182, 106, 40, 0.08), 0 26px 70px rgba(72, 45, 18, 0.12);
+            --shadow: 0 20px 48px rgba(77, 54, 31, 0.12);
+        }
+
+        body[data-theme="light"] {
+            color-scheme: light;
+            --bg: #f5efe6;
+            --surface: rgba(255, 251, 245, 0.84);
+            --surface-muted: rgba(250, 243, 234, 0.94);
+            --border: rgba(132, 95, 57, 0.16);
+            --text: #2a1d12;
+            --muted: #7b6653;
+            --primary: #b66a28;
+            --primary-strong: #95531d;
+            --accent: #1f8a70;
+            --success: #1b8f64;
+            --danger: #c64f4f;
+            --warning: #d48b1f;
+            --grid-line: rgba(182, 106, 40, 0.07);
+            --glow: 0 0 0 1px rgba(182, 106, 40, 0.08), 0 26px 70px rgba(72, 45, 18, 0.12);
+            --shadow: 0 20px 48px rgba(77, 54, 31, 0.12);
         }
 
         body[data-theme="dark"] {
             color-scheme: dark;
-            --bg: #050b14;
-            --surface: rgba(9, 18, 31, 0.86);
-            --surface-muted: rgba(15, 31, 51, 0.86);
-            --border: rgba(0, 229, 255, 0.26);
-            --text: #eefbff;
-            --muted: #9db7c8;
-            --primary: #00e5ff;
-            --primary-strong: #68f2ff;
-            --accent: #a78bfa;
-            --success: #39ffb6;
-            --danger: #ff3d81;
-            --warning: #ffbf3d;
-            --grid-line: rgba(0, 229, 255, 0.09);
-            --glow: 0 0 0 1px rgba(0, 229, 255, 0.16), 0 18px 60px rgba(0, 229, 255, 0.12);
-            --shadow: 0 20px 55px rgba(0, 0, 0, 0.38);
+            --bg: #15110d;
+            --surface: rgba(28, 20, 15, 0.82);
+            --surface-muted: rgba(38, 29, 22, 0.92);
+            --border: rgba(214, 152, 82, 0.16);
+            --text: #f7efe5;
+            --muted: #c2ae99;
+            --primary: #d69852;
+            --primary-strong: #edb06c;
+            --accent: #34b39a;
+            --success: #47d39f;
+            --danger: #f07272;
+            --warning: #f0b44b;
+            --grid-line: rgba(214, 152, 82, 0.07);
+            --glow: 0 0 0 1px rgba(214, 152, 82, 0.1), 0 28px 90px rgba(0, 0, 0, 0.28);
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
         }
 
         * { box-sizing: border-box; }
@@ -49,11 +68,11 @@
             margin: 0;
             min-height: 100vh;
             background:
-                radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 28%),
-                radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 30%),
-                linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 82%, #000 18%));
+                radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 24%),
+                radial-gradient(circle at 90% 14%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 22%),
+                linear-gradient(135deg, color-mix(in srgb, var(--bg) 94%, white 6%), color-mix(in srgb, var(--bg) 88%, #dbe7ff 12%) 48%, color-mix(in srgb, var(--bg) 92%, #000 8%) 100%);
             color: var(--text);
-            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            font-family: "Segoe UI", "Tahoma", Arial, sans-serif;
             letter-spacing: 0;
         }
 
@@ -65,12 +84,13 @@
             background-image:
                 linear-gradient(var(--grid-line) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 42px 42px;
+            background-size: 56px 56px;
             mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95), transparent 88%);
         }
 
         button, input, select {
             font: inherit;
+            transition: border-color .2s ease, background-color .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
         }
 
         button {
@@ -88,32 +108,49 @@
             min-height: 100vh;
             display: grid;
             place-items: center;
-            padding: 24px;
+            padding: 28px;
         }
 
         .login-panel {
-            width: min(980px, 100%);
+            position: relative;
+            width: min(1100px, 100%);
             display: grid;
-            grid-template-columns: 1fr 420px;
+            grid-template-columns: 1.15fr 0.85fr;
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 30px;
             overflow: hidden;
             background: var(--surface);
             box-shadow: var(--glow);
-            backdrop-filter: blur(18px);
+            backdrop-filter: blur(24px);
+        }
+
+        .login-panel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 14%, transparent), transparent 24%),
+                linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.18) 50%, transparent 78%);
+            opacity: 0.7;
         }
 
         .login-intro {
-            padding: 42px;
+            position: relative;
+            padding: 56px 48px;
             background:
-                linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), transparent 46%),
-                linear-gradient(225deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 48%),
+                linear-gradient(145deg, color-mix(in srgb, var(--primary) 18%, transparent), transparent 48%),
+                radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 24%),
                 var(--surface-muted);
             border-inline-end: 1px solid var(--border);
         }
 
         .login-form-panel {
-            padding: 32px;
+            position: relative;
+            padding: 34px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .brand-row, .app-header, .row, .toolbar, .role-switch, .summary-grid {
@@ -122,22 +159,189 @@
         }
 
         .brand-row {
-            gap: 14px;
-            margin-bottom: 34px;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 40px;
+        }
+
+        .login-intro .muted,
+        .login-intro p:not(.eyebrow) {
+            max-width: 38ch;
+        }
+
+        .face-scan-visual {
+            position: relative;
+            margin-top: 28px;
+            width: min(100%, 380px);
+            aspect-ratio: 1.12 / 1;
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            background:
+                radial-gradient(circle at top, color-mix(in srgb, var(--primary) 14%, transparent), transparent 38%),
+                linear-gradient(180deg, color-mix(in srgb, var(--surface-muted) 84%, white 16%), color-mix(in srgb, var(--surface) 92%, transparent));
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .face-scan-visual::before {
+            content: "";
+            position: absolute;
+            inset: 18px;
+            border-radius: 22px;
+            border: 1px dashed color-mix(in srgb, var(--primary) 24%, transparent);
+            opacity: 0.8;
+        }
+
+        .scan-person {
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 82%;
+            margin: auto;
+            width: 72%;
+        }
+
+        .scan-head {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            width: 112px;
+            height: 126px;
+            transform: translateX(-50%);
+            border-radius: 48% 48% 44% 44%;
+            background: linear-gradient(180deg, #f1c6a8, #d99d79);
+            box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.04);
+        }
+
+        .scan-head::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            width: 122px;
+            height: 72px;
+            transform: translateX(-50%);
+            border-radius: 55% 55% 38% 38%;
+            background: #4c3527;
+        }
+
+        .scan-head::after {
+            content: "";
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            width: 54px;
+            height: 14px;
+            transform: translateX(-50%);
+            border-bottom: 2px solid rgba(78, 45, 28, 0.55);
+            border-radius: 999px;
+        }
+
+        .scan-shoulders {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 220px;
+            height: 158px;
+            transform: translateX(-50%);
+            border-radius: 38px 38px 22px 22px;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 26%, white 74%), color-mix(in srgb, var(--primary) 70%, #10233d 30%));
+        }
+
+        .scan-shoulders::before {
+            content: none;
+        }
+
+        .scan-box {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            width: 78px;
+            height: 78px;
+            transform: translateX(-50%);
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 0 24px color-mix(in srgb, var(--accent) 30%, transparent);
+        }
+
+        .scan-box::before,
+        .scan-box::after {
+            content: "";
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            background: color-mix(in srgb, var(--accent) 88%, white 12%);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent);
+        }
+
+        .scan-box::before {
+            top: 24px;
+        }
+
+        .scan-box::after {
+            bottom: 24px;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            right: 10px;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 88%, white 12%), transparent);
+            box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 42%, transparent);
+            animation: faceScanLine 2.4s ease-in-out infinite;
+        }
+
+        .scan-pill {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            border: 1px solid color-mix(in srgb, var(--success) 42%, var(--border) 58%);
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--surface) 88%, white 12%);
+            color: var(--success);
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+        }
+
+        @keyframes faceScanLine {
+            0% {
+                transform: translateY(0);
+                opacity: 0.25;
+            }
+            15% {
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(52px);
+                opacity: 0.9;
+            }
+            85% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 0.25;
+            }
         }
 
         .seal {
-            width: 104px;
-            height: 104px;
-            border-radius: 20px;
+            width: 108px;
+            height: 108px;
+            border-radius: 26px;
             flex: 0 0 auto;
             display: grid;
             place-items: center;
             overflow: hidden;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: linear-gradient(145deg, var(--primary), color-mix(in srgb, var(--accent) 72%, white 28%));
             color: #fff;
             font-weight: 800;
-            box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 45%, transparent);
+            box-shadow: 0 18px 40px color-mix(in srgb, var(--primary) 24%, transparent);
+            border: 1px solid rgba(255, 255, 255, 0.35);
         }
 
         .seal img {
@@ -150,14 +354,14 @@
         }
 
         .brand-row .seal {
-            width: 172px;
-            height: 172px;
-            border-radius: 32px;
+            width: 148px;
+            height: 148px;
+            border-radius: 36px;
         }
 
         .header-title .seal {
-            width: 104px;
-            height: 104px;
+            width: 82px;
+            height: 82px;
             border-radius: 24px;
         }
 
@@ -173,9 +377,10 @@
         h1, h2, h3, p { margin-top: 0; }
 
         h1 {
-            margin-bottom: 14px;
-            font-size: clamp(28px, 4vw, 44px);
-            line-height: 1.12;
+            margin-bottom: 16px;
+            font-size: clamp(32px, 4vw, 50px);
+            line-height: 1.02;
+            letter-spacing: -0.03em;
         }
 
         h2 {
@@ -190,14 +395,14 @@
 
         .muted {
             color: var(--muted);
-            line-height: 1.7;
+            line-height: 1.8;
         }
 
         .settings-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
         label {
@@ -211,16 +416,17 @@
         input, select {
             width: 100%;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--surface);
+            border-radius: 16px;
+            background: color-mix(in srgb, var(--surface) 92%, white 8%);
             color: var(--text);
-            padding: 12px 13px;
+            padding: 14px 15px;
             outline: none;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
         }
 
         input:focus, select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(31, 95, 139, 0.14);
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
         }
 
         .field {
@@ -229,18 +435,18 @@
 
         .role-switch {
             gap: 8px;
-            margin: 16px 0 20px;
-            padding: 4px;
+            margin: 18px 0 22px;
+            padding: 6px;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--surface-muted);
+            border-radius: 18px;
+            background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
         }
 
         .role-button {
             flex: 1;
             border: 0;
-            border-radius: 10px;
-            padding: 11px 12px;
+            border-radius: 14px;
+            padding: 13px 12px;
             background: transparent;
             color: var(--muted);
             font-weight: 800;
@@ -254,35 +460,43 @@
 
         .primary-button, .secondary-button, .danger-button, .ghost-button {
             border: 1px solid transparent;
-            border-radius: 8px;
-            padding: 12px 16px;
+            border-radius: 16px;
+            padding: 13px 18px;
             font-weight: 800;
         }
 
         .primary-button {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--accent) 64%, var(--primary) 36%));
             color: #fff;
-            box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 30%, transparent);
+            box-shadow: 0 18px 34px color-mix(in srgb, var(--primary) 22%, transparent);
         }
 
         .primary-button:hover {
-            background: var(--primary-strong);
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--primary-strong), var(--accent));
         }
 
         .secondary-button {
             border-color: var(--border);
-            background: var(--surface);
+            background: color-mix(in srgb, var(--surface) 84%, white 16%);
             color: var(--text);
         }
 
+        .secondary-button:hover,
+        .ghost-button:hover,
+        .admin-tab:hover,
+        .role-button:hover {
+            transform: translateY(-1px);
+        }
+
         .danger-button {
-            background: var(--danger);
+            background: linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 80%, #7d1030 20%));
             color: #fff;
         }
 
         .ghost-button {
             border-color: var(--border);
-            background: transparent;
+            background: color-mix(in srgb, var(--surface) 78%, transparent);
             color: var(--text);
         }
 
@@ -291,6 +505,46 @@
             margin-top: 14px;
             color: var(--muted);
             font-size: 14px;
+        }
+
+        .inline-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 10px;
+            border: 0;
+            padding: 0;
+            background: transparent;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .inline-link:hover {
+            color: var(--primary-strong);
+        }
+
+        .inline-action {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .register-employee-panel {
+            margin-top: 22px;
+            padding-top: 22px;
+            border-top: 1px solid var(--border);
+        }
+
+        .help-panel {
+            margin-top: 18px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: color-mix(in srgb, var(--surface-muted) 92%, white 8%);
+        }
+
+        .help-panel p:last-child {
+            margin-bottom: 0;
         }
 
         .app-shell {
@@ -305,11 +559,11 @@
             z-index: 10;
             justify-content: space-between;
             gap: 16px;
-            padding: 16px 24px;
+            padding: 18px 28px;
             border-bottom: 1px solid var(--border);
-            background: color-mix(in srgb, var(--surface) 92%, transparent);
-            backdrop-filter: blur(12px);
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+            background: color-mix(in srgb, var(--surface) 84%, transparent);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
         }
 
         .header-title {
@@ -321,16 +575,17 @@
         .user-badge {
             border: 1px solid var(--border);
             border-radius: 999px;
-            padding: 7px 12px;
+            padding: 9px 14px;
             color: var(--muted);
             font-size: 13px;
             font-weight: 700;
+            background: color-mix(in srgb, var(--surface) 88%, white 12%);
         }
 
         .main {
-            width: min(1320px, 100%);
+            width: min(1520px, 100%);
             margin: 0 auto;
-            padding: 22px;
+            padding: 28px 22px 34px;
         }
 
         .grid-admin {
@@ -342,39 +597,44 @@
 
         .admin-page {
             display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
             gap: 18px;
+            align-items: start;
         }
 
         .admin-page .stack {
-            display: contents;
+            display: grid;
+            gap: 22px;
+            align-content: start;
         }
 
         .admin-tabs {
+            grid-column: 1 / -1;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 24px;
             background: var(--surface);
             box-shadow: var(--glow);
-            padding: 10px;
-            backdrop-filter: blur(16px);
+            padding: 12px;
+            backdrop-filter: blur(20px);
         }
 
         .admin-tab {
             border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--surface-muted);
+            border-radius: 16px;
+            background: color-mix(in srgb, var(--surface-muted) 90%, white 10%);
             color: var(--text);
-            padding: 11px 14px;
+            padding: 12px 16px;
             font-weight: 800;
         }
 
         .admin-tab.active {
             border-color: transparent;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--accent) 65%, var(--primary) 35%));
             color: #fff;
-            box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 30%, transparent);
+            box-shadow: 0 16px 32px color-mix(in srgb, var(--primary) 20%, transparent);
         }
 
         .admin-panel {
@@ -387,23 +647,36 @@
 
         .grid-security {
             display: grid;
-            grid-template-columns: minmax(0, 1.4fr) 390px;
-            gap: 18px;
+            grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+            gap: 22px;
             align-items: start;
         }
 
         .stack {
             display: grid;
-            gap: 18px;
+            gap: 22px;
         }
 
         .card {
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 24px;
             background: var(--surface);
             box-shadow: var(--glow);
-            padding: 18px;
-            backdrop-filter: blur(16px);
+            padding: 22px;
+            backdrop-filter: blur(20px);
+        }
+
+        .admin-page > .stack:first-of-type .admin-panel[data-admin-panel="sync"] {
+            min-height: 100%;
+        }
+
+        .admin-page > .stack:first-of-type .admin-panel[data-admin-panel="register"],
+        .admin-page > .stack:first-of-type .admin-panel[data-admin-panel="securityUsers"] {
+            min-height: 100%;
+        }
+
+        .admin-page > .stack:last-of-type .card {
+            min-height: 100%;
         }
 
         .card-header {
@@ -411,8 +684,8 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 14px;
-            margin-bottom: 16px;
-            padding-bottom: 14px;
+            margin-bottom: 18px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -424,15 +697,23 @@
         .metric {
             min-width: 120px;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--surface-muted);
-            padding: 12px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--surface-muted) 94%, white 6%), color-mix(in srgb, var(--surface) 96%, transparent));
+            padding: 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            width: 100%;
         }
 
         .metric-value {
             display: block;
-            font-size: 24px;
+            font-size: 30px;
             font-weight: 900;
+            letter-spacing: -0.03em;
         }
 
         .metric-label {
@@ -449,10 +730,51 @@
 
         .form-grid .full { grid-column: 1 / -1; }
 
+        .image-choice-panel {
+            display: grid;
+            gap: 10px;
+        }
+
+        .image-choice-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .camera-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(18, 16, 14, 0.68);
+            backdrop-filter: blur(8px);
+        }
+
+        .camera-modal-card {
+            width: min(560px, 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--surface);
+            box-shadow: var(--glow);
+            padding: 20px;
+        }
+
+        .camera-modal-video {
+            width: 100%;
+            max-height: 380px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #0f0f10;
+            object-fit: cover;
+        }
+
         .table-wrap {
             overflow: auto;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 18px;
+            background: color-mix(in srgb, var(--surface) 88%, white 12%);
         }
 
         table {
@@ -462,7 +784,7 @@
         }
 
         th, td {
-            padding: 12px;
+            padding: 14px 12px;
             border-bottom: 1px solid var(--border);
             text-align: start;
             vertical-align: middle;
@@ -473,6 +795,7 @@
             background: color-mix(in srgb, var(--surface-muted) 92%, var(--primary) 8%);
             font-size: 12px;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         tr:last-child td {
@@ -482,7 +805,7 @@
         .student-photo {
             width: 48px;
             height: 36px;
-            border-radius: 6px;
+            border-radius: 10px;
             object-fit: cover;
             border: 1px solid var(--border);
             background: var(--surface-muted);
@@ -494,7 +817,7 @@
         }
 
         .live-header {
-            padding: 18px;
+            padding: 22px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -511,7 +834,7 @@
             display: flex;
             justify-content: space-between;
             gap: 10px;
-            padding: 14px 18px;
+            padding: 16px 22px 20px;
             border-top: 1px solid var(--border);
             color: var(--muted);
         }
@@ -522,10 +845,11 @@
             gap: 7px;
             border: 1px solid var(--border);
             border-radius: 999px;
-            padding: 6px 10px;
+            padding: 8px 12px;
             color: var(--muted);
             font-size: 12px;
             font-weight: 800;
+            background: color-mix(in srgb, var(--surface) 86%, white 14%);
         }
 
         .pill.success { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
@@ -542,9 +866,9 @@
         .alert-card {
             border: 1px solid var(--border);
             border-inline-start-width: 5px;
-            border-radius: 12px;
+            border-radius: 18px;
             background: var(--surface);
-            padding: 12px;
+            padding: 14px;
             box-shadow: var(--shadow);
         }
 
@@ -553,12 +877,77 @@
 
         .alert-card img {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 12px;
             aspect-ratio: 16 / 9;
-            border-radius: 6px;
+            border-radius: 12px;
             object-fit: cover;
             border: 1px solid var(--border);
         }
+
+        .media-scan-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .media-results {
+            display: grid;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .media-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .media-preview {
+            width: 100%;
+            max-height: 360px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            object-fit: contain;
+            background: #0b1220;
+        }
+
+        .result-section {
+            display: grid;
+            gap: 8px;
+        }
+
+        .result-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .result-list {
+            display: grid;
+            gap: 8px;
+            max-height: 260px;
+            overflow: auto;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid var(--border);
+            border-inline-start-width: 4px;
+            border-radius: 14px;
+            padding: 11px 12px;
+            background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
+        }
+
+        .result-item.success { border-inline-start-color: var(--success); }
+        .result-item.warning { border-inline-start-color: var(--warning); }
+        .result-item.danger { border-inline-start-color: var(--danger); }
 
         .empty-state {
             padding: 28px 14px;
@@ -571,9 +960,14 @@
                 grid-template-columns: 1fr;
             }
 
+            .admin-page {
+                grid-template-columns: 1fr;
+            }
+
             .login-intro {
                 border-inline-end: 0;
                 border-bottom: 1px solid var(--border);
+                padding: 32px 28px;
             }
 
             .app-header {
@@ -591,19 +985,31 @@
                 padding: 18px;
             }
 
-            .settings-row, .form-grid {
+            .login-panel {
+                border-radius: 22px;
+            }
+
+            .admin-tabs {
+                border-radius: 18px;
+            }
+
+            .settings-row, .form-grid, .media-scan-form, .media-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
                 grid-template-columns: 1fr;
             }
 
             .brand-row .seal {
-                width: 132px;
-                height: 132px;
-                border-radius: 26px;
+                width: 118px;
+                height: 118px;
+                border-radius: 28px;
             }
 
             .header-title .seal {
-                width: 86px;
-                height: 86px;
+                width: 74px;
+                height: 74px;
                 border-radius: 20px;
             }
         }
@@ -621,6 +1027,16 @@
                     <div>
                         <p class="eyebrow" data-i18n="systemLabel">نظام الدخول الجامعي</p>
                         <h1 data-i18n="loginTitle">SMART FACE RECOGNITION SYSTEM</h1>
+                    </div>
+                </div>
+                <div class="face-scan-visual" aria-hidden="true">
+                    <span class="scan-pill">FACE ID ACTIVE</span>
+                    <div class="scan-person">
+                        <div class="scan-head"></div>
+                        <div class="scan-box">
+                            <span class="scan-line"></span>
+                        </div>
+                        <div class="scan-shoulders"></div>
                     </div>
                 </div>
             </div>
@@ -657,9 +1073,58 @@
                         <label for="passwordInput" data-i18n="password">كلمة المرور</label>
                         <input id="passwordInput" type="password" autocomplete="current-password" required>
                     </div>
+                    <button id="forgotPasswordButton" class="inline-link" type="button" data-i18n="forgotPassword">هل نسيت كلمة السر؟</button>
                     <button class="primary-button" type="submit" style="width: 100%;" data-i18n="signIn">دخول</button>
+                    <button id="openEmployeeRegisterButton" class="secondary-button inline-action" type="button" data-i18n="newAdmissionsEmployee">موظف قبول وتسجيل جديد</button>
                     <p id="loginStatus" class="status-text"></p>
                 </form>
+
+                <section id="forgotPasswordPanel" class="help-panel hidden">
+                    <p class="eyebrow" data-i18n="forgotPassword">هل نسيت كلمة السر؟</p>
+                    <p data-i18n="forgotPasswordHelp">
+                        إذا نسيت كلمة المرور، راجع مسؤول القبول والتسجيل أو أنشئ حسابًا جديدًا إذا كانت هذه أول مرة تستخدم النظام.
+                    </p>
+                </section>
+
+                <section id="employeeRegisterPanel" class="register-employee-panel hidden">
+                    <div class="card-header">
+                        <div>
+                            <p class="eyebrow" data-i18n="newAdmissionsEmployee">موظف قبول وتسجيل جديد</p>
+                            <h3 data-i18n="employeeInfoTitle">إنشاء حساب موظف</h3>
+                        </div>
+                    </div>
+                    <form id="employeeRegisterForm" class="form-grid">
+                        <div>
+                            <label for="employeeFullNameInput" data-i18n="fullName">الاسم الكامل</label>
+                            <input id="employeeFullNameInput" type="text" required>
+                        </div>
+                        <div>
+                            <label for="employeePhoneInput" data-i18n="phoneOptional">رقم الهاتف (اختياري)</label>
+                            <input id="employeePhoneInput" type="text">
+                        </div>
+                        <div class="full">
+                            <label for="employeeEmailInput" data-i18n="emailOptional">البريد الإلكتروني (اختياري)</label>
+                            <input id="employeeEmailInput" type="email">
+                        </div>
+                        <div>
+                            <label for="employeeUsernameInput" data-i18n="newUsername">اسم المستخدم الجديد</label>
+                            <input id="employeeUsernameInput" type="text" autocomplete="username" required>
+                        </div>
+                        <div>
+                            <label for="employeePasswordInput" data-i18n="newPassword">كلمة المرور الجديدة</label>
+                            <input id="employeePasswordInput" type="password" autocomplete="new-password" required>
+                        </div>
+                        <div>
+                            <label for="employeePasswordConfirmInput" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
+                            <input id="employeePasswordConfirmInput" type="password" autocomplete="new-password" required>
+                        </div>
+                        <div class="full row" style="gap: 10px; justify-content: flex-start;">
+                            <button class="primary-button" type="submit" data-i18n="createEmployeeAccount">إنشاء الحساب</button>
+                            <button id="closeEmployeeRegisterButton" class="ghost-button" type="button" data-i18n="cancel">إلغاء</button>
+                        </div>
+                        <p id="employeeRegisterStatus" class="status-text full"></p>
+                    </form>
+                </section>
             </div>
         </section>
     </div>
@@ -687,6 +1152,7 @@
                 <nav class="admin-tabs" aria-label="Admissions sections">
                     <button class="admin-tab active" type="button" data-admin-tab="sync" data-i18n="tabSync">المزامنة</button>
                     <button class="admin-tab" type="button" data-admin-tab="register" data-i18n="tabRegister">تسجيل طالب جديد</button>
+                    <button class="admin-tab" type="button" data-admin-tab="securityUsers" data-i18n="tabSecurityUsers">إضافة رجل أمن</button>
                     <button class="admin-tab" type="button" data-admin-tab="students" data-i18n="tabStudents">الطلاب المسجلون</button>
                     <button class="admin-tab" type="button" data-admin-tab="graduates" data-i18n="tabGraduates">الخريجون</button>
                 </nav>
@@ -747,11 +1213,74 @@
                             </div>
                             <div>
                                 <label for="studentImageInput" data-i18n="studentImage">صورة الطالب</label>
-                                <input id="studentImageInput" name="image" type="file" accept="image/*" required>
+                                <div class="image-choice-panel">
+                                    <div class="image-choice-actions">
+                                        <button id="uploadImageButton" class="secondary-button" type="button" data-i18n="uploadStudentImage">Upload Image</button>
+                                        <button id="openCameraButton" class="primary-button" type="button" data-i18n="captureStudentImage">Capture Photo</button>
+                                    </div>
+                                    <input id="studentImageInput" name="image" type="file" accept="image/*" class="hidden">
+                                    <p id="studentImageSelectionStatus" class="status-text"></p>
+                                </div>
                             </div>
                             <div class="full">
                                 <button class="primary-button" type="submit" data-i18n="saveStudent">حفظ الطالب</button>
                                 <p id="registerStatus" class="status-text"></p>
+                            </div>
+                        </form>
+                    </section>
+
+                    <div id="cameraModal" class="camera-modal hidden">
+                        <div class="camera-modal-card">
+                            <div class="card-header">
+                                <div>
+                                    <p class="eyebrow" data-i18n="captureStudentImage">Capture Photo</p>
+                                    <h3 data-i18n="cameraPreviewTitle">Camera Preview</h3>
+                                </div>
+                            </div>
+                            <video id="cameraModalVideo" class="camera-modal-video" autoplay playsinline muted></video>
+                            <div class="row" style="justify-content: flex-start; gap: 10px; margin-top: 16px;">
+                                <button id="takePhotoButton" class="primary-button" type="button" data-i18n="takePhoto">Take Photo</button>
+                                <button id="closeCameraModalButton" class="ghost-button" type="button" data-i18n="cancel">Cancel</button>
+                            </div>
+                            <p id="cameraModalStatus" class="status-text"></p>
+                        </div>
+                    </div>
+
+                    <section class="card admin-panel" data-admin-panel="securityUsers">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="securityAccountManagement">إدارة حسابات الأمن</p>
+                                <h3 data-i18n="createSecurityAccount">إنشاء حساب رجل أمن</h3>
+                            </div>
+                        </div>
+                        <form id="securityUserForm" class="form-grid">
+                            <div>
+                                <label for="securityFullNameInput" data-i18n="fullName">الاسم الكامل</label>
+                                <input id="securityFullNameInput" name="full_name" type="text" required>
+                            </div>
+                            <div>
+                                <label for="securityPhoneInput" data-i18n="phoneOptional">رقم الهاتف (اختياري)</label>
+                                <input id="securityPhoneInput" name="phone" type="text">
+                            </div>
+                            <div class="full">
+                                <label for="securityEmailInput" data-i18n="emailOptional">البريد الإلكتروني (اختياري)</label>
+                                <input id="securityEmailInput" name="email" type="email">
+                            </div>
+                            <div>
+                                <label for="securityUsernameInput" data-i18n="newUsername">اسم المستخدم الجديد</label>
+                                <input id="securityUsernameInput" name="username" type="text" autocomplete="username" required>
+                            </div>
+                            <div>
+                                <label for="securityPasswordInput" data-i18n="newPassword">كلمة المرور الجديدة</label>
+                                <input id="securityPasswordInput" name="password" type="password" autocomplete="new-password" required>
+                            </div>
+                            <div>
+                                <label for="securityPasswordConfirmInput" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
+                                <input id="securityPasswordConfirmInput" name="password_confirm" type="password" autocomplete="new-password" required>
+                            </div>
+                            <div class="full">
+                                <button id="createSecurityUserButton" class="primary-button" type="submit" data-i18n="createSecurityAccountButton">حفظ حساب رجل الأمن</button>
+                                <p id="securityUserStatus" class="status-text"></p>
                             </div>
                         </form>
                     </section>
@@ -814,22 +1343,42 @@
             </section>
 
             <section id="securityView" class="grid-security hidden">
-                <section class="card live-panel">
-                    <div class="live-header">
-                        <div class="card-header" style="margin: 0; padding: 0; border: 0;">
-                            <div>
-                                <p class="eyebrow" data-i18n="securityLive">شاشة الأمن</p>
-                                <h3 data-i18n="liveCamera">الكاميرا المباشرة</h3>
+                <div class="stack">
+                    <section class="card live-panel">
+                        <div class="live-header">
+                            <div class="card-header" style="margin: 0; padding: 0; border: 0;">
+                                <div>
+                                    <p class="eyebrow" data-i18n="securityLive">شاشة الأمن</p>
+                                    <h3 data-i18n="liveCamera">الكاميرا المباشرة</h3>
+                                </div>
+                                <span id="cameraBadge" class="pill" data-i18n="checking">جاري الفحص</span>
                             </div>
-                            <span id="cameraBadge" class="pill" data-i18n="checking">جاري الفحص</span>
                         </div>
-                    </div>
-                    <img id="videoStream" class="video-frame" alt="Live security camera">
-                    <div class="decision-row">
-                        <span id="decisionBadge" class="pill" data-i18n="waitingDecision">بانتظار القراءة</span>
-                        <span id="cooldownBadge" class="pill">10s</span>
-                    </div>
-                </section>
+                        <img id="videoStream" class="video-frame" alt="Live security camera">
+                        <div class="decision-row">
+                            <span id="decisionBadge" class="pill" data-i18n="waitingDecision">بانتظار القراءة</span>
+                            <span id="cooldownBadge" class="pill">10s</span>
+                        </div>
+                    </section>
+
+                    <section class="card media-scan-panel">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="mediaScan">معالجة ملف</p>
+                                <h3 data-i18n="mediaScanTitle">صورة أو فيديو دخول</h3>
+                            </div>
+                        </div>
+                        <form id="mediaScanForm" class="media-scan-form">
+                            <div class="field">
+                                <label for="mediaScanInput" data-i18n="mediaFile">الصورة أو الفيديو</label>
+                                <input id="mediaScanInput" name="media" type="file" accept="image/*,video/*" required>
+                            </div>
+                            <button id="mediaScanButton" class="primary-button" type="submit" data-i18n="processMedia">معالجة الملف</button>
+                        </form>
+                        <p id="mediaScanStatus" class="status-text"></p>
+                        <div id="mediaScanResults" class="media-results hidden"></div>
+                    </section>
+                </div>
 
                 <aside class="card">
                     <div class="card-header">
@@ -856,12 +1405,30 @@
                 dark: "داكن",
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
+                newAdmissionsEmployee: "موظف قبول وتسجيل جديد",
+                employeeInfoTitle: "إنشاء حساب موظف",
                 tabSync: "المزامنة",
                 tabRegister: "تسجيل طالب جديد",
+                tabSecurityUsers: "إضافة رجل أمن",
                 tabStudents: "الطلاب المسجلون",
                 tabGraduates: "الخريجون",
+                securityAccountManagement: "إدارة حسابات الأمن",
+                createSecurityAccount: "إنشاء حساب رجل أمن",
+                createSecurityAccountButton: "حفظ حساب رجل الأمن",
                 username: "اسم المستخدم",
                 password: "كلمة المرور",
+                forgotPassword: "هل نسيت كلمة السر؟",
+                forgotPasswordHelp: "إذا نسيت كلمة المرور، راجع مسؤول القبول والتسجيل أو أنشئ حسابًا جديدًا إذا كانت هذه أول مرة تستخدم النظام.",
+                fullName: "الاسم الكامل",
+                phone: "رقم الهاتف",
+                phoneOptional: "رقم الهاتف (اختياري)",
+                email: "البريد الإلكتروني",
+                emailOptional: "البريد الإلكتروني (اختياري)",
+                newUsername: "اسم المستخدم الجديد",
+                newPassword: "كلمة المرور الجديدة",
+                confirmPassword: "تأكيد كلمة المرور",
+                createEmployeeAccount: "إنشاء الحساب",
+                cancel: "إلغاء",
                 signIn: "دخول",
                 logout: "تسجيل خروج",
                 adminTitle: "لوحة القبول والتسجيل",
@@ -880,6 +1447,14 @@
                 studentId: "الرقم الجامعي",
                 role: "الدور",
                 studentImage: "صورة الطالب",
+                uploadStudentImage: "تحميل صورة",
+                captureStudentImage: "التقاط صورة",
+                cameraPreviewTitle: "معاينة الكاميرا",
+                takePhoto: "التقاط",
+                imageSelected: "تم اختيار صورة بنجاح.",
+                imageCaptured: "تم التقاط الصورة بنجاح.",
+                studentImageRequired: "يجب إضافة صورة من الجهاز أو التقاط صورة بالكاميرا.",
+                cameraAccessError: "تعذر فتح الكاميرا. تأكد من السماح بالوصول إليها.",
                 saveStudent: "حفظ الطالب",
                 registeredStudents: "الطلاب المسجلون",
                 students: "طلاب",
@@ -905,11 +1480,37 @@
                 noStudents: "لا يوجد طلاب مسجلون.",
                 noGraduates: "لا يوجد خريجون للحذف.",
                 noAlerts: "لا توجد إنذارات حتى الآن.",
+                mediaScan: "معالجة ملف",
+                mediaScanTitle: "صورة أو فيديو دخول",
+                mediaFile: "الصورة أو الفيديو",
+                processMedia: "معالجة الملف",
+                processingMedia: "جاري تحليل الملف...",
+                selectMediaFile: "اختر صورة أو فيديو أولاً.",
+                mediaScanComplete: "تم تحليل الملف.",
+                mediaEntered: "دخلوا",
+                mediaMissing: "لم يتم رصدهم",
+                mediaAlerts: "تنبيهات",
+                mediaNoEntered: "لم يتم التعرف على أي شخص مسجل.",
+                mediaNoMissing: "كل المسجلين ظهروا في الملف.",
+                mediaNoMediaAlerts: "لا توجد وجوه غير معروفة أو حالات مراجعة.",
+                mediaPreview: "لقطة من التحليل",
+                detectedFaces: "وجوه مرصودة",
+                sampledFrames: "إطارات محللة",
+                detectionsLabel: "مرات الرصد",
+                frameLabel: "إطار",
+                secondLabel: "ثانية",
                 saved: "تم الحفظ بنجاح.",
                 synced: "تمت المزامنة.",
                 deleted: "تم حذف السجلات المحددة.",
                 selectGraduateFirst: "اختر طالبًا واحدًا على الأقل.",
-                accountCreated: "تم إنشاء الحساب وتسجيل الدخول.",
+                employeeCreated: "تم إنشاء حساب الموظف. يمكنك الآن تسجيل الدخول.",
+                securityUserCreated: "تم إنشاء حساب رجل الأمن بنجاح.",
+                passwordsMismatch: "كلمتا المرور غير متطابقتين.",
+                employeeRequiredFields: "لازم تعبّي الاسم الكامل واسم المستخدم وكلمة المرور.",
+                employeePasswordShort: "كلمة المرور لازم تكون 4 أحرف أو أكثر.",
+                employeeUsernameTaken: "اسم المستخدم مستخدم من قبل موظف آخر.",
+                securityUsernameTaken: "اسم المستخدم مستخدم من قبل رجل أمن آخر.",
+                unexpectedServerResponse: "الاستجابة من السيرفر غير متوقعة.",
                 signedIn: "تم تسجيل الدخول.",
                 signedOut: "تم تسجيل الخروج."
             },
@@ -922,12 +1523,30 @@
                 dark: "Dark",
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
+                newAdmissionsEmployee: "New Admissions Employee",
+                employeeInfoTitle: "Create Employee Account",
                 tabSync: "Sync",
                 tabRegister: "Register Student",
+                tabSecurityUsers: "Add Security Guard",
                 tabStudents: "Registered Students",
                 tabGraduates: "Graduates",
+                securityAccountManagement: "Security Account Management",
+                createSecurityAccount: "Create Security Account",
+                createSecurityAccountButton: "Save Security Account",
                 username: "Username",
                 password: "Password",
+                forgotPassword: "Forgot your password?",
+                forgotPasswordHelp: "If you forgot your password, contact the admissions administrator or create a new account if this is your first time using the system.",
+                fullName: "Full Name",
+                phone: "Phone",
+                phoneOptional: "Phone (optional)",
+                email: "Email",
+                emailOptional: "Email (optional)",
+                newUsername: "New Username",
+                newPassword: "New Password",
+                confirmPassword: "Confirm Password",
+                createEmployeeAccount: "Create Account",
+                cancel: "Cancel",
                 signIn: "Sign In",
                 logout: "Sign Out",
                 adminTitle: "Admissions And Registration",
@@ -946,6 +1565,14 @@
                 studentId: "University ID",
                 role: "Role",
                 studentImage: "Student Photo",
+                uploadStudentImage: "Upload Image",
+                captureStudentImage: "Capture Photo",
+                cameraPreviewTitle: "Camera Preview",
+                takePhoto: "Take Photo",
+                imageSelected: "Image selected successfully.",
+                imageCaptured: "Photo captured successfully.",
+                studentImageRequired: "Please choose a device photo or capture one with the camera.",
+                cameraAccessError: "Unable to access the camera. Please allow camera access.",
                 saveStudent: "Save Student",
                 registeredStudents: "Registered Students",
                 students: "Students",
@@ -971,11 +1598,37 @@
                 noStudents: "No registered students.",
                 noGraduates: "No graduates available for deletion.",
                 noAlerts: "No alerts yet.",
+                mediaScan: "Media Scan",
+                mediaScanTitle: "Entry Image Or Video",
+                mediaFile: "Image Or Video",
+                processMedia: "Process File",
+                processingMedia: "Analyzing file...",
+                selectMediaFile: "Choose an image or video first.",
+                mediaScanComplete: "File analysis completed.",
+                mediaEntered: "Entered",
+                mediaMissing: "Not Detected",
+                mediaAlerts: "Alerts",
+                mediaNoEntered: "No registered person was recognized.",
+                mediaNoMissing: "Every registered person appeared in the file.",
+                mediaNoMediaAlerts: "No unknown faces or review cases.",
+                mediaPreview: "Analysis Snapshot",
+                detectedFaces: "Detected Faces",
+                sampledFrames: "Analyzed Frames",
+                detectionsLabel: "Detections",
+                frameLabel: "Frame",
+                secondLabel: "Second",
                 saved: "Saved successfully.",
                 synced: "Sync completed.",
                 deleted: "Selected records deleted.",
                 selectGraduateFirst: "Select at least one graduate.",
-                accountCreated: "Account created and signed in.",
+                employeeCreated: "Employee account created. You can sign in now.",
+                securityUserCreated: "Security employee account created successfully.",
+                passwordsMismatch: "Passwords do not match.",
+                employeeRequiredFields: "Full name, username, and password are required.",
+                employeePasswordShort: "Password must be at least 4 characters.",
+                employeeUsernameTaken: "This username is already used by another admissions employee.",
+                securityUsernameTaken: "This username is already used by another security employee.",
+                unexpectedServerResponse: "Unexpected server response.",
                 signedIn: "Signed in.",
                 signedOut: "Signed out."
             }
@@ -992,7 +1645,10 @@
             selectedGraduateIds: new Set(),
             alerts: [],
             socket: null,
-            statusTimer: null
+            statusTimer: null,
+            registerCameraStream: null,
+            capturedStudentImage: null,
+            mediaScanResult: null
         };
 
         const elements = {
@@ -1000,6 +1656,13 @@
             appShell: document.getElementById("appShell"),
             loginForm: document.getElementById("loginForm"),
             loginStatus: document.getElementById("loginStatus"),
+            forgotPasswordButton: document.getElementById("forgotPasswordButton"),
+            forgotPasswordPanel: document.getElementById("forgotPasswordPanel"),
+            openEmployeeRegisterButton: document.getElementById("openEmployeeRegisterButton"),
+            closeEmployeeRegisterButton: document.getElementById("closeEmployeeRegisterButton"),
+            employeeRegisterPanel: document.getElementById("employeeRegisterPanel"),
+            employeeRegisterForm: document.getElementById("employeeRegisterForm"),
+            employeeRegisterStatus: document.getElementById("employeeRegisterStatus"),
             languageSelect: document.getElementById("languageSelect"),
             themeSelect: document.getElementById("themeSelect"),
             areaEyebrow: document.getElementById("areaEyebrow"),
@@ -1014,7 +1677,19 @@
             syncNowButton: document.getElementById("syncNowButton"),
             syncStatus: document.getElementById("syncStatus"),
             registerForm: document.getElementById("registerForm"),
+            uploadImageButton: document.getElementById("uploadImageButton"),
+            openCameraButton: document.getElementById("openCameraButton"),
+            studentImageInput: document.getElementById("studentImageInput"),
+            studentImageSelectionStatus: document.getElementById("studentImageSelectionStatus"),
+            cameraModal: document.getElementById("cameraModal"),
+            cameraModalVideo: document.getElementById("cameraModalVideo"),
+            takePhotoButton: document.getElementById("takePhotoButton"),
+            closeCameraModalButton: document.getElementById("closeCameraModalButton"),
+            cameraModalStatus: document.getElementById("cameraModalStatus"),
             registerStatus: document.getElementById("registerStatus"),
+            securityUserForm: document.getElementById("securityUserForm"),
+            createSecurityUserButton: document.getElementById("createSecurityUserButton"),
+            securityUserStatus: document.getElementById("securityUserStatus"),
             studentsCount: document.getElementById("studentsCount"),
             studentsTableBody: document.getElementById("studentsTableBody"),
             graduatesCount: document.getElementById("graduatesCount"),
@@ -1026,12 +1701,29 @@
             cameraBadge: document.getElementById("cameraBadge"),
             decisionBadge: document.getElementById("decisionBadge"),
             cooldownBadge: document.getElementById("cooldownBadge"),
+            mediaScanForm: document.getElementById("mediaScanForm"),
+            mediaScanInput: document.getElementById("mediaScanInput"),
+            mediaScanButton: document.getElementById("mediaScanButton"),
+            mediaScanStatus: document.getElementById("mediaScanStatus"),
+            mediaScanResults: document.getElementById("mediaScanResults"),
             alertsCount: document.getElementById("alertsCount"),
             alertsContainer: document.getElementById("alertsContainer")
         };
 
         function t(key) {
             return translations[state.language][key] || translations.en[key] || key;
+        }
+
+        function localizeErrorMessage(message) {
+            const map = {
+                "full_name, username, and password are required": t("employeeRequiredFields"),
+                "Password must be at least 4 characters": t("employeePasswordShort"),
+                "This username is already used by another admissions employee": t("employeeUsernameTaken"),
+                "This username is already used by another security employee": t("securityUsernameTaken"),
+                "Unexpected server response.": t("unexpectedServerResponse"),
+                "media file is required": t("selectMediaFile"),
+            };
+            return map[message] || message;
         }
 
         function escapeHtml(value) {
@@ -1041,6 +1733,57 @@
                 .replaceAll(">", "&gt;")
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#39;");
+        }
+
+        function clearCapturedStudentImage() {
+            state.capturedStudentImage = null;
+        }
+
+        function stopRegisterCamera() {
+            if (state.registerCameraStream) {
+                state.registerCameraStream.getTracks().forEach((track) => track.stop());
+                state.registerCameraStream = null;
+            }
+            elements.cameraModalVideo.srcObject = null;
+        }
+
+        function closeCameraModal() {
+            stopRegisterCamera();
+            elements.cameraModal.classList.add("hidden");
+            elements.cameraModalStatus.textContent = "";
+        }
+
+        async function openCameraModal() {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error(t("cameraAccessError"));
+            }
+            closeCameraModal();
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            state.registerCameraStream = stream;
+            elements.cameraModalVideo.srcObject = stream;
+            elements.cameraModal.classList.remove("hidden");
+        }
+
+        async function captureImageFromCamera() {
+            const video = elements.cameraModalVideo;
+            if (!state.registerCameraStream || !video.videoWidth || !video.videoHeight) {
+                throw new Error(t("cameraAccessError"));
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+            if (!blob) {
+                throw new Error(t("cameraAccessError"));
+            }
+
+            clearCapturedStudentImage();
+            elements.studentImageInput.value = "";
+            state.capturedStudentImage = new File([blob], `captured-student-${Date.now()}.jpg`, { type: "image/jpeg" });
+            elements.studentImageSelectionStatus.textContent = t("imageCaptured");
+            closeCameraModal();
         }
 
         async function fetchJson(url, options = {}) {
@@ -1069,20 +1812,44 @@
             document.querySelectorAll(".role-button").forEach((button) => {
                 button.classList.toggle("active", button.dataset.role === state.selectedRole);
             });
+            elements.openEmployeeRegisterButton.classList.toggle("hidden", state.selectedRole !== "admin");
+            if (state.selectedRole !== "admin") {
+                toggleEmployeeRegisterPanel(false);
+            }
             setAdminPanel(state.adminPanel);
 
             renderAdmin();
             renderAlerts();
+            renderMediaScanResults();
             updateHeader();
+        }
+
+        function toggleEmployeeRegisterPanel(show) {
+            elements.employeeRegisterPanel.classList.toggle("hidden", !show);
+            elements.employeeRegisterStatus.textContent = "";
+            if (show) {
+                state.selectedRole = "admin";
+                applyPreferences();
+            }
+        }
+
+        function toggleForgotPasswordPanel() {
+            elements.forgotPasswordPanel.classList.toggle("hidden");
         }
 
         function showLogin() {
             state.user = null;
+            state.mediaScanResult = null;
+            closeCameraModal();
             elements.loginScreen.classList.remove("hidden");
             elements.appShell.classList.add("hidden");
             elements.adminView.classList.add("hidden");
             elements.securityView.classList.add("hidden");
+            toggleEmployeeRegisterPanel(false);
             elements.videoStream.removeAttribute("src");
+            elements.mediaScanForm.reset();
+            elements.mediaScanStatus.textContent = "";
+            renderMediaScanResults();
             if (state.statusTimer) {
                 clearInterval(state.statusTimer);
                 state.statusTimer = null;
@@ -1092,9 +1859,10 @@
         function updateHeader() {
             if (!state.user) return;
             const isAdmin = state.user.role === "admin";
+            const displayName = state.user.full_name || state.user.username;
             elements.areaEyebrow.textContent = isAdmin ? t("adminRole") : t("securityRole");
             elements.areaTitle.textContent = isAdmin ? t("adminTitle") : t("securityTitle");
-            elements.userBadge.textContent = `${state.user.username} · ${isAdmin ? t("adminRole") : t("securityRole")}`;
+            elements.userBadge.textContent = `${displayName} · ${isAdmin ? t("adminRole") : t("securityRole")}`;
         }
 
         async function showApp(user) {
@@ -1246,6 +2014,91 @@
             `).join("");
         }
 
+        function mediaItemMeta(item) {
+            const parts = [];
+            if (item.student_id) parts.push(item.student_id);
+            if (item.role) parts.push(item.role);
+            if (item.detections !== undefined) parts.push(`${t("detectionsLabel")}: ${item.detections}`);
+            if (item.first_second !== null && item.first_second !== undefined) {
+                parts.push(`${t("secondLabel")}: ${item.first_second}`);
+            } else if (item.first_frame !== undefined) {
+                parts.push(`${t("frameLabel")}: ${item.first_frame}`);
+            }
+            return parts.join(" / ");
+        }
+
+        function renderMediaList(items, emptyKey, tone) {
+            if (!items || items.length === 0) {
+                return `<div class="empty-state">${t(emptyKey)}</div>`;
+            }
+
+            return `
+                <div class="result-list">
+                    ${items.map((item) => {
+                        const itemTone = typeof tone === "function" ? tone(item) : tone;
+                        const title = item.name || item.label || item.status || "-";
+                        const badge = item.status || item.role || "";
+                        const badgeClass = itemTone === "success" ? "success" : itemTone === "danger" ? "danger" : "warning";
+                        return `
+                            <article class="result-item ${itemTone}">
+                                <div>
+                                    <strong>${escapeHtml(title)}</strong>
+                                    <p class="muted" style="margin: 4px 0 0; font-size: 12px;">${escapeHtml(mediaItemMeta(item))}</p>
+                                </div>
+                                ${badge ? `<span class="pill ${badgeClass}">${escapeHtml(badge)}</span>` : ""}
+                            </article>
+                        `;
+                    }).join("")}
+                </div>
+            `;
+        }
+
+        function renderMediaScanResults() {
+            const result = state.mediaScanResult;
+            if (!result) {
+                elements.mediaScanResults.classList.add("hidden");
+                elements.mediaScanResults.innerHTML = "";
+                return;
+            }
+
+            const processedFrames = result.processed_frames ?? 0;
+            const detectedFaces = result.detected_faces ?? 0;
+            const fileName = result.filename ? escapeHtml(result.filename) : "";
+            const metaText = `${fileName} / ${t("sampledFrames")}: ${processedFrames} / ${t("detectedFaces")}: ${detectedFaces}`;
+
+            elements.mediaScanResults.classList.remove("hidden");
+            elements.mediaScanResults.innerHTML = `
+                <div class="media-summary">
+                    <div class="metric">
+                        <span class="metric-value">${result.entered_count ?? 0}</span>
+                        <span class="metric-label">${t("mediaEntered")}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">${result.missing_count ?? 0}</span>
+                        <span class="metric-label">${t("mediaMissing")}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">${result.alert_count ?? 0}</span>
+                        <span class="metric-label">${t("mediaAlerts")}</span>
+                    </div>
+                </div>
+                <p class="muted" style="margin: 0;">${metaText}</p>
+                ${result.snapshot_path ? `<img class="media-preview" src="${escapeHtml(result.snapshot_path)}?t=${Date.now()}" alt="${t("mediaPreview")}">` : ""}
+                <div class="result-section">
+                    <div class="result-section-title"><span>${t("mediaEntered")}</span><span>${result.entered_count ?? 0}</span></div>
+                    ${renderMediaList(result.entered || [], "mediaNoEntered", "success")}
+                </div>
+                <div class="result-section">
+                    <div class="result-section-title"><span>${t("mediaAlerts")}</span><span>${result.alert_count ?? 0}</span></div>
+                    ${renderMediaList(result.alerts || [], "mediaNoMediaAlerts", (item) => item.severity === "red" ? "danger" : "warning")}
+                </div>
+                <div class="result-section">
+                    <div class="result-section-title"><span>${t("mediaMissing")}</span><span>${result.missing_count ?? 0}</span></div>
+                    ${renderMediaList(result.missing || [], "mediaNoMissing", "warning")}
+                </div>
+            `;
+        }
+
         function playAlarm() {
             try {
                 const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
@@ -1304,10 +2157,61 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ role: state.selectedRole, username, password })
                 });
-                elements.loginStatus.textContent = payload.created ? t("accountCreated") : t("signedIn");
+                elements.loginStatus.textContent = t("signedIn");
                 await showApp(payload.user);
             } catch (error) {
-                elements.loginStatus.textContent = error.message;
+                elements.loginStatus.textContent = localizeErrorMessage(error.message);
+            }
+        });
+
+        elements.openEmployeeRegisterButton.addEventListener("click", () => {
+            toggleEmployeeRegisterPanel(true);
+        });
+
+        elements.forgotPasswordButton.addEventListener("click", () => {
+            toggleForgotPasswordPanel();
+        });
+
+        elements.closeEmployeeRegisterButton.addEventListener("click", () => {
+            toggleEmployeeRegisterPanel(false);
+        });
+
+        elements.employeeRegisterForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            elements.employeeRegisterStatus.textContent = "";
+            const fullName = document.getElementById("employeeFullNameInput").value.trim();
+            const phone = document.getElementById("employeePhoneInput").value.trim();
+            const email = document.getElementById("employeeEmailInput").value.trim();
+            const username = document.getElementById("employeeUsernameInput").value.trim();
+            const password = document.getElementById("employeePasswordInput").value;
+            const passwordConfirm = document.getElementById("employeePasswordConfirmInput").value;
+
+            if (password !== passwordConfirm) {
+                elements.employeeRegisterStatus.textContent = t("passwordsMismatch");
+                return;
+            }
+
+            try {
+                await fetchJson("/api/auth/register-admissions-employee", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        phone,
+                        email,
+                        username,
+                        password
+                    })
+                });
+                elements.employeeRegisterStatus.textContent = t("employeeCreated");
+                document.getElementById("usernameInput").value = username;
+                document.getElementById("passwordInput").value = password;
+                elements.employeeRegisterForm.reset();
+                state.selectedRole = "admin";
+                toggleEmployeeRegisterPanel(false);
+                elements.loginStatus.textContent = t("employeeCreated");
+            } catch (error) {
+                elements.employeeRegisterStatus.textContent = localizeErrorMessage(error.message);
             }
         });
 
@@ -1336,10 +2240,50 @@
             }
         });
 
+        elements.studentImageInput.addEventListener("change", () => {
+            if (elements.studentImageInput.files && elements.studentImageInput.files.length > 0) {
+                clearCapturedStudentImage();
+                elements.studentImageSelectionStatus.textContent = t("imageSelected");
+            }
+        });
+
+        elements.uploadImageButton.addEventListener("click", () => {
+            elements.studentImageInput.click();
+        });
+
+        elements.openCameraButton.addEventListener("click", async () => {
+            try {
+                await openCameraModal();
+            } catch (error) {
+                elements.studentImageSelectionStatus.textContent = error.message || t("cameraAccessError");
+            }
+        });
+
+        elements.takePhotoButton.addEventListener("click", async () => {
+            try {
+                await captureImageFromCamera();
+            } catch (error) {
+                elements.cameraModalStatus.textContent = error.message || t("cameraAccessError");
+            }
+        });
+
+        elements.closeCameraModalButton.addEventListener("click", () => {
+            closeCameraModal();
+        });
+
         elements.registerForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             elements.registerStatus.textContent = "";
+            elements.studentImageSelectionStatus.textContent = "";
             const formData = new FormData(elements.registerForm);
+            const selectedImage =
+                (elements.studentImageInput.files && elements.studentImageInput.files[0]) ||
+                state.capturedStudentImage;
+            if (!selectedImage) {
+                elements.registerStatus.textContent = t("studentImageRequired");
+                return;
+            }
+            formData.set("image", selectedImage);
             try {
                 const payload = await fetchJson("/api/register", {
                     method: "POST",
@@ -1349,9 +2293,80 @@
                 state.graduates = payload.graduates || [];
                 renderAdmin();
                 elements.registerForm.reset();
+                clearCapturedStudentImage();
+                elements.studentImageSelectionStatus.textContent = "";
                 elements.registerStatus.textContent = t("saved");
             } catch (error) {
                 elements.registerStatus.textContent = error.message;
+            }
+        });
+
+        elements.mediaScanForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            elements.mediaScanStatus.textContent = "";
+            const selectedFile = elements.mediaScanInput.files && elements.mediaScanInput.files[0];
+            if (!selectedFile) {
+                elements.mediaScanStatus.textContent = t("selectMediaFile");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.set("media", selectedFile);
+            elements.mediaScanButton.disabled = true;
+            elements.mediaScanStatus.textContent = t("processingMedia");
+            try {
+                const payload = await fetchJson("/api/security/media-scan", {
+                    method: "POST",
+                    body: formData
+                });
+                state.mediaScanResult = payload;
+                renderMediaScanResults();
+                elements.mediaScanStatus.textContent = t("mediaScanComplete");
+                if ((payload.missing_count || 0) > 0 || (payload.alert_count || 0) > 0) {
+                    playAlarm();
+                }
+            } catch (error) {
+                elements.mediaScanStatus.textContent = localizeErrorMessage(error.message);
+            } finally {
+                elements.mediaScanButton.disabled = false;
+            }
+        });
+
+        elements.securityUserForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            elements.securityUserStatus.textContent = "";
+            const fullName = document.getElementById("securityFullNameInput").value.trim();
+            const phone = document.getElementById("securityPhoneInput").value.trim();
+            const email = document.getElementById("securityEmailInput").value.trim();
+            const username = document.getElementById("securityUsernameInput").value.trim();
+            const password = document.getElementById("securityPasswordInput").value;
+            const passwordConfirm = document.getElementById("securityPasswordConfirmInput").value;
+
+            if (password !== passwordConfirm) {
+                elements.securityUserStatus.textContent = t("passwordsMismatch");
+                return;
+            }
+
+            elements.createSecurityUserButton.disabled = true;
+            try {
+                await fetchJson("/api/security-users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        phone,
+                        email,
+                        username,
+                        password
+                    })
+                });
+                elements.securityUserForm.reset();
+                elements.securityUserStatus.textContent = t("securityUserCreated");
+                setAdminPanel("securityUsers");
+            } catch (error) {
+                elements.securityUserStatus.textContent = localizeErrorMessage(error.message);
+            } finally {
+                elements.createSecurityUserButton.disabled = false;
             }
         });
 
