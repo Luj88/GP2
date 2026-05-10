@@ -1,4 +1,5 @@
 import json
+import os
 import pickle
 import queue
 import sqlite3
@@ -32,6 +33,10 @@ SCREENSHOT_DIR = REALTIME_DIR / "captures"
 STREAM_JPEG_QUALITY = 72
 CAPTURE_MAX_WIDTH = 960
 FRAME_SKIP_INTERVAL = 10
+CAMERA_INDEX = int(os.environ.get("GP2_CAMERA_INDEX", "0"))
+CAMERA_WARMUP_FRAMES = 8
+BLANK_FRAME_MEAN_THRESHOLD = 3.0
+BLANK_FRAME_STD_THRESHOLD = 2.0
 VALID_ROLES = {"Student", "Staff", "Admin", "Security"}
 ACCOUNT_ROLES = {"admin", "security"}
 ADMISSION_SYNC_INTERVAL_SECONDS = 15
@@ -618,11 +623,17 @@ def placeholder_frame(message: str) -> np.ndarray:
     return frame
 
 
+def is_blank_camera_frame(frame: np.ndarray) -> bool:
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return float(gray.mean()) < BLANK_FRAME_MEAN_THRESHOLD and float(gray.std()) < BLANK_FRAME_STD_THRESHOLD
+
+
 class WebFaceProcessor:
     def __init__(self) -> None:
         self.students = load_database()
         self.capture: Optional[cv2.VideoCapture] = None
         self.capture_error: Optional[str] = None
+        self.camera_source: Optional[str] = None
         self.running = False
         self.current_frame: Optional[np.ndarray] = None
         self.current_decision: Optional[FrameDecision] = None
@@ -637,9 +648,53 @@ class WebFaceProcessor:
     def _open_camera(self) -> None:
         if self.capture is not None and self.capture.isOpened():
             return
-        self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        self.capture.set(cv2.CAP_PROP_FPS, TARGET_FPS)
-        self.capture_error = None if self.capture.isOpened() else "Unable to open the default camera with DirectShow."
+
+        camera_indexes = [CAMERA_INDEX] + [index for index in range(4) if index != CAMERA_INDEX]
+        backends = [
+            ("DirectShow", cv2.CAP_DSHOW),
+            ("MSMF", cv2.CAP_MSMF),
+            ("default backend", cv2.CAP_ANY),
+        ]
+        errors: list[str] = []
+
+        for camera_index in camera_indexes:
+            for backend_name, backend in backends:
+                capture = cv2.VideoCapture(camera_index, backend)
+                if not capture.isOpened():
+                    capture.release()
+                    errors.append(f"camera {camera_index} via {backend_name}: not opened")
+                    continue
+
+                capture.set(cv2.CAP_PROP_FPS, TARGET_FPS)
+                usable_frame = None
+                for _ in range(CAMERA_WARMUP_FRAMES):
+                    ok, frame = capture.read()
+                    if ok and frame is not None and frame.size:
+                        usable_frame = frame
+                        if not is_blank_camera_frame(frame):
+                            break
+                    time.sleep(0.03)
+
+                if usable_frame is None:
+                    capture.release()
+                    errors.append(f"camera {camera_index} via {backend_name}: no frames")
+                    continue
+
+                if is_blank_camera_frame(usable_frame):
+                    capture.release()
+                    errors.append(f"camera {camera_index} via {backend_name}: blank frames")
+                    continue
+
+                self.capture = capture
+                self.camera_source = f"camera {camera_index} via {backend_name}"
+                self.capture_error = None
+                with self.state_lock:
+                    self.current_frame = usable_frame.copy()
+                return
+
+        self.capture = None
+        self.camera_source = None
+        self.capture_error = "Unable to open a camera with a visible frame. " + "; ".join(errors[-6:])
 
     def start(self) -> None:
         if self.running:
@@ -785,6 +840,7 @@ class WebFaceProcessor:
         return {
             "camera_ready": self.capture is not None and self.capture.isOpened(),
             "camera_error": self.capture_error,
+            "camera_source": self.camera_source,
             "frame_skip_interval": FRAME_SKIP_INTERVAL,
             "identification_cooldown_seconds": IDENTIFICATION_COOLDOWN_SECONDS,
             "current_decision": None if decision is None else {
@@ -805,7 +861,6 @@ class WebFaceProcessor:
 
 ensure_database_schema()
 processor = WebFaceProcessor()
-processor.start()
 
 
 def admissions_sync_loop() -> None:
@@ -896,6 +951,7 @@ def bootstrap():
 @app.route("/video_feed")
 @require_role("security")
 def video_feed():
+    processor.start()
     return Response(
         processor.generate_stream(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
@@ -911,6 +967,7 @@ def get_capture(filename: str):
 @app.route("/api/system/status")
 @require_role("security")
 def get_system_status():
+    processor.start()
     return jsonify(processor.system_status())
 
 
@@ -1063,4 +1120,11 @@ def register():
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=5000,
+        debug=True,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )
