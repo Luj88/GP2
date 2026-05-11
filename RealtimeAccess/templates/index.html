@@ -62,6 +62,25 @@
             --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
         }
 
+        body[data-theme="blue"] {
+            color-scheme: light;
+            --bg: #eef6ff;
+            --surface: rgba(248, 252, 255, 0.9);
+            --surface-muted: rgba(235, 245, 255, 0.95);
+            --border: rgba(42, 103, 166, 0.18);
+            --text: #132436;
+            --muted: #60758c;
+            --primary: #2f7ed8;
+            --primary-strong: #1f5fa8;
+            --accent: #0f9f9a;
+            --success: #168a66;
+            --danger: #c65050;
+            --warning: #c47a1f;
+            --grid-line: rgba(47, 126, 216, 0.08);
+            --glow: 0 0 0 1px rgba(47, 126, 216, 0.08), 0 26px 70px rgba(37, 91, 151, 0.14);
+            --shadow: 0 20px 48px rgba(34, 78, 128, 0.14);
+        }
+
         * { box-sizing: border-box; }
 
         body {
@@ -1069,6 +1088,7 @@
                         <label for="themeSelect" data-i18n="theme">الوضع</label>
                         <select id="themeSelect">
                             <option value="light" data-i18n="light">فاتح</option>
+                            <option value="blue" data-i18n="blue">أزرق</option>
                             <option value="dark" data-i18n="dark">داكن</option>
                         </select>
                     </div>
@@ -1420,6 +1440,7 @@
                 language: "اللغة",
                 theme: "الوضع",
                 light: "فاتح",
+                blue: "أزرق",
                 dark: "داكن",
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
@@ -1543,6 +1564,7 @@
                 language: "Language",
                 theme: "Theme",
                 light: "Light",
+                blue: "Blue",
                 dark: "Dark",
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
@@ -1662,9 +1684,12 @@
             }
         };
 
+        const savedTheme = localStorage.getItem("accessTheme");
+        const initialTheme = ["light", "blue", "dark"].includes(savedTheme) ? savedTheme : "light";
+
         const state = {
             language: localStorage.getItem("accessLanguage") || "ar",
-            theme: localStorage.getItem("accessTheme") || "light",
+            theme: initialTheme,
             selectedRole: "admin",
             adminPanel: "sync",
             user: null,
