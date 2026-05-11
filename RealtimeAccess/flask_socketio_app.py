@@ -34,8 +34,21 @@ from realtime_face_access import (
 REALTIME_DIR = Path(__file__).resolve().parent
 SCREENSHOT_DIR = REALTIME_DIR / "captures"
 STREAM_JPEG_QUALITY = 72
-CAPTURE_MAX_WIDTH = 960
-FRAME_SKIP_INTERVAL = 10
+STREAM_FPS = 20
+STREAM_FRAME_INTERVAL_SECONDS = 1 / STREAM_FPS
+CAPTURE_MAX_WIDTH = 1280
+FRAME_SKIP_INTERVAL = 30
+KNOWN_FACE_RECHECK_COOLDOWN_SECONDS = 30.0
+CAMERA_INDEX = 0
+CAMERA_MIRROR = True
+CAMERA_FRAME_WIDTH = 1280
+CAMERA_FRAME_HEIGHT = 720
+CAMERA_BACKENDS: tuple[tuple[str, Optional[int]], ...] = (
+    ("DirectShow", cv2.CAP_DSHOW),
+    ("Media Foundation", cv2.CAP_MSMF),
+    ("Default", None),
+)
+CAMERA_DISABLED_MESSAGE = "Camera is turned off by security."
 MEDIA_SCAN_MAX_UPLOAD_BYTES = 250 * 1024 * 1024
 MEDIA_SCAN_MAX_VIDEO_FRAMES = 45
 MEDIA_SCAN_MIN_VIDEO_SAMPLE_SECONDS = 1.0
@@ -989,6 +1002,9 @@ class WebFaceProcessor:
         self.students = load_database()
         self.capture: Optional[cv2.VideoCapture] = None
         self.capture_error: Optional[str] = None
+        self.camera_backend: Optional[str] = None
+        self.read_failures = 0
+        self.camera_enabled = True
         self.running = False
         self.current_frame: Optional[np.ndarray] = None
         self.current_decision: Optional[FrameDecision] = None
@@ -1000,12 +1016,87 @@ class WebFaceProcessor:
     def refresh_students(self) -> None:
         self.students = load_database()
 
+    def _drain_frame_queue(self) -> None:
+        while True:
+            try:
+                self.frame_queue.get_nowait()
+            except queue.Empty:
+                return
+
+    def _release_camera(self) -> None:
+        if self.capture is not None:
+            self.capture.release()
+        self.capture = None
+        self.camera_backend = None
+
+    def set_camera_enabled(self, enabled: bool) -> dict[str, Any]:
+        self.camera_enabled = enabled
+        self._drain_frame_queue()
+        self.cooldowns.clear()
+        with self.state_lock:
+            self.current_decision = None
+            if not enabled:
+                self.current_frame = None
+
+        if enabled:
+            self.capture_error = None
+            self._open_camera()
+        else:
+            self._release_camera()
+            self.capture_error = CAMERA_DISABLED_MESSAGE
+
+        return self.system_status()
+
+    def _configure_camera(self, capture: cv2.VideoCapture) -> None:
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_FRAME_WIDTH)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_FRAME_HEIGHT)
+        capture.set(cv2.CAP_PROP_FPS, TARGET_FPS)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+
+    def _mirror_frame(self, frame: np.ndarray) -> np.ndarray:
+        return cv2.flip(frame, 1) if CAMERA_MIRROR else frame
+
     def _open_camera(self) -> None:
+        if not self.camera_enabled:
+            self._release_camera()
+            self.capture_error = CAMERA_DISABLED_MESSAGE
+            return
+
         if self.capture is not None and self.capture.isOpened():
             return
-        self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        self.capture.set(cv2.CAP_PROP_FPS, TARGET_FPS)
-        self.capture_error = None if self.capture.isOpened() else "Unable to open the default camera with DirectShow."
+
+        self._release_camera()
+        attempted_backends: list[str] = []
+        for backend_name, backend in CAMERA_BACKENDS:
+            attempted_backends.append(backend_name)
+            capture = (
+                cv2.VideoCapture(CAMERA_INDEX)
+                if backend is None
+                else cv2.VideoCapture(CAMERA_INDEX, backend)
+            )
+            if not capture.isOpened():
+                capture.release()
+                continue
+
+            self._configure_camera(capture)
+            ok, frame = capture.read()
+            if not ok or frame is None or frame.size == 0:
+                capture.release()
+                continue
+
+            frame = self._mirror_frame(frame)
+            self.capture = capture
+            self.camera_backend = backend_name
+            self.capture_error = None
+            self.read_failures = 0
+            with self.state_lock:
+                self.current_frame = frame.copy()
+            return
+
+        self.capture_error = (
+            f"Unable to open camera {CAMERA_INDEX}. Tried: {', '.join(attempted_backends)}."
+        )
 
     def start(self) -> None:
         if self.running:
@@ -1016,6 +1107,16 @@ class WebFaceProcessor:
 
     def _reader_loop(self) -> None:
         while self.running:
+            if not self.camera_enabled:
+                self._release_camera()
+                self._drain_frame_queue()
+                self.capture_error = CAMERA_DISABLED_MESSAGE
+                with self.state_lock:
+                    self.current_frame = None
+                    self.current_decision = None
+                time.sleep(0.2)
+                continue
+
             if self.capture is None or not self.capture.isOpened():
                 self._open_camera()
                 if self.capture is None or not self.capture.isOpened():
@@ -1027,12 +1128,19 @@ class WebFaceProcessor:
                 continue
 
             ok, frame = self.capture.read()
-            if not ok:
+            if not ok or frame is None or frame.size == 0:
+                self.read_failures += 1
                 self.capture_error = "Camera connected but no frame could be grabbed."
-                time.sleep(0.05)
+                if self.read_failures >= 5:
+                    self._release_camera()
+                    self.capture_error = "Camera stream dropped. Reconnecting..."
+                    self.read_failures = 0
+                time.sleep(0.1)
                 continue
 
+            frame = self._mirror_frame(frame)
             self.capture_error = None
+            self.read_failures = 0
             self.frame_index += 1
             with self.state_lock:
                 self.current_frame = frame.copy()
@@ -1052,23 +1160,44 @@ class WebFaceProcessor:
         for key in expired:
             self.cooldowns.pop(key, None)
 
+    def _cooldown_seconds_for_decision(self, decision: FrameDecision) -> float:
+        if decision.log_status == "Allowed" and decision.student_id:
+            return KNOWN_FACE_RECHECK_COOLDOWN_SECONDS
+        return IDENTIFICATION_COOLDOWN_SECONDS
+
     def _worker_loop(self) -> None:
         while self.running:
+            if not self.camera_enabled:
+                self._drain_frame_queue()
+                time.sleep(0.2)
+                continue
+
             try:
                 frame = self.frame_queue.get(timeout=0.2)
             except queue.Empty:
                 continue
 
+            if not self.camera_enabled:
+                continue
+
             decision = evaluate_frame(frame, self.students)
-            if decision is None:
+            if decision is None or not self.camera_enabled:
                 continue
 
             now = time.time()
             self._cleanup_cooldowns(now)
-            if self.cooldowns.get(decision.cooldown_key, 0.0) > now:
+            is_in_cooldown = self.cooldowns.get(decision.cooldown_key, 0.0) > now
+
+            with self.state_lock:
+                self.current_decision = decision
+
+            if is_in_cooldown:
                 continue
 
-            self.cooldowns[decision.cooldown_key] = now + IDENTIFICATION_COOLDOWN_SECONDS
+            if not self.camera_enabled:
+                continue
+
+            self.cooldowns[decision.cooldown_key] = now + self._cooldown_seconds_for_decision(decision)
             insert_access_log(decision)
 
             if decision.should_capture:
@@ -1081,11 +1210,10 @@ class WebFaceProcessor:
                     emit_security_event(decision, image_path)
                 if decision.should_alarm:
                     trigger_alarm()
-
-            with self.state_lock:
-                self.current_decision = decision
-
     def capture_current_frame(self) -> np.ndarray:
+        if not self.camera_enabled:
+            raise RuntimeError(CAMERA_DISABLED_MESSAGE)
+
         with self.state_lock:
             if self.current_frame is not None:
                 return self.current_frame.copy()
@@ -1098,11 +1226,15 @@ class WebFaceProcessor:
         if not ok:
             raise RuntimeError("Unable to capture frame from camera.")
 
+        frame = self._mirror_frame(frame)
         with self.state_lock:
             self.current_frame = frame.copy()
         return frame
 
     def get_annotated_frame(self) -> np.ndarray:
+        if not self.camera_enabled:
+            return placeholder_frame(CAMERA_DISABLED_MESSAGE)
+
         with self.state_lock:
             frame = None if self.current_frame is None else self.current_frame.copy()
             decision = self.current_decision
@@ -1143,19 +1275,28 @@ class WebFaceProcessor:
                 time.sleep(0.03)
                 continue
 
+            frame_bytes = buffer.tobytes()
             yield (
                 b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
+                b"Content-Type: image/jpeg\r\n"
+                b"Content-Length: " + str(len(frame_bytes)).encode("ascii") + b"\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
             )
+            time.sleep(STREAM_FRAME_INTERVAL_SECONDS)
 
     def system_status(self) -> dict[str, Any]:
         with self.state_lock:
-            decision = self.current_decision
+            camera_enabled = self.camera_enabled
+            decision = self.current_decision if camera_enabled else None
         return {
-            "camera_ready": self.capture is not None and self.capture.isOpened(),
-            "camera_error": self.capture_error,
+            "camera_enabled": camera_enabled,
+            "camera_ready": camera_enabled and self.capture is not None and self.capture.isOpened(),
+            "camera_error": CAMERA_DISABLED_MESSAGE if not camera_enabled else self.capture_error,
+            "camera_backend": self.camera_backend,
             "frame_skip_interval": FRAME_SKIP_INTERVAL,
             "identification_cooldown_seconds": IDENTIFICATION_COOLDOWN_SECONDS,
+            "known_face_cooldown_seconds": KNOWN_FACE_RECHECK_COOLDOWN_SECONDS,
             "current_decision": None if decision is None else {
                 "label": decision.label,
                 "status": decision.log_status,
@@ -1335,6 +1476,15 @@ def get_system_status():
     return jsonify(processor.system_status())
 
 
+@app.route("/api/system/camera", methods=["POST"])
+@require_role("security")
+def set_system_camera():
+    payload = request.get_json(silent=True) or {}
+    if "enabled" not in payload:
+        return jsonify({"error": "enabled is required"}), 400
+    return jsonify(processor.set_camera_enabled(bool(payload["enabled"])))
+
+
 @app.route("/api/security/media-scan", methods=["POST"])
 @require_role("security")
 def security_media_scan():
@@ -1497,4 +1647,11 @@ def register():
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=5000,
+        debug=True,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )

@@ -763,11 +763,13 @@
 
         .camera-modal-video {
             width: 100%;
+            aspect-ratio: 16 / 9;
             max-height: 380px;
             border: 1px solid var(--border);
             border-radius: 18px;
             background: #0f0f10;
-            object-fit: cover;
+            object-fit: contain;
+            transform: scaleX(-1);
         }
 
         .table-wrap {
@@ -821,12 +823,25 @@
             border-bottom: 1px solid var(--border);
         }
 
+        .live-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .camera-toggle-button {
+            min-width: 132px;
+            white-space: nowrap;
+        }
+
         .video-frame {
             width: 100%;
             aspect-ratio: 16 / 9;
             display: block;
             background: #0b1220;
-            object-fit: cover;
+            object-fit: contain;
             border-block: 1px solid var(--border);
         }
 
@@ -1351,7 +1366,10 @@
                                     <p class="eyebrow" data-i18n="securityLive">شاشة الأمن</p>
                                     <h3 data-i18n="liveCamera">الكاميرا المباشرة</h3>
                                 </div>
-                                <span id="cameraBadge" class="pill" data-i18n="checking">جاري الفحص</span>
+                                <div class="live-actions">
+                                    <span id="cameraBadge" class="pill" data-i18n="checking">جاري الفحص</span>
+                                    <button id="cameraToggleButton" class="danger-button camera-toggle-button" type="button" data-i18n="turnCameraOff">إيقاف الكاميرا</button>
+                                </div>
                             </div>
                         </div>
                         <img id="videoStream" class="video-frame" alt="Live security camera">
@@ -1474,6 +1492,11 @@
                 checking: "جاري الفحص",
                 cameraOnline: "الكاميرا تعمل",
                 cameraOffline: "الكاميرا غير متاحة",
+                cameraOff: "الكاميرا متوقفة",
+                turnCameraOff: "إيقاف الكاميرا",
+                turnCameraOn: "تشغيل الكاميرا",
+                faceReadingOff: "قراءة الوجوه متوقفة",
+                cameraToggleFailed: "تعذر تغيير حالة الكاميرا.",
                 waitingDecision: "بانتظار القراءة",
                 alertPanel: "لوحة الإنذارات",
                 alerts: "إنذارات",
@@ -1592,6 +1615,11 @@
                 checking: "Checking",
                 cameraOnline: "Camera Online",
                 cameraOffline: "Camera Offline",
+                cameraOff: "Camera Off",
+                turnCameraOff: "Turn Off Camera",
+                turnCameraOn: "Turn On Camera",
+                faceReadingOff: "Face reading is off",
+                cameraToggleFailed: "Unable to change camera state.",
                 waitingDecision: "Waiting For Reading",
                 alertPanel: "Alert Panel",
                 alerts: "Alerts",
@@ -1644,6 +1672,7 @@
             graduates: [],
             selectedGraduateIds: new Set(),
             alerts: [],
+            cameraEnabled: true,
             socket: null,
             statusTimer: null,
             registerCameraStream: null,
@@ -1699,6 +1728,7 @@
             graduatesStatus: document.getElementById("graduatesStatus"),
             videoStream: document.getElementById("videoStream"),
             cameraBadge: document.getElementById("cameraBadge"),
+            cameraToggleButton: document.getElementById("cameraToggleButton"),
             decisionBadge: document.getElementById("decisionBadge"),
             cooldownBadge: document.getElementById("cooldownBadge"),
             mediaScanForm: document.getElementById("mediaScanForm"),
@@ -1758,7 +1788,14 @@
                 throw new Error(t("cameraAccessError"));
             }
             closeCameraModal();
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    aspectRatio: { ideal: 16 / 9 }
+                },
+                audio: false
+            });
             state.registerCameraStream = stream;
             elements.cameraModalVideo.srcObject = stream;
             elements.cameraModal.classList.remove("hidden");
@@ -1773,7 +1810,10 @@
             const canvas = document.createElement("canvas");
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+            const context = canvas.getContext("2d");
+            context.translate(canvas.width, 0);
+            context.scale(-1, 1);
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
             if (!blob) {
                 throw new Error(t("cameraAccessError"));
@@ -1975,7 +2015,28 @@
 
         async function refreshSystemStatus() {
             const status = await fetchJson("/api/system/status");
-            elements.cooldownBadge.textContent = `${status.identification_cooldown_seconds || 10}s`;
+            renderSystemStatus(status);
+        }
+
+        function renderSystemStatus(status) {
+            state.cameraEnabled = status.camera_enabled !== false;
+            const toggleKey = state.cameraEnabled ? "turnCameraOff" : "turnCameraOn";
+            elements.cameraToggleButton.dataset.i18n = toggleKey;
+            elements.cameraToggleButton.textContent = t(toggleKey);
+            elements.cameraToggleButton.className = state.cameraEnabled
+                ? "danger-button camera-toggle-button"
+                : "primary-button camera-toggle-button";
+
+            elements.cooldownBadge.textContent = `${status.known_face_cooldown_seconds || status.identification_cooldown_seconds || 10}s`;
+            if (!state.cameraEnabled) {
+                elements.cameraBadge.textContent = t("cameraOff");
+                elements.cameraBadge.className = "pill warning";
+                elements.decisionBadge.textContent = t("faceReadingOff");
+                elements.decisionBadge.className = "pill warning";
+                elements.cooldownBadge.textContent = t("cameraOff");
+                return;
+            }
+
             if (status.camera_ready) {
                 elements.cameraBadge.textContent = t("cameraOnline");
                 elements.cameraBadge.className = "pill success";
@@ -2223,6 +2284,29 @@
             }
             showLogin();
             elements.loginStatus.textContent = t("signedOut");
+        });
+
+        elements.cameraToggleButton.addEventListener("click", async () => {
+            const nextEnabled = !state.cameraEnabled;
+            elements.cameraToggleButton.disabled = true;
+            elements.cameraBadge.textContent = t("checking");
+            elements.cameraBadge.className = "pill";
+            try {
+                const status = await fetchJson("/api/system/camera", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enabled: nextEnabled })
+                });
+                renderSystemStatus(status);
+                if (nextEnabled) {
+                    elements.videoStream.src = `/video_feed?t=${Date.now()}`;
+                }
+            } catch (error) {
+                elements.cameraBadge.textContent = t("cameraToggleFailed");
+                elements.cameraBadge.className = "pill danger";
+            } finally {
+                elements.cameraToggleButton.disabled = false;
+            }
         });
 
         elements.syncNowButton.addEventListener("click", async () => {
