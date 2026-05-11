@@ -966,6 +966,7 @@
                 cameraOnline: "Camera Online",
                 cameraOffline: "Camera Offline",
                 waitingDecision: "Waiting For Reading",
+                peopleDetected: "people in frame",
                 alertPanel: "Alert Panel",
                 alerts: "Alerts",
                 noStudents: "No registered students.",
@@ -1216,7 +1217,16 @@
                 elements.cameraBadge.className = "pill danger";
             }
 
-            if (status.current_decision) {
+            const decisions = status.current_decisions || [];
+            if (decisions.length > 1) {
+                const severity = decisions.some((decision) => decision.severity === "red")
+                    ? "red"
+                    : decisions.some((decision) => decision.severity === "orange")
+                        ? "orange"
+                        : "green";
+                elements.decisionBadge.textContent = `${status.detected_people_count || decisions.length} ${t("peopleDetected")}`;
+                elements.decisionBadge.className = `pill ${severity === "green" ? "success" : severity === "orange" ? "warning" : "danger"}`;
+            } else if (status.current_decision) {
                 elements.decisionBadge.textContent = status.current_decision.label;
                 const severity = status.current_decision.severity;
                 elements.decisionBadge.className = `pill ${severity === "green" ? "success" : severity === "orange" ? "warning" : "danger"}`;

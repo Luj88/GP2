@@ -19,6 +19,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from realtime_face_access import (
     DATABASE_PATH,
     IDENTIFICATION_COOLDOWN_SECONDS,
+    MAX_FACES_PER_FRAME,
     TARGET_FPS,
     FrameDecision,
     evaluate_frame,
@@ -615,6 +616,42 @@ def emit_security_event(decision: FrameDecision, image_path: str) -> None:
     print(f"EVENT: {json.dumps(payload)}")
 
 
+def decision_severity(decision: FrameDecision) -> str:
+    if decision.log_status == "Allowed":
+        return "green"
+    if decision.log_status == "Manual ID Required":
+        return "orange"
+    return "red"
+
+
+def decision_priority(decision: FrameDecision) -> int:
+    return {
+        "red": 3,
+        "orange": 2,
+        "green": 1,
+    }.get(decision_severity(decision), 0)
+
+
+def serialize_decision(decision: FrameDecision) -> dict[str, Any]:
+    return {
+        "label": decision.label,
+        "status": decision.log_status,
+        "outcome": decision.outcome,
+        "student_id": decision.student_id,
+        "student_name": decision.student_name,
+        "role": decision.role,
+        "accessory_state": decision.accessory_state,
+        "severity": decision_severity(decision),
+        "bbox": decision.bbox,
+    }
+
+
+def choose_primary_decision(decisions: list[FrameDecision]) -> Optional[FrameDecision]:
+    if not decisions:
+        return None
+    return max(decisions, key=decision_priority)
+
+
 def placeholder_frame(message: str) -> np.ndarray:
     frame = np.zeros((540, 960, 3), dtype=np.uint8)
     frame[:] = (12, 18, 32)
@@ -637,6 +674,7 @@ class WebFaceProcessor:
         self.running = False
         self.current_frame: Optional[np.ndarray] = None
         self.current_decision: Optional[FrameDecision] = None
+        self.current_decisions: list[FrameDecision] = []
         self.state_lock = threading.Lock()
         self.frame_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1)
         self.frame_index = 0
@@ -745,31 +783,36 @@ class WebFaceProcessor:
             except queue.Empty:
                 continue
 
-            decision = evaluate_frame(frame, self.students)
-            if decision is None:
+            decisions = evaluate_frame(frame, self.students)
+            if not decisions:
                 continue
 
             now = time.time()
             self._cleanup_cooldowns(now)
-            if self.cooldowns.get(decision.cooldown_key, 0.0) > now:
-                continue
+            alarm_triggered = False
 
-            self.cooldowns[decision.cooldown_key] = now + IDENTIFICATION_COOLDOWN_SECONDS
-            insert_access_log(decision)
+            for decision in decisions:
+                if self.cooldowns.get(decision.cooldown_key, 0.0) > now:
+                    continue
 
-            if decision.should_capture:
-                prefix = {
-                    "Denied": "intruder",
-                    "Manual ID Required": "manual_id",
-                }.get(decision.log_status, "unknown")
-                image_path = capture_screenshot(frame, prefix)
-                if decision.should_alert:
-                    emit_security_event(decision, image_path)
-                if decision.should_alarm:
-                    trigger_alarm()
+                self.cooldowns[decision.cooldown_key] = now + IDENTIFICATION_COOLDOWN_SECONDS
+                insert_access_log(decision)
+
+                if decision.should_capture:
+                    prefix = {
+                        "Denied": "intruder",
+                        "Manual ID Required": "manual_id",
+                    }.get(decision.log_status, "unknown")
+                    image_path = capture_screenshot(frame, prefix)
+                    if decision.should_alert:
+                        emit_security_event(decision, image_path)
+                    if decision.should_alarm and not alarm_triggered:
+                        trigger_alarm()
+                        alarm_triggered = True
 
             with self.state_lock:
-                self.current_decision = decision
+                self.current_decisions = decisions
+                self.current_decision = choose_primary_decision(decisions)
 
     def capture_current_frame(self) -> np.ndarray:
         with self.state_lock:
@@ -791,18 +834,27 @@ class WebFaceProcessor:
     def get_annotated_frame(self) -> np.ndarray:
         with self.state_lock:
             frame = None if self.current_frame is None else self.current_frame.copy()
-            decision = self.current_decision
+            decisions = list(self.current_decisions)
 
         if frame is None:
             return placeholder_frame(self.capture_error or "Waiting for camera...")
 
-        if decision and decision.matched_until < time.time():
-            decision = None
+        now = time.time()
+        active_decisions = [
+            decision
+            for decision in decisions
+            if decision.matched_until >= now
+        ]
+        if len(active_decisions) != len(decisions):
             with self.state_lock:
-                if self.current_decision and self.current_decision.matched_until < time.time():
-                    self.current_decision = None
+                self.current_decisions = [
+                    decision
+                    for decision in self.current_decisions
+                    if decision.matched_until >= now
+                ]
+                self.current_decision = choose_primary_decision(self.current_decisions)
 
-        if decision:
+        for decision in active_decisions:
             x, y, w, h = decision.bbox
             cv2.rectangle(frame, (x, y), (x + w, y + h), decision.color, 2)
             cv2.putText(
@@ -837,25 +889,17 @@ class WebFaceProcessor:
     def system_status(self) -> dict[str, Any]:
         with self.state_lock:
             decision = self.current_decision
+            decisions = list(self.current_decisions)
         return {
             "camera_ready": self.capture is not None and self.capture.isOpened(),
             "camera_error": self.capture_error,
             "camera_source": self.camera_source,
             "frame_skip_interval": FRAME_SKIP_INTERVAL,
+            "max_faces_per_frame": MAX_FACES_PER_FRAME,
+            "detected_people_count": len(decisions),
             "identification_cooldown_seconds": IDENTIFICATION_COOLDOWN_SECONDS,
-            "current_decision": None if decision is None else {
-                "label": decision.label,
-                "status": decision.log_status,
-                "outcome": decision.outcome,
-                "accessory_state": decision.accessory_state,
-                "severity": (
-                    "green"
-                    if decision.log_status == "Allowed"
-                    else "orange"
-                    if decision.log_status == "Manual ID Required"
-                    else "red"
-                ),
-            },
+            "current_decision": None if decision is None else serialize_decision(decision),
+            "current_decisions": [serialize_decision(item) for item in decisions],
         }
 
 

@@ -16,6 +16,7 @@ MODEL_NAME = "VGG-Face"
 MATCH_THRESHOLD = 0.35
 TARGET_FPS = 30
 IDENTIFICATION_COOLDOWN_SECONDS = 10.0
+MAX_FACES_PER_FRAME = 25
 
 
 def _load_cascade(filename: str) -> cv2.CascadeClassifier:
@@ -136,7 +137,25 @@ def analyze_accessory_state(face_region: np.ndarray) -> str:
     return "clear"
 
 
-def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+def _representation_to_embedding(
+    representation: dict,
+    frame: np.ndarray,
+) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    facial_area = representation.get("facial_area", {})
+    bbox = (
+        int(facial_area.get("x", 0)),
+        int(facial_area.get("y", 0)),
+        int(facial_area.get("w", frame.shape[1])),
+        int(facial_area.get("h", frame.shape[0])),
+    )
+    embedding = np.array(representation["embedding"], dtype=np.float32)
+    return embedding, bbox
+
+
+def extract_embeddings(
+    frame: np.ndarray,
+    max_faces: int = MAX_FACES_PER_FRAME,
+) -> list[tuple[np.ndarray, tuple[int, int, int, int]]]:
     representations = DeepFace.represent(
         img_path=frame,
         model_name=MODEL_NAME,
@@ -145,28 +164,56 @@ def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, in
     )
     if not representations:
         raise ValueError("No face embedding returned by DeepFace.")
+    if isinstance(representations, dict):
+        representations = [representations]
 
-    face = representations[0]
-    facial_area = face.get("facial_area", {})
-    bbox = (
-        int(facial_area.get("x", 0)),
-        int(facial_area.get("y", 0)),
-        int(facial_area.get("w", frame.shape[1])),
-        int(facial_area.get("h", frame.shape[0])),
-    )
-    embedding = np.array(face["embedding"], dtype=np.float32)
-    return embedding, bbox
+    faces = [
+        _representation_to_embedding(representation, frame)
+        for representation in representations
+    ]
+    faces.sort(key=lambda face: face[1][2] * face[1][3], reverse=True)
+    return faces[:max_faces]
+
+
+def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    return extract_embeddings(frame, max_faces=1)[0]
+
+
+def fallback_person_boxes(
+    frame: np.ndarray,
+    max_faces: int = MAX_FACES_PER_FRAME,
+) -> list[tuple[int, int, int, int]]:
+    if FACE_CASCADE.empty():
+        return []
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = FACE_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+    boxes = [
+        (int(x), int(y), int(w), int(h))
+        for x, y, w, h in faces
+    ]
+    boxes.sort(key=lambda box: box[2] * box[3], reverse=True)
+    return boxes[:max_faces]
 
 
 def fallback_person_box(frame: np.ndarray) -> Optional[tuple[int, int, int, int]]:
-    if FACE_CASCADE.empty():
-        return None
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = FACE_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-    if len(faces) == 0:
-        return None
-    x, y, w, h = faces[0]
-    return int(x), int(y), int(w), int(h)
+    boxes = fallback_person_boxes(frame, max_faces=1)
+    return boxes[0] if boxes else None
+
+
+def unidentified_cooldown_key(
+    *,
+    outcome: str,
+    accessory_state: str,
+    log_status: str,
+    bbox: tuple[int, int, int, int],
+) -> str:
+    x, y, w, h = bbox
+    center_x = (x + w // 2) // 80
+    center_y = (y + h // 2) // 80
+    return (
+        f"{outcome}:{accessory_state}:{log_status}:"
+        f"{center_x}:{center_y}:{w // 40}:{h // 40}"
+    )
 
 
 def clip_bbox(bbox: tuple[int, int, int, int], frame_shape: tuple[int, int, int]) -> tuple[int, int, int, int]:
@@ -222,20 +269,14 @@ def _make_decision(
     )
 
 
-def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional[FrameDecision]:
-    now = time.time()
-    bbox: Optional[tuple[int, int, int, int]] = None
-    embedding: Optional[np.ndarray] = None
-
-    try:
-        embedding, bbox = extract_embedding(frame)
-    except Exception:
-        bbox = fallback_person_box(frame)
-        embedding = None
-
-    if bbox is None:
-        return None
-
+def evaluate_face(
+    frame: np.ndarray,
+    students: list[StudentRecord],
+    *,
+    bbox: tuple[int, int, int, int],
+    embedding: Optional[np.ndarray],
+    now: float,
+) -> Optional[FrameDecision]:
     x, y, w, h = clip_bbox(bbox, frame.shape)
     face_region = frame[y : y + h, x : x + w]
     if face_region.size == 0:
@@ -255,7 +296,12 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
             should_alert=True,
             should_alarm=True,
             should_capture=True,
-            cooldown_key="manual_review:niqab",
+            cooldown_key=unidentified_cooldown_key(
+                outcome="manual_review",
+                accessory_state=accessory_state,
+                log_status="Manual ID Required",
+                bbox=(x, y, w, h),
+            ),
         )
 
     if accessory_state == "mask_and_sunglasses":
@@ -271,7 +317,12 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
             should_alert=True,
             should_alarm=True,
             should_capture=True,
-            cooldown_key="denied:mask_and_sunglasses",
+            cooldown_key=unidentified_cooldown_key(
+                outcome="denied",
+                accessory_state=accessory_state,
+                log_status="Denied",
+                bbox=(x, y, w, h),
+            ),
         )
 
     matched_student = match_face(embedding, students) if embedding is not None else None
@@ -302,7 +353,12 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
             color=(0, 255, 0),
             accessory_state=accessory_state,
             log_status="Allowed",
-            cooldown_key="allowed:mask_only",
+            cooldown_key=unidentified_cooldown_key(
+                outcome="allowed",
+                accessory_state=accessory_state,
+                log_status="Allowed",
+                bbox=(x, y, w, h),
+            ),
         )
 
     if accessory_state == "sunglasses_only":
@@ -314,7 +370,12 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
             color=(0, 255, 0),
             accessory_state=accessory_state,
             log_status="Allowed",
-            cooldown_key="allowed:sunglasses_only",
+            cooldown_key=unidentified_cooldown_key(
+                outcome="allowed",
+                accessory_state=accessory_state,
+                log_status="Allowed",
+                bbox=(x, y, w, h),
+            ),
         )
 
     return _make_decision(
@@ -329,5 +390,40 @@ def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional
         should_alert=True,
         should_alarm=True,
         should_capture=True,
-        cooldown_key="unknown:clear_face",
+        cooldown_key=unidentified_cooldown_key(
+            outcome="unknown",
+            accessory_state=accessory_state,
+            log_status="Unknown",
+            bbox=(x, y, w, h),
+        ),
     )
+
+
+def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> list[FrameDecision]:
+    now = time.time()
+    face_inputs: list[tuple[Optional[np.ndarray], tuple[int, int, int, int]]] = []
+
+    try:
+        face_inputs = [
+            (embedding, bbox)
+            for embedding, bbox in extract_embeddings(frame, max_faces=MAX_FACES_PER_FRAME)
+        ]
+    except Exception:
+        face_inputs = [
+            (None, bbox)
+            for bbox in fallback_person_boxes(frame, max_faces=MAX_FACES_PER_FRAME)
+        ]
+
+    decisions: list[FrameDecision] = []
+    for embedding, bbox in face_inputs[:MAX_FACES_PER_FRAME]:
+        decision = evaluate_face(
+            frame,
+            students,
+            bbox=bbox,
+            embedding=embedding,
+            now=now,
+        )
+        if decision is not None:
+            decisions.append(decision)
+
+    return decisions
