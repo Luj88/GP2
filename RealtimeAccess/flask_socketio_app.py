@@ -40,6 +40,7 @@ CAPTURE_MAX_WIDTH = 1280
 FRAME_SKIP_INTERVAL = 30
 KNOWN_FACE_RECHECK_COOLDOWN_SECONDS = 30.0
 CAMERA_INDEX = 0
+CAMERA_INDICES = (0, 1, 2, 3, 4)
 CAMERA_MIRROR = True
 CAMERA_FRAME_WIDTH = 1280
 CAMERA_FRAME_HEIGHT = 720
@@ -976,8 +977,6 @@ def scan_uploaded_media(media_file: Any) -> dict[str, Any]:
 
     media_type = detect_media_upload_type(media_file)
     students = load_database()
-    if not students:
-        raise ValueError("No registered students are available for matching.")
 
     if media_type == "image":
         frame = decode_image_bytes(media_file.read())
@@ -1067,35 +1066,37 @@ class WebFaceProcessor:
             return
 
         self._release_camera()
-        attempted_backends: list[str] = []
-        for backend_name, backend in CAMERA_BACKENDS:
-            attempted_backends.append(backend_name)
-            capture = (
-                cv2.VideoCapture(CAMERA_INDEX)
-                if backend is None
-                else cv2.VideoCapture(CAMERA_INDEX, backend)
-            )
-            if not capture.isOpened():
-                capture.release()
-                continue
+        attempted_sources: list[str] = []
+        ordered_indices = (CAMERA_INDEX,) + tuple(index for index in CAMERA_INDICES if index != CAMERA_INDEX)
+        for camera_index in ordered_indices:
+            for backend_name, backend in CAMERA_BACKENDS:
+                attempted_sources.append(f"{backend_name}:{camera_index}")
+                capture = (
+                    cv2.VideoCapture(camera_index)
+                    if backend is None
+                    else cv2.VideoCapture(camera_index, backend)
+                )
+                if not capture.isOpened():
+                    capture.release()
+                    continue
 
-            self._configure_camera(capture)
-            ok, frame = capture.read()
-            if not ok or frame is None or frame.size == 0:
-                capture.release()
-                continue
+                self._configure_camera(capture)
+                ok, frame = capture.read()
+                if not ok or frame is None or frame.size == 0:
+                    capture.release()
+                    continue
 
-            frame = self._mirror_frame(frame)
-            self.capture = capture
-            self.camera_backend = backend_name
-            self.capture_error = None
-            self.read_failures = 0
-            with self.state_lock:
-                self.current_frame = frame.copy()
-            return
+                frame = self._mirror_frame(frame)
+                self.capture = capture
+                self.camera_backend = f"{backend_name} camera {camera_index}"
+                self.capture_error = None
+                self.read_failures = 0
+                with self.state_lock:
+                    self.current_frame = frame.copy()
+                return
 
         self.capture_error = (
-            f"Unable to open camera {CAMERA_INDEX}. Tried: {', '.join(attempted_backends)}."
+            f"Unable to open a camera. Tried: {', '.join(attempted_sources)}."
         )
 
     def start(self) -> None:
