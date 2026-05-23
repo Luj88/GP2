@@ -1,4 +1,5 @@
 import pickle
+import logging
 import sqlite3
 import time
 from dataclasses import dataclass
@@ -9,6 +10,8 @@ import cv2
 import numpy as np
 from deepface import DeepFace
 
+
+logger = logging.getLogger(__name__)
 
 GP2_DIR = Path(__file__).resolve().parents[1]
 DATABASE_PATH = GP2_DIR / "university.db"
@@ -190,7 +193,7 @@ def clip_bbox(bbox: tuple[int, int, int, int], frame_shape: tuple[int, int, int]
 
 
 def trigger_alarm() -> None:
-    print("ALARM: Unauthorized entry detected.")
+    logger.warning("ALARM: Unauthorized entry detected.")
 
 
 def _make_decision(

@@ -559,6 +559,35 @@
             line-height: 1.8;
         }
 
+        .block-full { width: 100%; }
+
+        .note-text { margin: 14px 0; }
+
+        .compact-note { margin: 0; }
+
+        .meta-text {
+            margin: 4px 0 0;
+            font-size: 12px;
+        }
+
+        .alert-label { margin: 8px 0 0; }
+
+        .inline-actions {
+            gap: 10px;
+            justify-content: flex-start;
+        }
+
+        .split-row {
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .modal-actions {
+            gap: 10px;
+            justify-content: flex-start;
+            margin-top: 16px;
+        }
+
         .settings-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1063,6 +1092,12 @@
             border-bottom: 1px solid var(--border);
         }
 
+        .card-header.flush {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
         .summary-grid {
             gap: 10px;
             flex-wrap: wrap;
@@ -1562,7 +1597,7 @@
                         <input id="passwordInput" type="password" autocomplete="current-password" required>
                     </div>
                     <button id="forgotPasswordButton" class="inline-link" type="button" data-i18n="forgotPassword">هل نسيت كلمة السر؟</button>
-                    <button class="primary-button" type="submit" style="width: 100%;" data-i18n="signIn">دخول</button>
+                    <button class="primary-button block-full" type="submit" data-i18n="signIn">دخول</button>
                     <button id="openEmployeeRegisterButton" class="secondary-button inline-action" type="button" data-i18n="newAdmissionsEmployee">موظف قبول وتسجيل جديد</button>
                     <p id="loginStatus" class="status-text"></p>
                 </form>
@@ -1600,13 +1635,13 @@
                         </div>
                         <div>
                             <label for="employeePasswordInput" data-i18n="newPassword">كلمة المرور الجديدة</label>
-                            <input id="employeePasswordInput" type="password" autocomplete="new-password" required>
+                            <input id="employeePasswordInput" type="password" autocomplete="new-password" minlength="8" required>
                         </div>
                         <div>
                             <label for="employeePasswordConfirmInput" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
-                            <input id="employeePasswordConfirmInput" type="password" autocomplete="new-password" required>
+                            <input id="employeePasswordConfirmInput" type="password" autocomplete="new-password" minlength="8" required>
                         </div>
-                        <div class="full row" style="gap: 10px; justify-content: flex-start;">
+                        <div class="full row inline-actions">
                             <button class="primary-button" type="submit" data-i18n="createEmployeeAccount">إنشاء الحساب</button>
                             <button id="closeEmployeeRegisterButton" class="ghost-button" type="button" data-i18n="cancel">إلغاء</button>
                         </div>
@@ -1671,7 +1706,7 @@
                                 <span class="metric-label" data-i18n="syncErrors">أخطاء</span>
                             </div>
                         </div>
-                        <p class="muted" style="margin: 14px 0;" data-i18n="admissionNote">
+                        <p class="muted note-text" data-i18n="admissionNote">
                             أي طالب جديد يضاف إلى جدول القبول والتسجيل مع صورته يتم استيراده تلقائيًا للنظام.
                         </p>
                         <button id="syncNowButton" class="primary-button" type="button" data-i18n="syncNow">مزامنة الآن</button>
@@ -1730,7 +1765,7 @@
                                 </div>
                             </div>
                             <video id="cameraModalVideo" class="camera-modal-video" autoplay playsinline muted></video>
-                            <div class="row" style="justify-content: flex-start; gap: 10px; margin-top: 16px;">
+                            <div class="row modal-actions">
                                 <button id="takePhotoButton" class="primary-button" type="button" data-i18n="takePhoto">Take Photo</button>
                                 <button id="closeCameraModalButton" class="ghost-button" type="button" data-i18n="cancel">Cancel</button>
                             </div>
@@ -1764,11 +1799,11 @@
                             </div>
                             <div>
                                 <label for="securityPasswordInput" data-i18n="newPassword">كلمة المرور الجديدة</label>
-                                <input id="securityPasswordInput" name="password" type="password" autocomplete="new-password" required>
+                                <input id="securityPasswordInput" name="password" type="password" autocomplete="new-password" minlength="8" required>
                             </div>
                             <div>
                                 <label for="securityPasswordConfirmInput" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
-                                <input id="securityPasswordConfirmInput" name="password_confirm" type="password" autocomplete="new-password" required>
+                                <input id="securityPasswordConfirmInput" name="password_confirm" type="password" autocomplete="new-password" minlength="8" required>
                             </div>
                             <div class="full">
                                 <button id="createSecurityUserButton" class="primary-button" type="submit" data-i18n="createSecurityAccountButton">حفظ حساب رجل الأمن</button>
@@ -1838,7 +1873,7 @@
                 <div class="stack">
                     <section class="card live-panel">
                         <div class="live-header">
-                            <div class="card-header" style="margin: 0; padding: 0; border: 0;">
+                            <div class="card-header flush">
                                 <div>
                                     <p class="eyebrow" data-i18n="securityLive">شاشة الأمن</p>
                                     <h3 data-i18n="liveCamera">الكاميرا المباشرة</h3>
@@ -2011,7 +2046,8 @@
                 securityUserCreated: "تم إنشاء حساب رجل الأمن بنجاح.",
                 passwordsMismatch: "كلمتا المرور غير متطابقتين.",
                 employeeRequiredFields: "لازم تعبّي الاسم الكامل واسم المستخدم وكلمة المرور.",
-                employeePasswordShort: "كلمة المرور لازم تكون 4 أحرف أو أكثر.",
+                employeePasswordShort: "كلمة المرور لازم تكون 8 أحرف أو أكثر.",
+                adminRequiredForEmployeeCreate: "لازم تكون مدير حتى تنشئ موظف قبول جديد.",
                 employeeUsernameTaken: "اسم المستخدم مستخدم من قبل موظف آخر.",
                 securityUsernameTaken: "اسم المستخدم مستخدم من قبل رجل أمن آخر.",
                 unexpectedServerResponse: "الاستجابة من السيرفر غير متوقعة.",
@@ -2138,7 +2174,8 @@
                 securityUserCreated: "Security employee account created successfully.",
                 passwordsMismatch: "Passwords do not match.",
                 employeeRequiredFields: "Full name, username, and password are required.",
-                employeePasswordShort: "Password must be at least 4 characters.",
+                employeePasswordShort: "Password must be at least 8 characters.",
+                adminRequiredForEmployeeCreate: "Only an admin can create another admissions employee.",
                 employeeUsernameTaken: "This username is already used by another admissions employee.",
                 securityUsernameTaken: "This username is already used by another security employee.",
                 unexpectedServerResponse: "Unexpected server response.",
@@ -2237,6 +2274,8 @@
             const map = {
                 "full_name, username, and password are required": t("employeeRequiredFields"),
                 "Password must be at least 4 characters": t("employeePasswordShort"),
+                "Password must be at least 8 characters": t("employeePasswordShort"),
+                "Only an admin can create another admissions employee": t("adminRequiredForEmployeeCreate"),
                 "This username is already used by another admissions employee": t("employeeUsernameTaken"),
                 "This username is already used by another security employee": t("securityUsernameTaken"),
                 "Unexpected server response.": t("unexpectedServerResponse"),
@@ -2560,12 +2599,12 @@
 
             elements.alertsContainer.innerHTML = state.alerts.map((alert) => `
                 <article class="alert-card ${alert.severity === "orange" ? "orange" : "red"}">
-                    <div class="row" style="justify-content: space-between; gap: 10px;">
+                    <div class="row split-row">
                         <strong>${escapeHtml(alert.status)}</strong>
                         <span class="pill ${alert.severity === "orange" ? "warning" : "danger"}">${escapeHtml(alert.event_type || alert.status)}</span>
                     </div>
-                    <p class="muted" style="margin: 8px 0 0;">${escapeHtml(alert.label)}</p>
-                    <p class="muted" style="margin: 4px 0 0; font-size: 12px;">${escapeHtml(alert.timestamp)}</p>
+                    <p class="muted alert-label">${escapeHtml(alert.label)}</p>
+                    <p class="muted meta-text">${escapeHtml(alert.timestamp)}</p>
                     ${alert.image_path ? `<img src="${escapeHtml(alert.image_path)}?t=${Date.now()}" alt="">` : ""}
                 </article>
             `).join("");
@@ -2600,7 +2639,7 @@
                             <article class="result-item ${itemTone}">
                                 <div>
                                     <strong>${escapeHtml(title)}</strong>
-                                    <p class="muted" style="margin: 4px 0 0; font-size: 12px;">${escapeHtml(mediaItemMeta(item))}</p>
+                                    <p class="muted meta-text">${escapeHtml(mediaItemMeta(item))}</p>
                                 </div>
                                 ${badge ? `<span class="pill ${badgeClass}">${escapeHtml(badge)}</span>` : ""}
                             </article>
@@ -2639,7 +2678,7 @@
                         <span class="metric-label">${t("mediaAlerts")}</span>
                     </div>
                 </div>
-                <p class="muted" style="margin: 0;">${metaText}</p>
+                <p class="muted compact-note">${metaText}</p>
                 ${result.snapshot_path ? `<img class="media-preview" src="${escapeHtml(result.snapshot_path)}?t=${Date.now()}" alt="${t("mediaPreview")}">` : ""}
                 <div class="result-section">
                     <div class="result-section-title"><span>${t("mediaEntered")}</span><span>${result.entered_count ?? 0}</span></div>
@@ -2770,7 +2809,6 @@
                 });
                 elements.employeeRegisterStatus.textContent = t("employeeCreated");
                 document.getElementById("usernameInput").value = username;
-                document.getElementById("passwordInput").value = password;
                 elements.employeeRegisterForm.reset();
                 state.selectedRole = "admin";
                 toggleEmployeeRegisterPanel(false);

@@ -4,4 +4,7 @@ __pycache__/
 *.tmp.db
 *.tmp.db-journal
 *.bak
+*.log
+*.db
+*.db-journal
 RealtimeAccess/captures/

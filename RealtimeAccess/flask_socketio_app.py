@@ -1,10 +1,14 @@
 import json
+import logging
+import os
 import pickle
 import queue
+import secrets
 import sqlite3
 import tempfile
 import threading
 import time
+import webbrowser
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
@@ -30,6 +34,8 @@ from realtime_face_access import (
     trigger_alarm,
 )
 
+
+logger = logging.getLogger(__name__)
 
 REALTIME_DIR = Path(__file__).resolve().parent
 SCREENSHOT_DIR = REALTIME_DIR / "captures"
@@ -59,11 +65,30 @@ VALID_ROLES = {"Student", "Staff", "Admin", "Security"}
 ACCOUNT_ROLES = {"admin", "security"}
 ADMISSION_SYNC_INTERVAL_SECONDS = 15
 ADMISSION_SYNC_BATCH_SIZE = 25
+MIN_PASSWORD_LENGTH = 8
+
+
+def env_flag(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str) -> list[str] | None:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return None
+    return [item.strip() for item in value.split(",") if item.strip()]
+
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.config["SECRET_KEY"] = "university-face-access"
+app.config["SECRET_KEY"] = os.environ.get("ACCESS_SECRET_KEY") or secrets.token_hex(32)
 app.config["MAX_CONTENT_LENGTH"] = MEDIA_SCAN_MAX_UPLOAD_BYTES
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = env_flag("ACCESS_COOKIE_SECURE", False)
+socketio = SocketIO(app, cors_allowed_origins=env_list("ACCESS_ALLOWED_ORIGINS"))
 
 
 def get_connection() -> sqlite3.Connection:
@@ -382,6 +407,17 @@ def create_admissions_employee(
     return create_app_user("admin", full_name, username, password, email, phone)
 
 
+def admin_user_exists() -> bool:
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            "SELECT 1 FROM app_users WHERE role = 'admin' LIMIT 1"
+        ).fetchone()
+        return row is not None
+    finally:
+        connection.close()
+
+
 def optimize_image_for_web(frame: np.ndarray, max_width: int = CAPTURE_MAX_WIDTH) -> np.ndarray:
     height, width = frame.shape[:2]
     if width <= max_width:
@@ -693,7 +729,7 @@ def emit_security_event(decision: FrameDecision, image_path: str) -> None:
         "image_path": image_path,
     }
     socketio.emit("security_event", payload)
-    print(f"EVENT: {json.dumps(payload)}")
+    logger.info("EVENT: %s", json.dumps(payload))
 
 
 def placeholder_frame(message: str) -> np.ndarray:
@@ -1324,7 +1360,7 @@ def admissions_sync_loop() -> None:
         try:
             sync_admission_students()
         except Exception as error:
-            print(f"ADMISSION_SYNC_ERROR: {error}")
+            logger.exception("ADMISSION_SYNC_ERROR: %s", error)
         time.sleep(ADMISSION_SYNC_INTERVAL_SECONDS)
 
 
@@ -1381,6 +1417,10 @@ def auth_login():
 
 @app.route("/api/auth/register-admissions-employee", methods=["POST"])
 def register_admissions_employee():
+    user = get_current_user()
+    if admin_user_exists() and (user is None or user.get("role") != "admin"):
+        return jsonify({"error": "Only an admin can create another admissions employee"}), 403
+
     payload = request.get_json(silent=True) or {}
     full_name = str(payload.get("full_name", "")).strip()
     username = str(payload.get("username", "")).strip()
@@ -1390,8 +1430,8 @@ def register_admissions_employee():
 
     if not full_name or not username or not password:
         return jsonify({"error": "full_name, username, and password are required"}), 400
-    if len(password) < 4:
-        return jsonify({"error": "Password must be at least 4 characters"}), 400
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
 
     try:
         user = create_admissions_employee(full_name, username, password, email, phone)
@@ -1417,8 +1457,8 @@ def create_security_user():
 
     if not full_name or not username or not password:
         return jsonify({"error": "full_name, username, and password are required"}), 400
-    if len(password) < 4:
-        return jsonify({"error": "Password must be at least 4 characters"}), 400
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
 
     try:
         user = create_app_user("security", full_name, username, password, email, phone)
@@ -1648,11 +1688,19 @@ def register():
 
 
 if __name__ == "__main__":
+    access_host = os.environ.get("ACCESS_HOST", "127.0.0.1")
+    access_port = int(os.environ.get("ACCESS_PORT", "5000"))
+    local_host = access_host in {"127.0.0.1", "localhost", "::1"}
+    browser_host = "127.0.0.1" if access_host == "0.0.0.0" else access_host
+    browser_url = f"http://{browser_host}:{access_port}"
+    if env_flag("ACCESS_OPEN_BROWSER", True):
+        threading.Timer(1.0, lambda: webbrowser.open_new_tab(browser_url)).start()
+
     socketio.run(
         app,
-        host="0.0.0.0",
-        port=5000,
-        debug=True,
+        host=access_host,
+        port=access_port,
+        debug=env_flag("ACCESS_DEBUG", False),
         use_reloader=False,
-        allow_unsafe_werkzeug=True,
+        allow_unsafe_werkzeug=env_flag("ACCESS_ALLOW_UNSAFE_WERKZEUG", local_host),
     )
