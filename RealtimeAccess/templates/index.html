@@ -68,10 +68,10 @@
             margin: 0;
             min-height: 100vh;
             background:
-                linear-gradient(135deg, rgba(6, 31, 62, 0.14), transparent 42%),
-                radial-gradient(circle at 10% 10%, rgba(47, 126, 216, 0.34), transparent 28%),
-                radial-gradient(circle at 90% 14%, rgba(15, 159, 154, 0.2), transparent 26%),
-                linear-gradient(135deg, #cde7ff 0%, #74b2ed 48%, #2265aa 100%);
+                linear-gradient(135deg, rgba(2, 9, 22, 0.28), transparent 42%),
+                radial-gradient(circle at 10% 10%, rgba(47, 126, 216, 0.26), transparent 28%),
+                radial-gradient(circle at 90% 14%, rgba(15, 159, 154, 0.16), transparent 26%),
+                linear-gradient(135deg, #071527 0%, #123b65 48%, #0a2342 100%);
             color: var(--text);
             font-family: "Segoe UI", "Tahoma", Arial, sans-serif;
             letter-spacing: 0;
@@ -136,11 +136,148 @@
 
         .login-shell::after {
             background:
-                linear-gradient(112deg, transparent 0 42%, rgba(255, 255, 255, 0.26) 47%, transparent 52%),
-                linear-gradient(180deg, transparent 0 68%, rgba(9, 42, 82, 0.16) 100%);
-            opacity: 0.34;
+                linear-gradient(112deg, transparent 0 42%, rgba(120, 195, 255, 0.2) 47%, transparent 52%),
+                linear-gradient(180deg, transparent 0 62%, rgba(2, 10, 22, 0.46) 100%);
+            opacity: 0.46;
             transform: translateX(-68%);
             animation: securitySweep 8s ease-in-out infinite;
+        }
+
+        .login-geometry {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .login-geometry span {
+            position: absolute;
+            display: block;
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+                repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.1) 19px, transparent 20px);
+            box-shadow: 0 22px 56px rgba(8, 40, 68, 0.13);
+            backdrop-filter: blur(8px);
+            opacity: 0.68;
+        }
+
+        .geo-frame {
+            width: 190px;
+            height: 190px;
+            inset-block-start: 9%;
+            inset-inline-end: 7%;
+            clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+            animation: geometricFloat 10s ease-in-out infinite;
+        }
+
+        .geo-chip {
+            width: 150px;
+            height: 82px;
+            inset-block-end: 13%;
+            inset-inline-start: 7%;
+            border-radius: 8px;
+            animation: geometricFloat 12s ease-in-out infinite reverse;
+        }
+
+        .geo-line {
+            width: 280px;
+            height: 2px;
+            inset-block-start: 67%;
+            inset-inline-end: 13%;
+            border: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
+            box-shadow: 0 0 24px rgba(255, 255, 255, 0.42);
+            animation: signalLine 5s ease-in-out infinite;
+        }
+
+        .corner-camera {
+            position: fixed;
+            z-index: 1;
+            inset-block-start: 38px;
+            inset-inline-start: 42px;
+            width: 178px;
+            height: 126px;
+            pointer-events: none;
+            transform-origin: 62px 32px;
+            animation: cameraPatrol 7.5s ease-in-out infinite;
+            filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.26));
+        }
+
+        .camera-arm {
+            position: absolute;
+            top: 18px;
+            inset-inline-start: 8px;
+            width: 82px;
+            height: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(228, 242, 255, 0.72), rgba(108, 151, 190, 0.52));
+            transform: rotate(-13deg);
+        }
+
+        .camera-arm::before {
+            content: "";
+            position: absolute;
+            width: 34px;
+            height: 34px;
+            top: -10px;
+            inset-inline-start: -14px;
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #e8f7ff, #42739f 72%);
+        }
+
+        .camera-body {
+            position: absolute;
+            top: 28px;
+            inset-inline-start: 58px;
+            width: 104px;
+            height: 56px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 12px 28px 28px 12px;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 38%),
+                linear-gradient(180deg, #d8edf9, #7198b9 64%, #426985);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+        }
+
+        .camera-body::before {
+            content: "";
+            position: absolute;
+            top: 12px;
+            inset-inline-end: 9px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 42% 38%, #8ee8ff 0 16%, #10243b 18% 46%, #07131f 48% 100%);
+            box-shadow: 0 0 18px rgba(52, 179, 154, 0.42);
+        }
+
+        .camera-body::after {
+            content: "";
+            position: absolute;
+            top: 17px;
+            inset-inline-start: 14px;
+            width: 28px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(14, 45, 77, 0.42);
+            box-shadow: 0 11px 0 rgba(14, 45, 77, 0.26);
+        }
+
+        .camera-beam {
+            position: absolute;
+            top: 50px;
+            inset-inline-start: 132px;
+            width: 118px;
+            height: 72px;
+            opacity: 0.28;
+            clip-path: polygon(0 36%, 100% 0, 100% 100%, 0 64%);
+            background: linear-gradient(90deg, rgba(142, 232, 255, 0.48), transparent);
+            animation: cameraBeam 7.5s ease-in-out infinite;
         }
 
         .login-panel {
@@ -238,12 +375,16 @@
         }
 
         .login-intro h1 {
-            color: #082844;
-            text-shadow: 0 18px 44px rgba(8, 40, 68, 0.18);
+            color: #f4fbff;
+            text-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
         }
 
         .login-intro .eyebrow {
-            color: #0d5f9f;
+            color: #a9dcff;
+        }
+
+        .login-intro .muted {
+            color: rgba(235, 247, 255, 0.78);
         }
 
         .face-scan-visual {
@@ -279,6 +420,66 @@
             opacity: 0.62;
             transform: translateY(-74%);
             animation: panelScan 5.4s ease-in-out infinite;
+        }
+
+        .scan-radar {
+            position: absolute;
+            inset: 34px;
+            z-index: 1;
+            border-radius: 24px;
+            pointer-events: none;
+        }
+
+        .scan-radar::before,
+        .scan-radar::after {
+            content: "";
+            position: absolute;
+            inset: 8%;
+            border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: radarPulse 3.8s ease-out infinite;
+        }
+
+        .scan-radar::after {
+            animation-delay: 1.6s;
+        }
+
+        .scan-corner {
+            position: absolute;
+            z-index: 4;
+            width: 46px;
+            height: 46px;
+            border-color: rgba(255, 255, 255, 0.78);
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.36));
+        }
+
+        .scan-corner.top-start {
+            top: 18px;
+            inset-inline-start: 18px;
+            border-top: 2px solid;
+            border-inline-start: 2px solid;
+        }
+
+        .scan-corner.top-end {
+            top: 18px;
+            inset-inline-end: 18px;
+            border-top: 2px solid;
+            border-inline-end: 2px solid;
+        }
+
+        .scan-corner.bottom-start {
+            bottom: 18px;
+            inset-inline-start: 18px;
+            border-bottom: 2px solid;
+            border-inline-start: 2px solid;
+        }
+
+        .scan-corner.bottom-end {
+            bottom: 18px;
+            inset-inline-end: 18px;
+            border-bottom: 2px solid;
+            border-inline-end: 2px solid;
         }
 
         .scan-person {
@@ -455,6 +656,44 @@
             }
         }
 
+        @keyframes geometricFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-18px) rotate(3deg);
+            }
+        }
+
+        @keyframes signalLine {
+            0%, 100% {
+                opacity: 0.18;
+                transform: scaleX(0.62);
+            }
+            48% {
+                opacity: 0.82;
+                transform: scaleX(1);
+            }
+        }
+
+        @keyframes cameraPatrol {
+            0%, 100% {
+                transform: rotate(-12deg) translateX(0);
+            }
+            50% {
+                transform: rotate(13deg) translateX(14px);
+            }
+        }
+
+        @keyframes cameraBeam {
+            0%, 100% {
+                opacity: 0.18;
+            }
+            50% {
+                opacity: 0.42;
+            }
+        }
+
         @keyframes panelScan {
             0%, 18% {
                 transform: translateY(-78%);
@@ -465,6 +704,17 @@
             }
             82%, 100% {
                 transform: translateY(78%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes radarPulse {
+            0% {
+                transform: scale(0.58);
+                opacity: 0.78;
+            }
+            78%, 100% {
+                transform: scale(1.18);
                 opacity: 0;
             }
         }
@@ -1191,7 +1441,6 @@
             border-radius: 18px;
             background: #0f0f10;
             object-fit: contain;
-            transform: scaleX(-1);
         }
 
         .table-wrap {
@@ -1237,6 +1486,147 @@
             object-fit: cover;
             border: 1px solid var(--border);
             background: var(--surface-muted);
+        }
+
+        .qr-code-preview {
+            width: min(220px, 100%);
+            aspect-ratio: 1;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+            padding: 12px;
+            object-fit: contain;
+        }
+
+        .access-log-student-button {
+            border: 0;
+            background: transparent;
+            color: var(--text);
+            padding: 0;
+            font-weight: 900;
+            text-align: start;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        .access-log-student-button.repeated {
+            color: var(--warning);
+        }
+
+        .access-log-history-row td {
+            background: color-mix(in srgb, var(--primary) 8%, transparent);
+            padding: 0;
+        }
+
+        .access-log-history {
+            display: grid;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .access-log-history-item {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--surface) 92%, white 8%);
+            padding: 10px 12px;
+        }
+
+        .registered-students-list {
+            min-height: 100%;
+        }
+
+        .student-name-list {
+            display: grid;
+            gap: 10px;
+            max-height: 620px;
+            overflow: auto;
+            padding-inline-end: 4px;
+        }
+
+        .student-name-item {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr);
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface-muted) 86%, white 14%);
+            color: var(--text);
+            padding: 10px;
+            text-align: start;
+        }
+
+        .student-name-item:hover,
+        .student-name-item.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+        }
+
+        .student-name-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-weight: 900;
+        }
+
+        .student-name-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .student-name-info,
+        .student-name-info strong,
+        .student-name-info span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .person-detail-panel {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .person-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .person-detail-item {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface) 90%, white 10%);
+            padding: 11px 12px;
+            min-width: 0;
+        }
+
+        .person-detail-item span,
+        .person-detail-item strong {
+            display: block;
+            overflow-wrap: anywhere;
+        }
+
+        .person-detail-item span {
+            margin-bottom: 4px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
         }
 
         .live-panel {
@@ -1447,6 +1837,17 @@
                 grid-template-columns: 1fr;
             }
 
+            .login-geometry {
+                opacity: 0.46;
+            }
+
+            .corner-camera {
+                opacity: 0.58;
+                transform: scale(0.82);
+                inset-block-start: 22px;
+                inset-inline-start: 18px;
+            }
+
             .admin-page {
                 grid-template-columns: 1fr;
             }
@@ -1471,6 +1872,14 @@
                 padding: 14px;
             }
 
+            .login-geometry {
+                display: none;
+            }
+
+            .corner-camera {
+                display: none;
+            }
+
             .login-intro, .login-form-panel, .card {
                 padding: 18px;
             }
@@ -1479,7 +1888,7 @@
                 border-radius: 18px;
             }
 
-            .settings-row, .form-grid, .media-scan-form, .media-summary {
+            .settings-row, .form-grid, .media-scan-form, .media-summary, .person-detail-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -1518,6 +1927,11 @@
             .alert-card::after,
             .face-scan-visual::after,
             .scan-line,
+            .scan-radar::before,
+            .scan-radar::after,
+            .login-geometry span,
+            .corner-camera,
+            .camera-beam,
             .primary-button::after {
                 animation: none;
             }
@@ -1526,6 +1940,16 @@
 </head>
 <body data-theme="blue">
     <div id="loginScreen" class="login-shell">
+        <div class="login-geometry" aria-hidden="true">
+            <span class="geo-frame"></span>
+            <span class="geo-chip"></span>
+            <span class="geo-line"></span>
+        </div>
+        <div class="corner-camera" aria-hidden="true">
+            <span class="camera-arm"></span>
+            <span class="camera-body"></span>
+            <span class="camera-beam"></span>
+        </div>
         <section class="login-panel">
             <div class="login-intro">
                 <div class="brand-row">
@@ -1539,6 +1963,11 @@
                     </div>
                 </div>
                 <div class="face-scan-visual" aria-hidden="true">
+                    <span class="scan-radar"></span>
+                    <span class="scan-corner top-start"></span>
+                    <span class="scan-corner top-end"></span>
+                    <span class="scan-corner bottom-start"></span>
+                    <span class="scan-corner bottom-end"></span>
                     <span class="scan-pill">FACE ID ACTIVE</span>
                     <div class="scan-person">
                         <div class="scan-head"></div>
@@ -1680,7 +2109,7 @@
                     <button class="admin-tab active" type="button" data-admin-tab="sync" data-i18n="tabSync">المزامنة</button>
                     <button class="admin-tab" type="button" data-admin-tab="register" data-i18n="tabRegister">تسجيل طالب جديد</button>
                     <button class="admin-tab" type="button" data-admin-tab="securityUsers" data-i18n="tabSecurityUsers">إضافة رجل أمن</button>
-                    <button class="admin-tab" type="button" data-admin-tab="students" data-i18n="tabStudents">الطلاب المسجلون</button>
+                    <button class="admin-tab" type="button" data-admin-tab="accessLogs" data-i18n="tabAccessLogs">عمليات الدخول</button>
                     <button class="admin-tab" type="button" data-admin-tab="graduates" data-i18n="tabGraduates">الخريجون</button>
                 </nav>
                 <div class="stack">
@@ -1764,7 +2193,7 @@
                                     <h3 data-i18n="cameraPreviewTitle">Camera Preview</h3>
                                 </div>
                             </div>
-                            <video id="cameraModalVideo" class="camera-modal-video" autoplay playsinline muted></video>
+                            <img id="cameraModalPreview" class="camera-modal-video" alt="">
                             <div class="row modal-actions">
                                 <button id="takePhotoButton" class="primary-button" type="button" data-i18n="takePhoto">Take Photo</button>
                                 <button id="closeCameraModalButton" class="ghost-button" type="button" data-i18n="cancel">Cancel</button>
@@ -1814,28 +2243,26 @@
                 </div>
 
                 <div class="stack">
-                    <section class="card admin-panel" data-admin-panel="students">
+                    <section class="card admin-panel registered-students-list" data-admin-panel="register">
                         <div class="card-header">
                             <div>
                                 <p class="eyebrow" data-i18n="registeredStudents">الطلاب المسجلون</p>
-                                <h3><span id="studentsCount">0</span> <span data-i18n="students">طلاب</span></h3>
+                                <h3><span id="registeredStudentsListCount">0</span> <span data-i18n="students">طلاب</span></h3>
                             </div>
                         </div>
-                        <div class="table-wrap">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th data-i18n="photo">الصورة</th>
-                                        <th data-i18n="studentName">اسم الطالب</th>
-                                        <th data-i18n="studentId">الرقم الجامعي</th>
-                                        <th data-i18n="role">الدور</th>
-                                        <th data-i18n="createdAt">تاريخ التسجيل</th>
-                                        <th data-i18n="action">إجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="studentsTableBody"></tbody>
-                            </table>
+                        <div id="registeredStudentsList" class="student-name-list"></div>
+                        <div id="registeredStudentDetails" class="person-detail-panel"></div>
+                    </section>
+
+                    <section class="card admin-panel registered-students-list" data-admin-panel="securityUsers">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="registeredSecurityUsers">رجال الأمن المسجلون</p>
+                                <h3><span id="registeredSecurityUsersCount">0</span> <span data-i18n="securityUsers">رجال أمن</span></h3>
+                            </div>
                         </div>
+                        <div id="registeredSecurityUsersList" class="student-name-list"></div>
+                        <div id="registeredSecurityUserDetails" class="person-detail-panel"></div>
                     </section>
 
                     <section class="card admin-panel" data-admin-panel="graduates">
@@ -1865,6 +2292,34 @@
                             </table>
                         </div>
                         <p id="graduatesStatus" class="status-text"></p>
+                    </section>
+
+                    <section class="card admin-panel" data-admin-panel="accessLogs">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="accessLogs">عمليات الدخول</p>
+                                <h3><span id="accessLogsCount">0</span> <span data-i18n="entries">عملية</span></h3>
+                            </div>
+                            <div class="toolbar">
+                                <button id="selectAllAccessLogsButton" class="secondary-button" type="button" data-i18n="selectAll">تحديد الكل</button>
+                                <button id="deleteSelectedAccessLogsButton" class="danger-button" type="button" data-i18n="deleteSelected">حذف المحدد</button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th data-i18n="studentId">الرقم الجامعي</th>
+                                        <th data-i18n="day">اليوم</th>
+                                        <th data-i18n="date">التاريخ</th>
+                                        <th data-i18n="exactTime">الساعة بالضبط</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="accessLogsTableBody"></tbody>
+                            </table>
+                        </div>
+                        <p id="accessLogsStatus" class="status-text"></p>
                     </section>
                 </div>
             </section>
@@ -1908,6 +2363,24 @@
                         <p id="mediaScanStatus" class="status-text"></p>
                         <div id="mediaScanResults" class="media-results hidden"></div>
                     </section>
+
+                    <section class="card">
+                        <div class="card-header">
+                            <div>
+                                <p class="eyebrow" data-i18n="qrFallback">تحقق بديل</p>
+                                <h3 data-i18n="qrVerifyTitle">تسجيل الدخول عبر الرقم الجامعي و QR</h3>
+                            </div>
+                        </div>
+                        <form id="qrStudentIdForm" class="media-scan-form">
+                            <div class="field">
+                                <label for="qrStudentIdInput" data-i18n="studentId">الرقم الجامعي</label>
+                                <input id="qrStudentIdInput" type="text" required>
+                            </div>
+                            <button id="qrStudentIdButton" class="primary-button" type="submit" data-i18n="verifyStudentId">تحقق وسجل الدخول</button>
+                        </form>
+                        <p id="qrStatus" class="status-text"></p>
+                        <div id="qrResult" class="media-results hidden"></div>
+                    </section>
                 </div>
 
                 <aside class="card">
@@ -1940,7 +2413,7 @@
                 tabSync: "المزامنة",
                 tabRegister: "تسجيل طالب جديد",
                 tabSecurityUsers: "إضافة رجل أمن",
-                tabStudents: "الطلاب المسجلون",
+                tabAccessLogs: "عمليات الدخول",
                 tabGraduates: "الخريجون",
                 securityAccountManagement: "إدارة حسابات الأمن",
                 createSecurityAccount: "إنشاء حساب رجل أمن",
@@ -1989,6 +2462,18 @@
                 saveStudent: "حفظ الطالب",
                 registeredStudents: "الطلاب المسجلون",
                 students: "طلاب",
+                noStudentsList: "لا يوجد طلاب مسجلون بعد.",
+                registeredSecurityUsers: "رجال الأمن المسجلون",
+                securityUsers: "رجال أمن",
+                noSecurityUsersList: "لا يوجد رجال أمن مسجلون بعد.",
+                selectedDetails: "بيانات الشخص",
+                selectPersonForDetails: "اضغط على اسم من القائمة لعرض بياناته.",
+                fullNameLabel: "الاسم الكامل",
+                usernameLabel: "اسم المستخدم",
+                emailLabel: "البريد الإلكتروني",
+                phoneLabel: "رقم الهاتف",
+                createdAtLabel: "تاريخ الإنشاء",
+                lastLoginLabel: "آخر دخول",
                 photo: "الصورة",
                 createdAt: "تاريخ التسجيل",
                 action: "إجراء",
@@ -2000,6 +2485,13 @@
                 deleteSelected: "حذف المحدد",
                 completed: "أنهى المتطلبات",
                 graduatedAt: "تاريخ التخرج",
+                accessLogs: "عمليات الدخول",
+                entries: "عملية",
+                day: "اليوم",
+                date: "التاريخ",
+                exactTime: "الساعة بالضبط",
+                noAccessLogs: "لا توجد عمليات دخول حتى الآن.",
+                selectAccessLogFirst: "اختر عملية دخول واحدة على الأقل.",
                 securityLive: "شاشة الأمن",
                 liveCamera: "الكاميرا المباشرة",
                 checking: "جاري الفحص",
@@ -2035,6 +2527,15 @@
                 mediaPreview: "لقطة من التحليل",
                 detectedFaces: "وجوه مرصودة",
                 sampledFrames: "إطارات محللة",
+                qrFallback: "تحقق بديل",
+                qrVerifyTitle: "تسجيل الدخول عبر الرقم الجامعي و QR",
+                verifyStudentId: "تحقق وسجل الدخول",
+                qrVerified: "تم التحقق وتسجيل الدخول.",
+                qrTokenForStudent: "رمز QR للطالب",
+                showQrToken: "إظهار رمز QR",
+                qrTokenHelp: "حوّل هذا الرمز إلى QR خاص بالطالب.",
+                studentNotFound: "لم يتم العثور على الطالب.",
+                studentIdRequired: "أدخل الرقم الجامعي.",
                 detectionsLabel: "مرات الرصد",
                 frameLabel: "إطار",
                 secondLabel: "ثانية",
@@ -2068,7 +2569,7 @@
                 tabSync: "Sync",
                 tabRegister: "Register Student",
                 tabSecurityUsers: "Add Security Guard",
-                tabStudents: "Registered Students",
+                tabAccessLogs: "Access Logs",
                 tabGraduates: "Graduates",
                 securityAccountManagement: "Security Account Management",
                 createSecurityAccount: "Create Security Account",
@@ -2117,6 +2618,18 @@
                 saveStudent: "Save Student",
                 registeredStudents: "Registered Students",
                 students: "Students",
+                noStudentsList: "No registered students yet.",
+                registeredSecurityUsers: "Registered Security Guards",
+                securityUsers: "Security Guards",
+                noSecurityUsersList: "No security guards registered yet.",
+                selectedDetails: "Person Details",
+                selectPersonForDetails: "Click a name in the list to show details.",
+                fullNameLabel: "Full Name",
+                usernameLabel: "Username",
+                emailLabel: "Email",
+                phoneLabel: "Phone",
+                createdAtLabel: "Created At",
+                lastLoginLabel: "Last Login",
                 photo: "Photo",
                 createdAt: "Created At",
                 action: "Action",
@@ -2128,6 +2641,13 @@
                 deleteSelected: "Delete Selected",
                 completed: "Completed",
                 graduatedAt: "Graduated At",
+                accessLogs: "Access Logs",
+                entries: "Entries",
+                day: "Day",
+                date: "Date",
+                exactTime: "Exact Time",
+                noAccessLogs: "No access entries yet.",
+                selectAccessLogFirst: "Select at least one access entry.",
                 securityLive: "Security Screen",
                 liveCamera: "Live Camera",
                 checking: "Checking",
@@ -2163,6 +2683,15 @@
                 mediaPreview: "Analysis Snapshot",
                 detectedFaces: "Detected Faces",
                 sampledFrames: "Analyzed Frames",
+                qrFallback: "Fallback Verification",
+                qrVerifyTitle: "Student ID And QR Access Check",
+                verifyStudentId: "Verify And Record Entry",
+                qrVerified: "Verified and access recorded.",
+                qrTokenForStudent: "Student QR Token",
+                showQrToken: "Show QR Token",
+                qrTokenHelp: "Encode this token into the student's QR code.",
+                studentNotFound: "Student was not found.",
+                studentIdRequired: "Enter the university ID.",
                 detectionsLabel: "Detections",
                 frameLabel: "Frame",
                 secondLabel: "Second",
@@ -2195,7 +2724,13 @@
             user: null,
             students: [],
             graduates: [],
+            securityUsers: [],
+            accessLogs: [],
+            selectedStudentId: null,
+            selectedSecurityUserId: null,
+            expandedAccessLogStudentId: null,
             selectedGraduateIds: new Set(),
+            selectedAccessLogIds: new Set(),
             alerts: [],
             cameraEnabled: true,
             socket: null,
@@ -2237,7 +2772,7 @@
             studentImageInput: document.getElementById("studentImageInput"),
             studentImageSelectionStatus: document.getElementById("studentImageSelectionStatus"),
             cameraModal: document.getElementById("cameraModal"),
-            cameraModalVideo: document.getElementById("cameraModalVideo"),
+            cameraModalPreview: document.getElementById("cameraModalPreview"),
             takePhotoButton: document.getElementById("takePhotoButton"),
             closeCameraModalButton: document.getElementById("closeCameraModalButton"),
             cameraModalStatus: document.getElementById("cameraModalStatus"),
@@ -2245,13 +2780,22 @@
             securityUserForm: document.getElementById("securityUserForm"),
             createSecurityUserButton: document.getElementById("createSecurityUserButton"),
             securityUserStatus: document.getElementById("securityUserStatus"),
-            studentsCount: document.getElementById("studentsCount"),
-            studentsTableBody: document.getElementById("studentsTableBody"),
+            registeredStudentsListCount: document.getElementById("registeredStudentsListCount"),
+            registeredStudentsList: document.getElementById("registeredStudentsList"),
+            registeredStudentDetails: document.getElementById("registeredStudentDetails"),
+            registeredSecurityUsersCount: document.getElementById("registeredSecurityUsersCount"),
+            registeredSecurityUsersList: document.getElementById("registeredSecurityUsersList"),
+            registeredSecurityUserDetails: document.getElementById("registeredSecurityUserDetails"),
             graduatesCount: document.getElementById("graduatesCount"),
             graduatesTableBody: document.getElementById("graduatesTableBody"),
             selectAllGraduatesButton: document.getElementById("selectAllGraduatesButton"),
             deleteSelectedGraduates: document.getElementById("deleteSelectedGraduates"),
             graduatesStatus: document.getElementById("graduatesStatus"),
+            accessLogsCount: document.getElementById("accessLogsCount"),
+            accessLogsTableBody: document.getElementById("accessLogsTableBody"),
+            selectAllAccessLogsButton: document.getElementById("selectAllAccessLogsButton"),
+            deleteSelectedAccessLogsButton: document.getElementById("deleteSelectedAccessLogsButton"),
+            accessLogsStatus: document.getElementById("accessLogsStatus"),
             videoStream: document.getElementById("videoStream"),
             cameraBadge: document.getElementById("cameraBadge"),
             cameraToggleButton: document.getElementById("cameraToggleButton"),
@@ -2262,6 +2806,11 @@
             mediaScanButton: document.getElementById("mediaScanButton"),
             mediaScanStatus: document.getElementById("mediaScanStatus"),
             mediaScanResults: document.getElementById("mediaScanResults"),
+            qrStudentIdForm: document.getElementById("qrStudentIdForm"),
+            qrStudentIdInput: document.getElementById("qrStudentIdInput"),
+            qrStudentIdButton: document.getElementById("qrStudentIdButton"),
+            qrStatus: document.getElementById("qrStatus"),
+            qrResult: document.getElementById("qrResult"),
             alertsCount: document.getElementById("alertsCount"),
             alertsContainer: document.getElementById("alertsContainer")
         };
@@ -2282,6 +2831,9 @@
                 "media file is required": t("selectMediaFile"),
                 "The uploaded image could not be read.": t("uploadedImageUnreadable"),
                 "Unsupported media type. Please upload an image or video file.": t("unsupportedMediaType"),
+                "Student was not found": t("studentNotFound"),
+                "student_id is required": t("studentIdRequired"),
+                "log_ids is required": t("selectAccessLogFirst"),
             };
             return map[message] || message;
         }
@@ -2304,7 +2856,7 @@
                 state.registerCameraStream.getTracks().forEach((track) => track.stop());
                 state.registerCameraStream = null;
             }
-            elements.cameraModalVideo.srcObject = null;
+            elements.cameraModalPreview.removeAttribute("src");
         }
 
         function closeCameraModal() {
@@ -2314,44 +2866,17 @@
         }
 
         async function openCameraModal() {
-            const localhostNames = new Set(["localhost", "127.0.0.1", "::1"]);
-            if (!window.isSecureContext && !localhostNames.has(window.location.hostname)) {
-                throw new Error(t("cameraSecureContextRequired"));
-            }
-            if (!navigator.mediaDevices?.getUserMedia) {
-                throw new Error(t("cameraAccessError"));
-            }
             closeCameraModal();
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    aspectRatio: { ideal: 16 / 9 }
-                },
-                audio: false
-            });
-            state.registerCameraStream = stream;
-            elements.cameraModalVideo.srcObject = stream;
+            elements.cameraModalPreview.src = `/registration_camera_feed?t=${Date.now()}`;
             elements.cameraModal.classList.remove("hidden");
         }
 
         async function captureImageFromCamera() {
-            const video = elements.cameraModalVideo;
-            if (!state.registerCameraStream || !video.videoWidth || !video.videoHeight) {
+            const response = await fetch(`/api/register/capture-image?t=${Date.now()}`);
+            if (!response.ok) {
                 throw new Error(t("cameraAccessError"));
             }
-
-            const canvas = document.createElement("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext("2d");
-            context.translate(canvas.width, 0);
-            context.scale(-1, 1);
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
-            if (!blob) {
-                throw new Error(t("cameraAccessError"));
-            }
+            const blob = await response.blob();
 
             clearCapturedStudentImage();
             elements.studentImageInput.value = "";
@@ -2459,15 +2984,21 @@
         }
 
         async function refreshAdminData() {
-            const [studentsPayload, graduatesPayload, admissionsPayload] = await Promise.all([
+            const [studentsPayload, graduatesPayload, securityUsersPayload, admissionsPayload, logsPayload] = await Promise.all([
                 fetchJson("/api/students"),
                 fetchJson("/api/graduates"),
-                fetchJson("/api/admissions/status")
+                fetchJson("/api/security-users"),
+                fetchJson("/api/admissions/status"),
+                fetchJson("/api/logs")
             ]);
             state.students = studentsPayload.items || [];
             state.graduates = graduatesPayload.items || [];
+            state.securityUsers = securityUsersPayload.items || [];
+            state.accessLogs = logsPayload.items || [];
             const validIds = new Set(state.graduates.map((graduate) => graduate.id));
             state.selectedGraduateIds = new Set([...state.selectedGraduateIds].filter((id) => validIds.has(id)));
+            const validLogIds = new Set(state.accessLogs.map((log) => String(log.id)));
+            state.selectedAccessLogIds = new Set([...state.selectedAccessLogIds].filter((id) => validLogIds.has(id)));
             renderAdmissions(admissionsPayload);
             renderAdmin();
         }
@@ -2476,6 +3007,87 @@
             elements.admissionTotal.textContent = status.total ?? 0;
             elements.admissionPending.textContent = status.pending ?? 0;
             elements.admissionErrors.textContent = status.errors ?? 0;
+        }
+
+        function renderDetailItems(items) {
+            return `
+                <div class="person-detail-grid">
+                    ${items.map((item) => `
+                        <div class="person-detail-item">
+                            <span>${escapeHtml(item.label)}</span>
+                            <strong>${escapeHtml(item.value || "-")}</strong>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        function renderStudentDetails(student) {
+            if (!student) {
+                elements.registeredStudentDetails.innerHTML = `<p class="muted compact-note">${t("selectPersonForDetails")}</p>`;
+                return;
+            }
+
+            elements.registeredStudentDetails.innerHTML = `
+                <h3>${t("selectedDetails")}</h3>
+                ${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}" alt="">` : ""}
+                ${renderDetailItems([
+                    { label: t("studentName"), value: student.name },
+                    { label: t("studentId"), value: student.id },
+                    { label: t("role"), value: student.role },
+                    { label: t("createdAtLabel"), value: student.created_at }
+                ])}
+                <button class="secondary-button show-student-qr-button" type="button" data-id="${escapeHtml(student.id)}">${t("showQrToken")}</button>
+                <div id="studentQrTokenPanel" class="hidden"></div>
+            `;
+        }
+
+        function renderSecurityUserDetails(user) {
+            if (!user) {
+                elements.registeredSecurityUserDetails.innerHTML = `<p class="muted compact-note">${t("selectPersonForDetails")}</p>`;
+                return;
+            }
+
+            elements.registeredSecurityUserDetails.innerHTML = `
+                <h3>${t("selectedDetails")}</h3>
+                ${renderDetailItems([
+                    { label: t("fullNameLabel"), value: user.full_name },
+                    { label: t("usernameLabel"), value: user.username },
+                    { label: t("emailLabel"), value: user.email },
+                    { label: t("phoneLabel"), value: user.phone },
+                    { label: t("createdAtLabel"), value: user.created_at },
+                    { label: t("lastLoginLabel"), value: user.last_login_at }
+                ])}
+            `;
+        }
+
+        function formatAccessLogParts(timestamp) {
+            const date = new Date(timestamp);
+            if (Number.isNaN(date.getTime())) {
+                return { day: "-", date: "-", time: "-" };
+            }
+            const locale = state.language === "ar" ? "ar-JO" : "en-US";
+            return {
+                day: date.toLocaleDateString(locale, { weekday: "long" }),
+                date: date.toLocaleDateString(locale, { year: "numeric", month: "2-digit", day: "2-digit" }),
+                time: date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+            };
+        }
+
+        function groupedAccessLogs() {
+            const groups = new Map();
+            state.accessLogs.forEach((log) => {
+                const key = log.student_id || "unknown";
+                if (!groups.has(key)) groups.set(key, { studentId: key, logs: [] });
+                groups.get(key).logs.push(log);
+            });
+
+            return [...groups.values()].map((group) => {
+                group.logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                group.latest = group.logs[0] || {};
+                group.logIds = group.logs.map((log) => String(log.id));
+                return group;
+            }).sort((a, b) => new Date(b.latest.timestamp) - new Date(a.latest.timestamp));
         }
 
         function setAdminPanel(panel) {
@@ -2489,23 +3101,105 @@
         }
 
         function renderAdmin() {
-            if (!elements.studentsTableBody) return;
-            elements.studentsCount.textContent = state.students.length;
+            elements.registeredStudentsListCount.textContent = state.students.length;
             elements.graduatesCount.textContent = state.graduates.length;
+            if (state.selectedStudentId && !state.students.some((student) => student.id === state.selectedStudentId)) {
+                state.selectedStudentId = null;
+            }
+            if (
+                state.selectedSecurityUserId &&
+                !state.securityUsers.some((user) => String(user.id) === String(state.selectedSecurityUserId))
+            ) {
+                state.selectedSecurityUserId = null;
+            }
 
             if (state.students.length === 0) {
-                elements.studentsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">${t("noStudents")}</td></tr>`;
+                elements.registeredStudentsList.innerHTML = `<p class="empty-state">${t("noStudentsList")}</p>`;
             } else {
-                elements.studentsTableBody.innerHTML = state.students.map((student) => `
-                    <tr>
-                        <td>${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}" alt="">` : ""}</td>
-                        <td>${escapeHtml(student.name)}</td>
-                        <td>${escapeHtml(student.id)}</td>
-                        <td>${escapeHtml(student.role)}</td>
-                        <td>${escapeHtml(student.created_at || "-")}</td>
-                        <td><button class="secondary-button graduate-button" type="button" data-id="${escapeHtml(student.id)}">${t("moveGraduate")}</button></td>
-                    </tr>
+                elements.registeredStudentsList.innerHTML = state.students.map((student) => `
+                    <button class="student-name-item registered-student-item ${state.selectedStudentId === student.id ? "active" : ""}" type="button" data-id="${escapeHtml(student.id)}">
+                        <span class="student-name-avatar">
+                            ${student.image_path ? `<img src="${escapeHtml(student.image_path)}" alt="">` : escapeHtml((student.name || "?").slice(0, 1))}
+                        </span>
+                        <span class="student-name-info">
+                            <strong>${escapeHtml(student.name)}</strong>
+                            <span class="muted meta-text">${escapeHtml(student.id)}</span>
+                        </span>
+                    </button>
                 `).join("");
+            }
+
+            elements.registeredSecurityUsersCount.textContent = state.securityUsers.length;
+            if (state.securityUsers.length === 0) {
+                elements.registeredSecurityUsersList.innerHTML = `<p class="empty-state">${t("noSecurityUsersList")}</p>`;
+            } else {
+                elements.registeredSecurityUsersList.innerHTML = state.securityUsers.map((user) => {
+                    const displayName = user.full_name || user.username;
+                    const meta = [user.username, user.phone || user.email].filter(Boolean).join(" / ");
+                    return `
+                        <button class="student-name-item registered-security-user-item ${String(state.selectedSecurityUserId) === String(user.id) ? "active" : ""}" type="button" data-id="${escapeHtml(String(user.id))}">
+                            <span class="student-name-avatar">${escapeHtml((displayName || "?").slice(0, 1))}</span>
+                            <span class="student-name-info">
+                                <strong>${escapeHtml(displayName)}</strong>
+                                <span class="muted meta-text">${escapeHtml(meta)}</span>
+                            </span>
+                        </button>
+                    `;
+                }).join("");
+            }
+
+            const selectedStudent = state.students.find((student) => student.id === state.selectedStudentId);
+            const selectedSecurityUser = state.securityUsers.find((user) => String(user.id) === String(state.selectedSecurityUserId));
+            renderStudentDetails(selectedStudent);
+            renderSecurityUserDetails(selectedSecurityUser);
+
+            const accessLogGroups = groupedAccessLogs();
+            elements.accessLogsCount.textContent = accessLogGroups.length;
+            elements.selectAllAccessLogsButton.textContent =
+                state.selectedAccessLogIds.size === state.accessLogs.length && state.accessLogs.length > 0
+                    ? t("clearSelection")
+                    : t("selectAll");
+            elements.deleteSelectedAccessLogsButton.disabled = state.selectedAccessLogIds.size === 0;
+            if (accessLogGroups.length === 0) {
+                elements.accessLogsTableBody.innerHTML = `<tr><td colspan="5" class="empty-state">${t("noAccessLogs")}</td></tr>`;
+            } else {
+                elements.accessLogsTableBody.innerHTML = accessLogGroups.map((group) => {
+                    const parts = formatAccessLogParts(group.latest.timestamp);
+                    const repeated = group.logs.length > 1;
+                    const allSelected = group.logIds.every((id) => state.selectedAccessLogIds.has(id));
+                    const expanded = state.expandedAccessLogStudentId === group.studentId;
+                    return `
+                        <tr>
+                            <td><input class="access-log-checkbox" type="checkbox" data-ids="${escapeHtml(group.logIds.join(","))}" ${allSelected ? "checked" : ""}></td>
+                            <td>
+                                <button class="access-log-student-button ${repeated ? "repeated" : ""}" type="button" data-student-id="${escapeHtml(group.studentId)}">
+                                    ${escapeHtml(group.studentId || "-")}
+                                </button>
+                            </td>
+                            <td>${escapeHtml(parts.day)}</td>
+                            <td>${escapeHtml(parts.date)}</td>
+                            <td>${escapeHtml(parts.time)}</td>
+                        </tr>
+                        ${expanded ? `
+                            <tr class="access-log-history-row">
+                                <td colspan="5">
+                                    <div class="access-log-history">
+                                        ${group.logs.map((log) => {
+                                            const historyParts = formatAccessLogParts(log.timestamp);
+                                            return `
+                                                <div class="access-log-history-item">
+                                                    <span>${escapeHtml(historyParts.day)}</span>
+                                                    <span>${escapeHtml(historyParts.date)}</span>
+                                                    <strong>${escapeHtml(historyParts.time)}</strong>
+                                                </div>
+                                            `;
+                                        }).join("")}
+                                    </div>
+                                </td>
+                            </tr>
+                        ` : ""}
+                    `;
+                }).join("");
             }
 
             elements.selectAllGraduatesButton.textContent =
@@ -2691,6 +3385,28 @@
                 <div class="result-section">
                     <div class="result-section-title"><span>${t("mediaMissing")}</span><span>${result.missing_count ?? 0}</span></div>
                     ${renderMediaList(result.missing || [], "mediaNoMissing", "warning")}
+                </div>
+            `;
+        }
+
+        function renderQrResult(payload) {
+            const student = payload.student || {};
+            const event = payload.event || {};
+            elements.qrResult.classList.remove("hidden");
+            elements.qrResult.innerHTML = `
+                <div class="result-section">
+                    <div class="result-section-title">
+                        <span>${t("qrVerified")}</span>
+                        <span class="pill success">${escapeHtml(event.event_type || "QR Verified")}</span>
+                    </div>
+                    ${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}?t=${Date.now()}" alt="">` : ""}
+                    ${payload.qr_image_url ? `<img class="qr-code-preview" src="${escapeHtml(payload.qr_image_url)}?t=${Date.now()}" alt="QR">` : ""}
+                    ${renderDetailItems([
+                        { label: t("studentName"), value: student.name },
+                        { label: t("studentId"), value: student.id },
+                        { label: t("role"), value: student.role },
+                        { label: t("createdAtLabel"), value: event.timestamp }
+                    ])}
                 </div>
             `;
         }
@@ -2902,6 +3618,7 @@
             elements.registerStatus.textContent = "";
             elements.studentImageSelectionStatus.textContent = "";
             const formData = new FormData(elements.registerForm);
+            const studentId = String(formData.get("student_id") || "").trim();
             const selectedImage =
                 (elements.studentImageInput.files && elements.studentImageInput.files[0]) ||
                 state.capturedStudentImage;
@@ -2917,6 +3634,7 @@
                 });
                 state.students = payload.students || [];
                 state.graduates = payload.graduates || [];
+                state.selectedStudentId = studentId || state.selectedStudentId;
                 renderAdmin();
                 elements.registerForm.reset();
                 clearCapturedStudentImage();
@@ -2959,6 +3677,33 @@
             }
         });
 
+        elements.qrStudentIdForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            elements.qrStatus.textContent = "";
+            elements.qrResult.classList.add("hidden");
+            const studentId = elements.qrStudentIdInput.value.trim();
+            if (!studentId) {
+                elements.qrStatus.textContent = t("studentIdRequired");
+                return;
+            }
+
+            elements.qrStudentIdButton.disabled = true;
+            try {
+                const payload = await fetchJson("/api/security/student-id-entry", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ student_id: studentId })
+                });
+                elements.qrStatus.textContent = t("qrVerified");
+                renderQrResult(payload);
+                elements.qrStudentIdForm.reset();
+            } catch (error) {
+                elements.qrStatus.textContent = localizeErrorMessage(error.message);
+            } finally {
+                elements.qrStudentIdButton.disabled = false;
+            }
+        });
+
         elements.securityUserForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             elements.securityUserStatus.textContent = "";
@@ -2976,7 +3721,7 @@
 
             elements.createSecurityUserButton.disabled = true;
             try {
-                await fetchJson("/api/security-users", {
+                const payload = await fetchJson("/api/security-users", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -2987,8 +3732,14 @@
                         password
                     })
                 });
+                state.securityUsers = payload.items || [
+                    payload.user,
+                    ...state.securityUsers
+                ].filter(Boolean);
+                state.selectedSecurityUserId = payload.user ? payload.user.id : state.selectedSecurityUserId;
                 elements.securityUserForm.reset();
                 elements.securityUserStatus.textContent = t("securityUserCreated");
+                renderAdmin();
                 setAdminPanel("securityUsers");
             } catch (error) {
                 elements.securityUserStatus.textContent = localizeErrorMessage(error.message);
@@ -2998,6 +3749,51 @@
         });
 
         document.addEventListener("click", async (event) => {
+            const showQrButton = event.target.closest(".show-student-qr-button");
+            if (showQrButton) {
+                const panel = document.getElementById("studentQrTokenPanel");
+                if (!panel) return;
+                panel.classList.remove("hidden");
+                panel.innerHTML = `<p class="muted compact-note">${t("checking")}</p>`;
+                try {
+                    const payload = await fetchJson(`/api/students/${encodeURIComponent(showQrButton.dataset.id)}/qr-token`);
+                    panel.innerHTML = `
+                        <img class="qr-code-preview" src="/api/students/${encodeURIComponent(showQrButton.dataset.id)}/qr-image?t=${Date.now()}" alt="QR">
+                        <div class="person-detail-item">
+                            <span>${t("qrTokenForStudent")}</span>
+                            <strong>${escapeHtml(payload.token)}</strong>
+                        </div>
+                        <p class="muted meta-text">${t("qrTokenHelp")}</p>
+                    `;
+                } catch (error) {
+                    panel.innerHTML = `<p class="status-text">${localizeErrorMessage(error.message)}</p>`;
+                }
+                return;
+            }
+
+            const registeredStudentButton = event.target.closest(".registered-student-item");
+            if (registeredStudentButton) {
+                state.selectedStudentId = registeredStudentButton.dataset.id;
+                renderAdmin();
+                return;
+            }
+
+            const registeredSecurityUserButton = event.target.closest(".registered-security-user-item");
+            if (registeredSecurityUserButton) {
+                state.selectedSecurityUserId = registeredSecurityUserButton.dataset.id;
+                renderAdmin();
+                return;
+            }
+
+            const accessLogStudentButton = event.target.closest(".access-log-student-button");
+            if (accessLogStudentButton) {
+                const studentId = accessLogStudentButton.dataset.studentId;
+                state.expandedAccessLogStudentId =
+                    state.expandedAccessLogStudentId === studentId ? null : studentId;
+                renderAdmin();
+                return;
+            }
+
             const graduateButton = event.target.closest(".graduate-button");
             if (!graduateButton) return;
             graduateButton.disabled = true;
@@ -3020,6 +3816,17 @@
             if (!checkbox) return;
             if (checkbox.checked) state.selectedGraduateIds.add(checkbox.dataset.id);
             else state.selectedGraduateIds.delete(checkbox.dataset.id);
+            renderAdmin();
+        });
+
+        document.addEventListener("change", (event) => {
+            const checkbox = event.target.closest(".access-log-checkbox");
+            if (!checkbox) return;
+            const ids = String(checkbox.dataset.ids || "").split(",").filter(Boolean);
+            ids.forEach((id) => {
+                if (checkbox.checked) state.selectedAccessLogIds.add(id);
+                else state.selectedAccessLogIds.delete(id);
+            });
             renderAdmin();
         });
 
@@ -3054,6 +3861,40 @@
                 elements.graduatesStatus.textContent = error.message;
             } finally {
                 elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
+            }
+        });
+
+        elements.selectAllAccessLogsButton.addEventListener("click", () => {
+            if (state.selectedAccessLogIds.size === state.accessLogs.length) {
+                state.selectedAccessLogIds.clear();
+            } else {
+                state.accessLogs.forEach((log) => state.selectedAccessLogIds.add(String(log.id)));
+            }
+            renderAdmin();
+        });
+
+        elements.deleteSelectedAccessLogsButton.addEventListener("click", async () => {
+            const logIds = [...state.selectedAccessLogIds];
+            if (logIds.length === 0) {
+                elements.accessLogsStatus.textContent = t("selectAccessLogFirst");
+                return;
+            }
+
+            elements.deleteSelectedAccessLogsButton.disabled = true;
+            try {
+                const payload = await fetchJson("/api/logs/delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ log_ids: logIds })
+                });
+                state.selectedAccessLogIds.clear();
+                state.accessLogs = payload.items || [];
+                renderAdmin();
+                elements.accessLogsStatus.textContent = t("deleted");
+            } catch (error) {
+                elements.accessLogsStatus.textContent = localizeErrorMessage(error.message);
+            } finally {
+                elements.deleteSelectedAccessLogsButton.disabled = state.selectedAccessLogIds.size === 0;
             }
         });
 

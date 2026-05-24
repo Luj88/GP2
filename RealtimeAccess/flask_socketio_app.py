@@ -18,6 +18,7 @@ import cv2
 import numpy as np
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory, session
 from flask_socketio import SocketIO
+from itsdangerous import BadSignature, URLSafeSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from realtime_face_access import (
@@ -89,6 +90,7 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = env_flag("ACCESS_COOKIE_SECURE", False)
 socketio = SocketIO(app, cors_allowed_origins=env_list("ACCESS_ALLOWED_ORIGINS"))
+qr_serializer = URLSafeSerializer(app.config["SECRET_KEY"], salt="student-entry-qr")
 
 
 def get_connection() -> sqlite3.Connection:
@@ -392,7 +394,25 @@ def create_app_user(
             "full_name": full_name,
             "email": email,
             "phone": phone,
+            "created_at": now,
         }
+    finally:
+        connection.close()
+
+
+def list_app_users(role: str) -> list[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            """
+            SELECT id, username, role, full_name, email, phone, created_at, last_login_at
+            FROM app_users
+            WHERE role = ?
+            ORDER BY datetime(created_at) DESC, full_name COLLATE NOCASE ASC
+            """,
+            (role,),
+        ).fetchall()
+        return [dict(row) for row in rows]
     finally:
         connection.close()
 
@@ -629,6 +649,103 @@ def insert_access_log(decision: FrameDecision) -> None:
         connection.close()
 
 
+def insert_qr_access_log(student: dict[str, Any]) -> dict[str, Any]:
+    connection = get_connection()
+    now = datetime.now()
+    timestamp = now.isoformat(timespec="seconds")
+    label = f"{student['name']} - QR Verified - Access Allowed"
+    try:
+        connection.execute(
+            """
+            INSERT INTO access_logs (
+                student_id, student_name, role, timestamp, date, status, label, event_type
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                student["id"],
+                student["name"],
+                student["role"],
+                timestamp,
+                now.date().isoformat(),
+                "Allowed",
+                label,
+                "QR Verified",
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    return {
+        "student_id": student["id"],
+        "student_name": student["name"],
+        "role": student["role"],
+        "timestamp": timestamp,
+        "status": "Allowed",
+        "label": label,
+        "event_type": "QR Verified",
+        "severity": "green",
+    }
+
+
+def get_student(student_id: str) -> Optional[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            """
+            SELECT id, name, role, image_path, created_at
+            FROM students
+            WHERE id = ?
+            """,
+            (student_id,),
+        ).fetchone()
+        return None if row is None else dict(row)
+    finally:
+        connection.close()
+
+
+def make_student_qr_token(student_id: str) -> str:
+    return qr_serializer.dumps({"student_id": student_id})
+
+
+def make_student_qr_image(student_id: str) -> np.ndarray:
+    token = make_student_qr_token(student_id)
+    encoder = cv2.QRCodeEncoder_create()
+    qr = encoder.encode(token)
+    qr = cv2.copyMakeBorder(qr, 4, 4, 4, 4, cv2.BORDER_CONSTANT, value=255)
+    return cv2.resize(qr, (320, 320), interpolation=cv2.INTER_NEAREST)
+
+
+def verify_student_qr_token(token: str) -> dict[str, Any]:
+    try:
+        payload = qr_serializer.loads(token)
+    except BadSignature as error:
+        raise ValueError("Invalid QR code") from error
+
+    student_id = str(payload.get("student_id", "")).strip()
+    if not student_id:
+        raise ValueError("Invalid QR code")
+
+    student = get_student(student_id)
+    if student is None:
+        raise ValueError("Student was not found")
+    return student
+
+
+def decode_qr_from_frame(frame: np.ndarray) -> str:
+    detector = cv2.QRCodeDetector()
+    value, _, _ = detector.detectAndDecode(frame)
+    value = str(value or "").strip()
+    if not value:
+        raise ValueError("No QR code was detected")
+    return value
+
+
+def decode_qr_from_image(image_bytes: bytes) -> str:
+    return decode_qr_from_frame(decode_image_bytes(image_bytes))
+
+
 def list_students() -> list[dict[str, Any]]:
     connection = get_connection()
     try:
@@ -709,6 +826,37 @@ def bulk_delete_graduates(student_ids: list[str]) -> int:
         connection.execute(f"DELETE FROM access_logs WHERE student_id IN ({placeholders})", student_ids)
         connection.commit()
         return int(deleted_count)
+    finally:
+        connection.close()
+
+
+def bulk_delete_access_logs(log_ids: list[int]) -> int:
+    connection = get_connection()
+    try:
+        placeholders = ", ".join("?" for _ in log_ids)
+        deleted_count = connection.execute(
+            f"SELECT COUNT(*) AS count FROM access_logs WHERE id IN ({placeholders})",
+            log_ids,
+        ).fetchone()["count"]
+        connection.execute(f"DELETE FROM access_logs WHERE id IN ({placeholders})", log_ids)
+        connection.commit()
+        return int(deleted_count)
+    finally:
+        connection.close()
+
+
+def get_access_logs_items() -> list[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            """
+            SELECT id, student_id, student_name, role, timestamp, date, status, label, event_type
+            FROM access_logs
+            ORDER BY timestamp DESC
+            LIMIT 500
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
     finally:
         connection.close()
 
@@ -1202,6 +1350,13 @@ class WebFaceProcessor:
             return KNOWN_FACE_RECHECK_COOLDOWN_SECONDS
         return IDENTIFICATION_COOLDOWN_SECONDS
 
+    def _known_face_recheck_blocked(self, now: float) -> bool:
+        with self.state_lock:
+            decision = self.current_decision
+        if not decision or decision.log_status != "Allowed" or not decision.student_id:
+            return False
+        return self.cooldowns.get(decision.cooldown_key, 0.0) > now
+
     def _worker_loop(self) -> None:
         while self.running:
             if not self.camera_enabled:
@@ -1215,6 +1370,11 @@ class WebFaceProcessor:
                 continue
 
             if not self.camera_enabled:
+                continue
+
+            now = time.time()
+            self._cleanup_cooldowns(now)
+            if self._known_face_recheck_blocked(now):
                 continue
 
             decision = evaluate_frame(frame, self.students)
@@ -1234,7 +1394,10 @@ class WebFaceProcessor:
             if not self.camera_enabled:
                 continue
 
-            self.cooldowns[decision.cooldown_key] = now + self._cooldown_seconds_for_decision(decision)
+            cooldown_seconds = self._cooldown_seconds_for_decision(decision)
+            self.cooldowns[decision.cooldown_key] = now + cooldown_seconds
+            if decision.log_status == "Allowed" and decision.student_id:
+                decision.matched_until = now + cooldown_seconds
             insert_access_log(decision)
 
             if decision.should_capture:
@@ -1300,9 +1463,47 @@ class WebFaceProcessor:
 
         return optimize_image_for_web(frame)
 
+    def get_registration_preview_frame(self) -> np.ndarray:
+        if not self.camera_enabled:
+            return placeholder_frame(CAMERA_DISABLED_MESSAGE)
+
+        with self.state_lock:
+            frame = None if self.current_frame is None else self.current_frame.copy()
+
+        if frame is None:
+            return placeholder_frame(self.capture_error or "Waiting for camera...")
+
+        return optimize_image_for_web(frame)
+
+    def capture_registration_frame(self) -> np.ndarray:
+        frame = self.capture_current_frame()
+        return frame if CAMERA_MIRROR else cv2.flip(frame, 1)
+
     def generate_stream(self):
         while True:
             frame = self.get_annotated_frame()
+            success, buffer = cv2.imencode(
+                ".jpg",
+                frame,
+                [int(cv2.IMWRITE_JPEG_QUALITY), STREAM_JPEG_QUALITY],
+            )
+            if not success:
+                time.sleep(0.03)
+                continue
+
+            frame_bytes = buffer.tobytes()
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n"
+                b"Content-Length: " + str(len(frame_bytes)).encode("ascii") + b"\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
+            )
+            time.sleep(STREAM_FRAME_INTERVAL_SECONDS)
+
+    def generate_registration_stream(self):
+        while True:
+            frame = self.get_registration_preview_frame()
             success, buffer = cv2.imencode(
                 ".jpg",
                 frame,
@@ -1467,8 +1668,16 @@ def create_security_user():
 
     return jsonify({
         "user": user,
+        "items": list_app_users("security"),
         "message": "Security employee account created successfully.",
     }), 201
+
+
+@app.route("/api/security-users")
+@require_auth
+@require_role("admin")
+def get_security_users():
+    return jsonify({"items": list_app_users("security")})
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -1487,6 +1696,7 @@ def bootstrap():
         payload.update({
             "students": list_students(),
             "graduates": list_graduated_students(),
+            "security_users": list_app_users("security"),
             "admissions": admission_sync_status(),
         })
     if user and user.get("role") == "security":
@@ -1503,6 +1713,33 @@ def video_feed():
         processor.generate_stream(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
+
+
+@app.route("/registration_camera_feed")
+@require_role("admin")
+def registration_camera_feed():
+    return Response(
+        processor.generate_registration_stream(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+@app.route("/api/register/capture-image")
+@require_role("admin")
+def capture_registration_image():
+    try:
+        frame = processor.capture_registration_frame()
+    except RuntimeError as error:
+        return jsonify({"error": str(error)}), 400
+
+    success, buffer = cv2.imencode(
+        ".jpg",
+        optimize_image_for_web(frame),
+        [int(cv2.IMWRITE_JPEG_QUALITY), STREAM_JPEG_QUALITY],
+    )
+    if not success:
+        return jsonify({"error": "Unable to capture frame from camera."}), 400
+    return Response(buffer.tobytes(), mimetype="image/jpeg")
 
 
 @app.route("/captures/<path:filename>")
@@ -1539,6 +1776,86 @@ def security_media_scan():
         return jsonify({"error": str(error)}), 400
 
 
+@app.route("/api/security/qr-verify", methods=["POST"])
+@require_role("security")
+def security_qr_verify():
+    payload = request.get_json(silent=True) or {}
+    token = str(payload.get("token", "")).strip()
+    if not token:
+        return jsonify({"error": "QR token is required"}), 400
+
+    try:
+        student = verify_student_qr_token(token)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "QR verified and access recorded.",
+        "student": student,
+        "event": event,
+    })
+
+
+@app.route("/api/security/qr-scan", methods=["POST"])
+@require_role("security")
+def security_qr_scan():
+    image_file = request.files.get("qr_image")
+    if image_file is None or not image_file.filename:
+        return jsonify({"error": "QR image is required"}), 400
+
+    try:
+        token = decode_qr_from_image(image_file.read())
+        student = verify_student_qr_token(token)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "QR verified and access recorded.",
+        "student": student,
+        "event": event,
+    })
+
+
+@app.route("/api/security/qr-scan-current", methods=["POST"])
+@require_role("security")
+def security_qr_scan_current():
+    try:
+        token = decode_qr_from_frame(processor.capture_current_frame())
+        student = verify_student_qr_token(token)
+    except (RuntimeError, ValueError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "QR verified and access recorded.",
+        "student": student,
+        "event": event,
+    })
+
+
+@app.route("/api/security/student-id-entry", methods=["POST"])
+@require_role("security")
+def security_student_id_entry():
+    payload = request.get_json(silent=True) or {}
+    student_id = str(payload.get("student_id", "")).strip()
+    if not student_id:
+        return jsonify({"error": "student_id is required"}), 400
+
+    student = get_student(student_id)
+    if student is None:
+        return jsonify({"error": "Student was not found"}), 404
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "Student verified and access recorded.",
+        "student": student,
+        "event": event,
+        "qr_image_url": f"/api/students/{student_id}/qr-image",
+    })
+
+
 @app.route("/api/admissions/status")
 @require_role("admin")
 def get_admissions_status():
@@ -1555,6 +1872,31 @@ def sync_admissions_now():
 @require_role("admin")
 def get_students():
     return jsonify({"items": list_students()})
+
+
+@app.route("/api/students/<student_id>/qr-token")
+@require_role("admin")
+def get_student_qr_token(student_id: str):
+    student = get_student(student_id)
+    if student is None:
+        return jsonify({"error": "Student not found"}), 404
+    return jsonify({
+        "student": student,
+        "token": make_student_qr_token(student_id),
+    })
+
+
+@app.route("/api/students/<student_id>/qr-image")
+@require_role("admin", "security")
+def get_student_qr_image(student_id: str):
+    student = get_student(student_id)
+    if student is None:
+        return jsonify({"error": "Student not found"}), 404
+
+    success, buffer = cv2.imencode(".png", make_student_qr_image(student_id))
+    if not success:
+        return jsonify({"error": "Unable to generate QR image"}), 500
+    return Response(buffer.tobytes(), mimetype="image/png")
 
 
 @app.route("/api/students/<student_id>/graduate", methods=["POST"])
@@ -1638,6 +1980,28 @@ def get_logs():
         connection.close()
 
     return jsonify({"items": items})
+
+
+@app.route("/api/logs/delete", methods=["POST"])
+@require_role("admin")
+def delete_logs():
+    payload = request.get_json(silent=True) or {}
+    log_ids: list[int] = []
+    for raw_id in payload.get("log_ids", []):
+        try:
+            log_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    if not log_ids:
+        return jsonify({"error": "log_ids is required"}), 400
+
+    deleted_count = bulk_delete_access_logs(log_ids)
+    return jsonify({
+        "message": "Selected access logs deleted.",
+        "deleted_count": deleted_count,
+        "items": get_access_logs_items(),
+    })
 
 
 @app.route("/api/register", methods=["POST"])
