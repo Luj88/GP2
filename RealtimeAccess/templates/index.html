@@ -10,18 +10,18 @@
             --bg: #eef6ff;
             --surface: rgba(248, 252, 255, 0.9);
             --surface-muted: rgba(235, 245, 255, 0.95);
-            --border: rgba(42, 103, 166, 0.18);
+            --border: rgba(31, 95, 168, 0.18);
             --text: #132436;
             --muted: #60758c;
-            --primary: #2f7ed8;
-            --primary-strong: #1f5fa8;
+            --primary: #15528f;
+            --primary-strong: #092b55;
             --accent: #0f9f9a;
             --success: #168a66;
             --danger: #c65050;
             --warning: #c47a1f;
-            --grid-line: rgba(47, 126, 216, 0.08);
-            --glow: 0 0 0 1px rgba(47, 126, 216, 0.08), 0 26px 70px rgba(37, 91, 151, 0.14);
-            --shadow: 0 20px 48px rgba(34, 78, 128, 0.14);
+            --grid-line: rgba(0, 29, 57, 0.08);
+            --glow: 0 0 0 1px rgba(0, 29, 57, 0.08), 0 26px 70px rgba(0, 20, 40, 0.14);
+            --shadow: 0 20px 48px rgba(0, 20, 40, 0.14);
         }
 
         body[data-theme="dark"] {
@@ -48,18 +48,18 @@
             --bg: #eef6ff;
             --surface: rgba(248, 252, 255, 0.9);
             --surface-muted: rgba(235, 245, 255, 0.95);
-            --border: rgba(42, 103, 166, 0.18);
+            --border: rgba(31, 95, 168, 0.18);
             --text: #132436;
             --muted: #60758c;
-            --primary: #2f7ed8;
-            --primary-strong: #1f5fa8;
+            --primary: #15528f;
+            --primary-strong: #092b55;
             --accent: #0f9f9a;
             --success: #168a66;
             --danger: #c65050;
             --warning: #c47a1f;
-            --grid-line: rgba(47, 126, 216, 0.08);
-            --glow: 0 0 0 1px rgba(47, 126, 216, 0.08), 0 26px 70px rgba(37, 91, 151, 0.14);
-            --shadow: 0 20px 48px rgba(34, 78, 128, 0.14);
+            --grid-line: rgba(0, 29, 57, 0.08);
+            --glow: 0 0 0 1px rgba(0, 29, 57, 0.08), 0 26px 70px rgba(0, 20, 40, 0.14);
+            --shadow: 0 20px 48px rgba(0, 20, 40, 0.14);
         }
 
         * { box-sizing: border-box; }
@@ -69,9 +69,9 @@
             min-height: 100vh;
             background:
                 linear-gradient(135deg, rgba(2, 9, 22, 0.28), transparent 42%),
-                radial-gradient(circle at 10% 10%, rgba(47, 126, 216, 0.26), transparent 28%),
+                radial-gradient(circle at 10% 10%, rgba(18, 77, 139, 0.32), transparent 28%),
                 radial-gradient(circle at 90% 14%, rgba(15, 159, 154, 0.16), transparent 26%),
-                linear-gradient(135deg, #071527 0%, #123b65 48%, #0a2342 100%);
+                linear-gradient(135deg, #06172c 0%, #0b315f 48%, #071d38 100%);
             color: var(--text);
             font-family: "Segoe UI", "Tahoma", Arial, sans-serif;
             letter-spacing: 0;
@@ -113,6 +113,7 @@
             padding: 28px;
             overflow: hidden;
             isolation: isolate;
+            direction: ltr;
         }
 
         .login-shell::before,
@@ -149,6 +150,7 @@
             z-index: 0;
             pointer-events: none;
             overflow: hidden;
+            direction: ltr;
         }
 
         .login-geometry span {
@@ -164,6 +166,7 @@
         }
 
         .geo-frame {
+            display: none;
             width: 190px;
             height: 190px;
             inset-block-start: 9%;
@@ -176,7 +179,7 @@
             width: 150px;
             height: 82px;
             inset-block-end: 13%;
-            inset-inline-start: 7%;
+            left: 7%;
             border-radius: 8px;
             animation: geometricFloat 12s ease-in-out infinite reverse;
         }
@@ -185,7 +188,7 @@
             width: 280px;
             height: 2px;
             inset-block-start: 67%;
-            inset-inline-end: 13%;
+            right: 13%;
             border: 0;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
             box-shadow: 0 0 24px rgba(255, 255, 255, 0.42);
@@ -196,19 +199,22 @@
             position: fixed;
             z-index: 1;
             inset-block-start: 38px;
-            inset-inline-start: 42px;
+            right: 42px;
+            left: auto;
             width: 178px;
             height: 126px;
+            direction: ltr;
             pointer-events: none;
-            transform-origin: 62px 32px;
-            animation: cameraPatrol 7.5s ease-in-out infinite;
+            transform-origin: center;
+            transform: scaleX(-1);
+            animation: none;
             filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.26));
         }
 
         .camera-arm {
             position: absolute;
             top: 18px;
-            inset-inline-start: 8px;
+            left: 8px;
             width: 82px;
             height: 16px;
             border: 1px solid rgba(255, 255, 255, 0.34);
@@ -223,7 +229,7 @@
             width: 34px;
             height: 34px;
             top: -10px;
-            inset-inline-start: -14px;
+            left: -14px;
             border: 1px solid rgba(255, 255, 255, 0.32);
             border-radius: 50%;
             background: radial-gradient(circle at 35% 35%, #e8f7ff, #42739f 72%);
@@ -232,7 +238,7 @@
         .camera-body {
             position: absolute;
             top: 28px;
-            inset-inline-start: 58px;
+            left: 58px;
             width: 104px;
             height: 56px;
             border: 1px solid rgba(255, 255, 255, 0.4);
@@ -241,13 +247,14 @@
                 linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 38%),
                 linear-gradient(180deg, #d8edf9, #7198b9 64%, #426985);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+            animation: cameraScannerUnit 3.2s ease-in-out infinite;
         }
 
         .camera-body::before {
             content: "";
             position: absolute;
             top: 12px;
-            inset-inline-end: 9px;
+            right: 9px;
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -260,7 +267,7 @@
             content: "";
             position: absolute;
             top: 17px;
-            inset-inline-start: 14px;
+            left: 14px;
             width: 28px;
             height: 5px;
             border-radius: 999px;
@@ -271,13 +278,13 @@
         .camera-beam {
             position: absolute;
             top: 50px;
-            inset-inline-start: 132px;
+            left: 132px;
             width: 118px;
             height: 72px;
             opacity: 0.28;
             clip-path: polygon(0 36%, 100% 0, 100% 100%, 0 64%);
             background: linear-gradient(90deg, rgba(142, 232, 255, 0.48), transparent);
-            animation: cameraBeam 7.5s ease-in-out infinite;
+            animation: cameraScannerBeam 3.2s ease-in-out infinite;
         }
 
         .login-panel {
@@ -285,23 +292,23 @@
             --bg: #eef6ff;
             --surface: rgba(244, 250, 255, 0.88);
             --surface-muted: rgba(225, 241, 255, 0.78);
-            --border: rgba(42, 103, 166, 0.22);
+            --border: rgba(31, 95, 168, 0.22);
             --text: #132436;
             --muted: #536c86;
-            --primary: #2f7ed8;
-            --primary-strong: #1f5fa8;
+            --primary: #15528f;
+            --primary-strong: #092b55;
             --accent: #0f9f9a;
             --success: #168a66;
             --danger: #c65050;
             --warning: #c47a1f;
-            --grid-line: rgba(47, 126, 216, 0.08);
-            --glow: 0 0 0 1px rgba(47, 126, 216, 0.08), 0 28px 80px rgba(37, 91, 151, 0.18);
-            --shadow: 0 20px 48px rgba(34, 78, 128, 0.16);
+            --grid-line: rgba(31, 95, 168, 0.08);
+            --glow: 0 0 0 1px rgba(31, 95, 168, 0.08), 0 28px 80px rgba(31, 95, 168, 0.18);
+            --shadow: 0 20px 48px rgba(31, 95, 168, 0.16);
             position: relative;
             z-index: 1;
             width: min(1100px, 100%);
             display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
+            grid-template-columns: 1fr;
             gap: 28px;
             align-items: center;
             border: 0;
@@ -314,30 +321,28 @@
         }
 
         .login-intro {
-            position: relative;
-            padding: 24px 10px;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            z-index: 3;
+            padding: 0;
             background: transparent;
             border-inline-end: 0;
         }
 
         .login-intro::before {
-            content: "";
-            position: absolute;
-            inset-inline-start: -18px;
-            top: 24px;
-            bottom: 24px;
-            width: 3px;
-            border-radius: 999px;
-            background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.82), transparent);
-            box-shadow: 0 0 24px rgba(255, 255, 255, 0.5);
+            content: none;
         }
 
         .login-form-panel {
             position: relative;
+            width: min(460px, 100%);
+            margin: 0 auto;
             padding: 10px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            direction: ltr;
         }
 
         .login-form-panel::before {
@@ -355,7 +360,7 @@
                 linear-gradient(var(--primary), var(--primary)) bottom left / 2px 58px no-repeat,
                 linear-gradient(var(--primary), var(--primary)) bottom right / 58px 2px no-repeat,
                 linear-gradient(var(--primary), var(--primary)) bottom right / 2px 58px no-repeat;
-            filter: drop-shadow(0 0 12px rgba(47, 126, 216, 0.28));
+            filter: drop-shadow(0 0 12px rgba(31, 95, 168, 0.28));
         }
 
         .brand-row, .app-header, .row, .toolbar, .role-switch, .summary-grid {
@@ -364,23 +369,30 @@
         }
 
         .brand-row {
-            align-items: flex-start;
-            gap: 18px;
-            margin-bottom: 40px;
+            direction: ltr;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 0;
         }
 
         .login-intro .muted,
         .login-intro p:not(.eyebrow) {
-            max-width: 38ch;
+            max-width: 26ch;
         }
 
         .login-intro h1 {
-            color: #f4fbff;
-            text-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
+            display: none;
         }
 
         .login-intro .eyebrow {
-            color: #a9dcff;
+            margin: 0;
+            color: #f4fbff;
+            font-size: 24px;
+            line-height: 1.15;
+            font-weight: 900;
+            text-transform: none;
+            white-space: nowrap;
+            text-align: left;
         }
 
         .login-intro .muted {
@@ -389,37 +401,70 @@
 
         .face-scan-visual {
             position: relative;
-            margin-top: 28px;
-            width: min(100%, 380px);
-            aspect-ratio: 1.12 / 1;
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            background:
-                repeating-linear-gradient(0deg, rgba(31, 95, 168, 0.08) 0 1px, transparent 1px 16px),
-                repeating-linear-gradient(90deg, rgba(31, 95, 168, 0.06) 0 1px, transparent 1px 16px),
-                radial-gradient(circle at top, rgba(47, 126, 216, 0.22), transparent 42%),
-                linear-gradient(180deg, rgba(238, 248, 255, 0.86), rgba(175, 216, 252, 0.68));
-            box-shadow: 0 24px 70px rgba(10, 54, 101, 0.26);
-            overflow: hidden;
-        }
-
-        .face-scan-visual::before {
-            content: "";
-            position: absolute;
-            inset: 18px;
-            border-radius: 22px;
-            border: 1px dashed color-mix(in srgb, var(--primary) 24%, transparent);
-            opacity: 0.8;
+            margin: 0 auto 14px;
+            width: min(100%, 240px);
+            min-height: 0;
+            display: grid;
+            justify-items: center;
+            align-content: center;
+            gap: 8px;
+            overflow: visible;
+            transform: none;
         }
 
         .face-scan-visual::after {
             content: "";
             position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.36), transparent);
-            opacity: 0.62;
-            transform: translateY(-74%);
-            animation: panelScan 5.4s ease-in-out infinite;
+            left: 9%;
+            right: 9%;
+            top: 12%;
+            height: 3px;
+            z-index: 3;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, rgba(92, 214, 255, 0.96), transparent);
+            box-shadow: 0 0 18px rgba(92, 214, 255, 0.72);
+            animation: imageScanSweep 3.2s ease-in-out infinite;
+        }
+
+        .secure-visual-frame {
+            position: relative;
+            width: min(100%, 198px);
+            aspect-ratio: 1 / 1;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+
+        .secure-visual-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: transparent;
+            filter: drop-shadow(0 24px 42px rgba(2, 14, 34, 0.34));
+        }
+
+        .just-secure-caption {
+            color: #f4fbff;
+            font-size: clamp(18px, 2.4vw, 24px);
+            font-weight: 900;
+            letter-spacing: 0;
+            line-height: 1.1;
+            display: block;
+            width: 100%;
+            text-align: center;
+            white-space: nowrap;
+            text-shadow: 0 18px 34px rgba(0, 0, 0, 0.34);
+        }
+
+        .login-panel,
+        .app-shell {
+            transition: opacity .62s cubic-bezier(.16, 1, .3, 1), transform .62s cubic-bezier(.16, 1, .3, 1);
+        }
+
+        body.language-smoothing .login-panel,
+        body.language-smoothing .app-shell {
+            opacity: 0.58;
+            transform: translateY(-6px);
         }
 
         .scan-radar {
@@ -694,6 +739,37 @@
             }
         }
 
+        @keyframes cameraBeamScan {
+            0%, 100% {
+                opacity: 0.2;
+                transform: translateY(-12px);
+            }
+            50% {
+                opacity: 0.48;
+                transform: translateY(22px);
+            }
+        }
+
+        @keyframes cameraScannerUnit {
+            0%, 100% {
+                transform: translateY(-10px);
+            }
+            50% {
+                transform: translateY(20px);
+            }
+        }
+
+        @keyframes cameraScannerBeam {
+            0%, 100% {
+                opacity: 0.2;
+                transform: translateY(-10px);
+            }
+            50% {
+                opacity: 0.48;
+                transform: translateY(20px);
+            }
+        }
+
         @keyframes panelScan {
             0%, 18% {
                 transform: translateY(-78%);
@@ -705,6 +781,35 @@
             82%, 100% {
                 transform: translateY(78%);
                 opacity: 0;
+            }
+        }
+
+        @keyframes cameraScanFloat {
+            0%, 100% {
+                transform: scaleX(-1) translateY(-8px);
+            }
+            50% {
+                transform: scaleX(-1) translateY(18px);
+            }
+        }
+
+        @keyframes cameraScanFloatSmall {
+            0%, 100% {
+                transform: scaleX(-1) scale(0.82) translateY(-8px);
+            }
+            50% {
+                transform: scaleX(-1) scale(0.82) translateY(18px);
+            }
+        }
+
+        @keyframes imageScanSweep {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.28;
+            }
+            48% {
+                transform: translateY(190px);
+                opacity: 0.92;
             }
         }
 
@@ -743,37 +848,37 @@
         .seal {
             width: 108px;
             height: 108px;
-            border-radius: 26px;
+            border-radius: 10px;
             flex: 0 0 auto;
             display: grid;
             place-items: center;
             overflow: hidden;
-            background: linear-gradient(145deg, var(--primary), color-mix(in srgb, var(--accent) 72%, white 28%));
+            background: #fff;
             color: #fff;
             font-weight: 800;
-            box-shadow: 0 18px 40px color-mix(in srgb, var(--primary) 24%, transparent);
-            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 0 12px 28px rgba(2, 12, 28, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
 
         .seal img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            padding: 0;
-            background: rgba(255, 255, 255, 0.94);
-            transform: scale(1.24);
+            object-fit: cover;
+            padding: 2px;
+            background: #fff;
+            transform: none;
         }
 
         .brand-row .seal {
-            width: 148px;
-            height: 148px;
-            border-radius: 36px;
+            width: 168px;
+            height: 132px;
+            border-radius: 14px;
         }
 
         .header-title .seal {
-            width: 82px;
-            height: 82px;
-            border-radius: 24px;
+            width: 74px;
+            height: 58px;
+            border-radius: 8px;
         }
 
         .eyebrow {
@@ -875,15 +980,23 @@
 
         .role-switch {
             gap: 8px;
-            margin: 18px 0 22px;
+            margin: 8px 0 14px;
             padding: 6px;
             border: 1px solid var(--border);
             border-radius: 18px;
             background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
+            align-items: stretch;
+            overflow: visible;
+            direction: ltr;
+        }
+
+        .role-menu-wrap {
+            position: relative;
+            flex: 1;
         }
 
         .role-button {
-            flex: 1;
+            width: 100%;
             border: 0;
             border-radius: 14px;
             padding: 13px 12px;
@@ -896,6 +1009,49 @@
             background: linear-gradient(135deg, var(--primary), var(--accent));
             color: #fff;
             box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 38%, transparent);
+        }
+
+        .role-dropdown {
+            position: absolute;
+            z-index: 12;
+            top: calc(100% + 8px);
+            inset-inline: 0;
+            display: grid;
+            gap: 7px;
+            min-width: 220px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface) 94%, white 6%);
+            box-shadow: var(--shadow);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-6px);
+            transition: opacity .16s ease, transform .16s ease;
+        }
+
+        .role-menu-wrap:hover .role-dropdown,
+        .role-menu-wrap:focus-within .role-dropdown {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .role-menu-item {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 12px;
+            background: transparent;
+            color: var(--text);
+            font-weight: 800;
+            text-align: inherit;
+        }
+
+        .role-menu-item:hover,
+        .role-menu-item:focus {
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            color: var(--primary-strong);
         }
 
         .primary-button, .secondary-button, .danger-button, .ghost-button {
@@ -1100,7 +1256,7 @@
 
         .app-shell::before {
             background:
-                linear-gradient(120deg, rgba(7, 32, 63, 0.22), transparent 44%),
+                linear-gradient(120deg, rgba(31, 95, 168, 0.22), transparent 44%),
                 repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 78px),
                 repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 78px);
             opacity: 0.36;
@@ -1658,7 +1814,7 @@
             aspect-ratio: 16 / 9;
             display: block;
             background:
-                radial-gradient(circle at center, rgba(47, 126, 216, 0.16), transparent 42%),
+                radial-gradient(circle at center, rgba(31, 95, 168, 0.16), transparent 42%),
                 #06172c;
             object-fit: contain;
             border-block: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border) 74%);
@@ -1675,7 +1831,7 @@
             pointer-events: none;
             background:
                 linear-gradient(180deg, transparent 0 46%, rgba(52, 179, 154, 0.34) 50%, transparent 54%),
-                linear-gradient(90deg, rgba(47, 126, 216, 0.18), transparent 18% 82%, rgba(47, 126, 216, 0.18));
+                linear-gradient(90deg, rgba(31, 95, 168, 0.18), transparent 18% 82%, rgba(31, 95, 168, 0.18));
             mix-blend-mode: screen;
             opacity: 0.72;
             transform: translateY(-64%);
@@ -1843,9 +1999,11 @@
 
             .corner-camera {
                 opacity: 0.58;
-                transform: scale(0.82);
+                transform: scaleX(-1) scale(0.82);
+                animation: none;
                 inset-block-start: 22px;
-                inset-inline-start: 18px;
+                right: 18px;
+                left: auto;
             }
 
             .admin-page {
@@ -1854,7 +2012,7 @@
 
             .login-intro {
                 border-inline-end: 0;
-                padding: 32px 28px;
+                padding: 0;
             }
 
             .login-intro::before {
@@ -1884,6 +2042,10 @@
                 padding: 18px;
             }
 
+            .login-intro {
+                padding: 0;
+            }
+
             .admin-tabs {
                 border-radius: 18px;
             }
@@ -1897,9 +2059,9 @@
             }
 
             .brand-row .seal {
-                width: 118px;
-                height: 118px;
-                border-radius: 28px;
+                width: 168px;
+                height: 132px;
+                border-radius: 14px;
             }
 
             .security-stats span {
@@ -1951,72 +2113,41 @@
             <span class="camera-beam"></span>
         </div>
         <section class="login-panel">
-            <div class="login-intro">
-                <div class="brand-row">
-                    <div class="seal">
-                        <img src="{{ url_for('static', filename='university-logo.png') }}" alt="University logo" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
-                        <span hidden>UA</span>
-                    </div>
-                    <div>
-                        <p class="eyebrow" data-i18n="systemLabel">نظام الدخول الجامعي</p>
-                        <h1 data-i18n="loginTitle">SMART FACE RECOGNITION SYSTEM</h1>
-                    </div>
-                </div>
-                <div class="face-scan-visual" aria-hidden="true">
-                    <span class="scan-radar"></span>
-                    <span class="scan-corner top-start"></span>
-                    <span class="scan-corner top-end"></span>
-                    <span class="scan-corner bottom-start"></span>
-                    <span class="scan-corner bottom-end"></span>
-                    <span class="scan-pill">FACE ID ACTIVE</span>
-                    <div class="scan-person">
-                        <div class="scan-head"></div>
-                        <div class="scan-box">
-                            <span class="scan-line"></span>
-                        </div>
-                        <div class="scan-shoulders"></div>
-                    </div>
-                </div>
-                <div class="security-stats" aria-hidden="true">
-                    <span>
-                        <strong>LIVE</strong>
-                        <small>SCAN</small>
-                    </span>
-                    <span>
-                        <strong>ID</strong>
-                        <small>CHECK</small>
-                    </span>
-                    <span>
-                        <strong>ROLE</strong>
-                        <small>GATE</small>
-                    </span>
-                </div>
-            </div>
-
             <div class="login-form-panel">
+                <div class="face-scan-visual" aria-hidden="true">
+                    <div class="secure-visual-frame">
+                        <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.src='{{ url_for('static', filename='university-logo.png') }}';">
+                    </div>
+                    <strong class="just-secure-caption">JUST Secure</strong>
+                </div>
+                <div class="role-switch" aria-label="Role">
+                    <div class="role-menu-wrap">
+                        <button class="role-button active" type="button" data-role="admin" data-i18n="adminRole">القبول والتسجيل</button>
+                        <div class="role-dropdown">
+                            <button class="role-menu-item login-role-option" type="button" data-role="admin" data-i18n="existingAdmissionsLogin">دخول موظف مسجل</button>
+                            <button id="openEmployeeRegisterButton" class="role-menu-item" type="button" data-i18n="newAdmissionsEmployee">إضافة موظف جديد</button>
+                        </div>
+                    </div>
+                    <div class="role-menu-wrap">
+                        <button class="role-button" type="button" data-role="security" data-i18n="securityRole">الأمن الجامعي</button>
+                        <div class="role-dropdown">
+                            <button class="role-menu-item login-role-option" type="button" data-role="security" data-i18n="existingSecurityLogin">دخول رجل أمن مسجل</button>
+                            <button id="openSecurityRegisterButton" class="role-menu-item" type="button" data-i18n="newSecurityEmployee">إضافة رجل أمن جديد</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="settings-row">
-                    <div>
+                    <div style="grid-column: 1 / -1;">
                         <label for="languageSelect" data-i18n="language">اللغة</label>
                         <select id="languageSelect">
                             <option value="ar">العربية</option>
                             <option value="en">English</option>
                         </select>
                     </div>
-                    <div>
-                        <label for="themeSelect" data-i18n="theme">الوضع</label>
-                        <select id="themeSelect">
-                            <option value="blue" data-i18n="blue">أزرق</option>
-                            <option value="dark" data-i18n="dark">داكن</option>
-                        </select>
-                    </div>
                 </div>
 
-                <div class="role-switch" aria-label="Role">
-                    <button class="role-button active" type="button" data-role="admin" data-i18n="adminRole">القبول والتسجيل</button>
-                    <button class="role-button" type="button" data-role="security" data-i18n="securityRole">الأمن الجامعي</button>
-                </div>
-
-                <form id="loginForm">
+                <form id="loginForm" class="hidden">
                     <div class="field">
                         <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
                         <input id="usernameInput" type="text" autocomplete="username" required>
@@ -2027,7 +2158,6 @@
                     </div>
                     <button id="forgotPasswordButton" class="inline-link" type="button" data-i18n="forgotPassword">هل نسيت كلمة السر؟</button>
                     <button class="primary-button block-full" type="submit" data-i18n="signIn">دخول</button>
-                    <button id="openEmployeeRegisterButton" class="secondary-button inline-action" type="button" data-i18n="newAdmissionsEmployee">موظف قبول وتسجيل جديد</button>
                     <p id="loginStatus" class="status-text"></p>
                 </form>
 
@@ -2049,6 +2179,10 @@
                         <div>
                             <label for="employeeFullNameInput" data-i18n="fullName">الاسم الكامل</label>
                             <input id="employeeFullNameInput" type="text" required>
+                        </div>
+                        <div>
+                            <label for="employeeIdInput" data-i18n="employeeId">رقم الموظف</label>
+                            <input id="employeeIdInput" type="text" required>
                         </div>
                         <div>
                             <label for="employeePhoneInput" data-i18n="phoneOptional">رقم الهاتف (اختياري)</label>
@@ -2099,6 +2233,8 @@
                     <option value="ar">العربية</option>
                     <option value="en">English</option>
                 </select>
+                <button id="adminAdmissionsButton" class="ghost-button hidden" type="button" data-i18n="admissionsArea">لوحة القبول</button>
+                <button id="adminSecurityButton" class="ghost-button hidden" type="button" data-i18n="securityLive">شاشة الأمن</button>
                 <button id="logoutButton" class="ghost-button" type="button" data-i18n="logout">تسجيل خروج</button>
             </div>
         </header>
@@ -2213,6 +2349,10 @@
                             <div>
                                 <label for="securityFullNameInput" data-i18n="fullName">الاسم الكامل</label>
                                 <input id="securityFullNameInput" name="full_name" type="text" required>
+                            </div>
+                            <div>
+                                <label for="securityEmployeeIdInput" data-i18n="employeeId">رقم الموظف</label>
+                                <input id="securityEmployeeIdInput" name="employee_id" type="text" required>
                             </div>
                             <div>
                                 <label for="securityPhoneInput" data-i18n="phoneOptional">رقم الهاتف (اختياري)</label>
@@ -2409,7 +2549,12 @@
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
                 newAdmissionsEmployee: "موظف قبول وتسجيل جديد",
+                newSecurityEmployee: "تسجيل رجل أمن جديد",
+                existingAdmissionsLogin: "دخول موظف مسجل",
+                existingSecurityLogin: "دخول رجل أمن مسجل",
                 employeeInfoTitle: "إنشاء حساب موظف",
+                employeeId: "رقم الموظف",
+                admissionsArea: "لوحة القبول",
                 tabSync: "المزامنة",
                 tabRegister: "تسجيل طالب جديد",
                 tabSecurityUsers: "إضافة رجل أمن",
@@ -2546,7 +2691,7 @@
                 employeeCreated: "تم إنشاء حساب الموظف. يمكنك الآن تسجيل الدخول.",
                 securityUserCreated: "تم إنشاء حساب رجل الأمن بنجاح.",
                 passwordsMismatch: "كلمتا المرور غير متطابقتين.",
-                employeeRequiredFields: "لازم تعبّي الاسم الكامل واسم المستخدم وكلمة المرور.",
+                employeeRequiredFields: "لازم تعبّي الاسم الكامل ورقم الموظف واسم المستخدم وكلمة المرور.",
                 employeePasswordShort: "كلمة المرور لازم تكون 8 أحرف أو أكثر.",
                 adminRequiredForEmployeeCreate: "لازم تكون مدير حتى تنشئ موظف قبول جديد.",
                 employeeUsernameTaken: "اسم المستخدم مستخدم من قبل موظف آخر.",
@@ -2565,7 +2710,12 @@
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
                 newAdmissionsEmployee: "New Admissions Employee",
+                newSecurityEmployee: "Register New Security Guard",
+                existingAdmissionsLogin: "Sign In Existing Employee",
+                existingSecurityLogin: "Sign In Existing Security Guard",
                 employeeInfoTitle: "Create Employee Account",
+                employeeId: "Employee ID",
+                admissionsArea: "Admissions Area",
                 tabSync: "Sync",
                 tabRegister: "Register Student",
                 tabSecurityUsers: "Add Security Guard",
@@ -2702,7 +2852,7 @@
                 employeeCreated: "Employee account created. You can sign in now.",
                 securityUserCreated: "Security employee account created successfully.",
                 passwordsMismatch: "Passwords do not match.",
-                employeeRequiredFields: "Full name, username, and password are required.",
+                employeeRequiredFields: "Full name, employee ID, username, and password are required.",
                 employeePasswordShort: "Password must be at least 8 characters.",
                 adminRequiredForEmployeeCreate: "Only an admin can create another admissions employee.",
                 employeeUsernameTaken: "This username is already used by another admissions employee.",
@@ -2713,13 +2863,13 @@
             }
         };
 
-        const savedTheme = localStorage.getItem("accessTheme");
-        const initialTheme = ["blue", "dark"].includes(savedTheme) ? savedTheme : "blue";
+        const initialTheme = "blue";
 
         const state = {
             language: localStorage.getItem("accessLanguage") || "ar",
             theme: initialTheme,
             selectedRole: "admin",
+            selectedRegistrationRole: "admin",
             adminPanel: "sync",
             user: null,
             students: [],
@@ -2748,16 +2898,18 @@
             forgotPasswordButton: document.getElementById("forgotPasswordButton"),
             forgotPasswordPanel: document.getElementById("forgotPasswordPanel"),
             openEmployeeRegisterButton: document.getElementById("openEmployeeRegisterButton"),
+            openSecurityRegisterButton: document.getElementById("openSecurityRegisterButton"),
             closeEmployeeRegisterButton: document.getElementById("closeEmployeeRegisterButton"),
             employeeRegisterPanel: document.getElementById("employeeRegisterPanel"),
             employeeRegisterForm: document.getElementById("employeeRegisterForm"),
             employeeRegisterStatus: document.getElementById("employeeRegisterStatus"),
             languageSelect: document.getElementById("languageSelect"),
             appLanguageSelect: document.getElementById("appLanguageSelect"),
-            themeSelect: document.getElementById("themeSelect"),
             areaEyebrow: document.getElementById("areaEyebrow"),
             areaTitle: document.getElementById("areaTitle"),
             userBadge: document.getElementById("userBadge"),
+            adminAdmissionsButton: document.getElementById("adminAdmissionsButton"),
+            adminSecurityButton: document.getElementById("adminSecurityButton"),
             logoutButton: document.getElementById("logoutButton"),
             adminView: document.getElementById("adminView"),
             securityView: document.getElementById("securityView"),
@@ -2822,6 +2974,7 @@
         function localizeErrorMessage(message) {
             const map = {
                 "full_name, username, and password are required": t("employeeRequiredFields"),
+                "full_name, employee_id, username, and password are required": t("employeeRequiredFields"),
                 "Password must be at least 4 characters": t("employeePasswordShort"),
                 "Password must be at least 8 characters": t("employeePasswordShort"),
                 "Only an admin can create another admissions employee": t("adminRequiredForEmployeeCreate"),
@@ -2902,7 +3055,6 @@
             document.body.dataset.theme = state.theme;
             elements.languageSelect.value = state.language;
             elements.appLanguageSelect.value = state.language;
-            elements.themeSelect.value = state.theme;
 
             document.querySelectorAll("[data-i18n]").forEach((node) => {
                 const key = node.dataset.i18n;
@@ -2912,10 +3064,6 @@
             document.querySelectorAll(".role-button").forEach((button) => {
                 button.classList.toggle("active", button.dataset.role === state.selectedRole);
             });
-            elements.openEmployeeRegisterButton.classList.toggle("hidden", state.selectedRole !== "admin");
-            if (state.selectedRole !== "admin") {
-                toggleEmployeeRegisterPanel(false);
-            }
             setAdminPanel(state.adminPanel);
 
             renderAdmin();
@@ -2924,13 +3072,30 @@
             updateHeader();
         }
 
-        function toggleEmployeeRegisterPanel(show) {
+        function toggleEmployeeRegisterPanel(show, role = state.selectedRegistrationRole) {
+            state.selectedRegistrationRole = role;
             elements.employeeRegisterPanel.classList.toggle("hidden", !show);
             elements.employeeRegisterStatus.textContent = "";
             if (show) {
-                state.selectedRole = "admin";
+                elements.loginForm.classList.add("hidden");
+                state.selectedRole = role;
                 applyPreferences();
+                const titleKey = role === "security" ? "newSecurityEmployee" : "newAdmissionsEmployee";
+                const titleNode = elements.employeeRegisterPanel.querySelector("[data-i18n='newAdmissionsEmployee'], [data-i18n='newSecurityEmployee']");
+                if (titleNode) {
+                    titleNode.dataset.i18n = titleKey;
+                    titleNode.textContent = t(titleKey);
+                }
             }
+        }
+
+        function showExistingLogin(role) {
+            state.selectedRole = role;
+            toggleEmployeeRegisterPanel(false);
+            elements.loginForm.classList.remove("hidden");
+            elements.loginStatus.textContent = "";
+            applyPreferences();
+            document.getElementById("usernameInput").focus();
         }
 
         function toggleForgotPasswordPanel() {
@@ -2946,10 +3111,19 @@
             elements.adminView.classList.add("hidden");
             elements.securityView.classList.add("hidden");
             toggleEmployeeRegisterPanel(false);
+            elements.loginForm.classList.add("hidden");
             elements.videoStream.removeAttribute("src");
             elements.mediaScanForm.reset();
             elements.mediaScanStatus.textContent = "";
             renderMediaScanResults();
+            if (state.statusTimer) {
+                clearInterval(state.statusTimer);
+                state.statusTimer = null;
+            }
+        }
+
+        function stopSecurityView() {
+            elements.videoStream.removeAttribute("src");
             if (state.statusTimer) {
                 clearInterval(state.statusTimer);
                 state.statusTimer = null;
@@ -2963,6 +3137,30 @@
             elements.areaEyebrow.textContent = isAdmin ? t("adminRole") : t("securityRole");
             elements.areaTitle.textContent = isAdmin ? t("adminTitle") : t("securityTitle");
             elements.userBadge.textContent = `${displayName} · ${isAdmin ? t("adminRole") : t("securityRole")}`;
+            elements.adminAdmissionsButton.classList.toggle("hidden", !isAdmin);
+            elements.adminSecurityButton.classList.toggle("hidden", !isAdmin);
+        }
+
+        async function showAdminArea() {
+            stopSecurityView();
+            elements.adminView.classList.remove("hidden");
+            elements.securityView.classList.add("hidden");
+            elements.adminAdmissionsButton.disabled = true;
+            elements.adminSecurityButton.disabled = false;
+            elements.areaEyebrow.textContent = t("adminRole");
+            elements.areaTitle.textContent = t("adminTitle");
+            setAdminPanel("sync");
+            await refreshAdminData();
+        }
+
+        async function showSecurityArea() {
+            elements.adminView.classList.add("hidden");
+            elements.securityView.classList.remove("hidden");
+            elements.adminAdmissionsButton.disabled = false;
+            elements.adminSecurityButton.disabled = true;
+            elements.areaEyebrow.textContent = t("securityRole");
+            elements.areaTitle.textContent = t("securityTitle");
+            await startSecurityView();
         }
 
         async function showApp(user) {
@@ -2972,13 +3170,12 @@
             updateHeader();
 
             if (user.role === "admin") {
-                elements.adminView.classList.remove("hidden");
-                elements.securityView.classList.add("hidden");
-                setAdminPanel("sync");
-                await refreshAdminData();
+                await showAdminArea();
             } else {
                 elements.adminView.classList.add("hidden");
                 elements.securityView.classList.remove("hidden");
+                elements.adminAdmissionsButton.classList.add("hidden");
+                elements.adminSecurityButton.classList.add("hidden");
                 startSecurityView();
             }
         }
@@ -3052,6 +3249,7 @@
                 <h3>${t("selectedDetails")}</h3>
                 ${renderDetailItems([
                     { label: t("fullNameLabel"), value: user.full_name },
+                    { label: t("employeeId"), value: user.employee_id },
                     { label: t("usernameLabel"), value: user.username },
                     { label: t("emailLabel"), value: user.email },
                     { label: t("phoneLabel"), value: user.phone },
@@ -3135,7 +3333,7 @@
             } else {
                 elements.registeredSecurityUsersList.innerHTML = state.securityUsers.map((user) => {
                     const displayName = user.full_name || user.username;
-                    const meta = [user.username, user.phone || user.email].filter(Boolean).join(" / ");
+                    const meta = [user.employee_id, user.username, user.phone || user.email].filter(Boolean).join(" / ");
                     return `
                         <button class="student-name-item registered-security-user-item ${String(state.selectedSecurityUserId) === String(user.id) ? "active" : ""}" type="button" data-id="${escapeHtml(String(user.id))}">
                             <span class="student-name-avatar">${escapeHtml((displayName || "?").slice(0, 1))}</span>
@@ -3436,7 +3634,16 @@
         document.querySelectorAll(".role-button").forEach((button) => {
             button.addEventListener("click", () => {
                 state.selectedRole = button.dataset.role;
+                toggleEmployeeRegisterPanel(false);
+                elements.loginForm.classList.add("hidden");
+                elements.loginStatus.textContent = "";
                 applyPreferences();
+            });
+        });
+
+        document.querySelectorAll(".login-role-option").forEach((button) => {
+            button.addEventListener("click", () => {
+                showExistingLogin(button.dataset.role);
             });
         });
 
@@ -3446,10 +3653,20 @@
             });
         });
 
+        let languageTransitionTimer = null;
+
         function setLanguage(language) {
+            if (language === state.language) return;
+            window.clearTimeout(languageTransitionTimer);
+            document.body.classList.add("language-smoothing");
             state.language = language;
             localStorage.setItem("accessLanguage", state.language);
-            applyPreferences();
+            languageTransitionTimer = window.setTimeout(() => {
+                applyPreferences();
+                window.requestAnimationFrame(() => {
+                    document.body.classList.remove("language-smoothing");
+                });
+            }, 320);
         }
 
         elements.languageSelect.addEventListener("change", (event) => {
@@ -3458,12 +3675,6 @@
 
         elements.appLanguageSelect.addEventListener("change", (event) => {
             setLanguage(event.target.value);
-        });
-
-        elements.themeSelect.addEventListener("change", (event) => {
-            state.theme = event.target.value;
-            localStorage.setItem("accessTheme", state.theme);
-            applyPreferences();
         });
 
         elements.loginForm.addEventListener("submit", async (event) => {
@@ -3485,7 +3696,11 @@
         });
 
         elements.openEmployeeRegisterButton.addEventListener("click", () => {
-            toggleEmployeeRegisterPanel(true);
+            toggleEmployeeRegisterPanel(true, "admin");
+        });
+
+        elements.openSecurityRegisterButton.addEventListener("click", () => {
+            toggleEmployeeRegisterPanel(true, "security");
         });
 
         elements.forgotPasswordButton.addEventListener("click", () => {
@@ -3496,10 +3711,23 @@
             toggleEmployeeRegisterPanel(false);
         });
 
+        elements.adminAdmissionsButton.addEventListener("click", () => {
+            showAdminArea().catch((error) => {
+                elements.loginStatus.textContent = localizeErrorMessage(error.message);
+            });
+        });
+
+        elements.adminSecurityButton.addEventListener("click", () => {
+            showSecurityArea().catch((error) => {
+                elements.loginStatus.textContent = localizeErrorMessage(error.message);
+            });
+        });
+
         elements.employeeRegisterForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             elements.employeeRegisterStatus.textContent = "";
             const fullName = document.getElementById("employeeFullNameInput").value.trim();
+            const employeeId = document.getElementById("employeeIdInput").value.trim();
             const phone = document.getElementById("employeePhoneInput").value.trim();
             const email = document.getElementById("employeeEmailInput").value.trim();
             const username = document.getElementById("employeeUsernameInput").value.trim();
@@ -3512,23 +3740,29 @@
             }
 
             try {
-                await fetchJson("/api/auth/register-admissions-employee", {
+                const registerUrl = state.selectedRegistrationRole === "security"
+                    ? "/api/auth/register-security-employee"
+                    : "/api/auth/register-admissions-employee";
+                await fetchJson(registerUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         full_name: fullName,
+                        employee_id: employeeId,
                         phone,
                         email,
                         username,
                         password
                     })
                 });
-                elements.employeeRegisterStatus.textContent = t("employeeCreated");
+                const successKey = state.selectedRegistrationRole === "security" ? "securityUserCreated" : "employeeCreated";
+                elements.employeeRegisterStatus.textContent = t(successKey);
                 document.getElementById("usernameInput").value = username;
                 elements.employeeRegisterForm.reset();
-                state.selectedRole = "admin";
+                state.selectedRole = state.selectedRegistrationRole;
                 toggleEmployeeRegisterPanel(false);
-                elements.loginStatus.textContent = t("employeeCreated");
+                elements.loginForm.classList.remove("hidden");
+                elements.loginStatus.textContent = t(successKey);
             } catch (error) {
                 elements.employeeRegisterStatus.textContent = localizeErrorMessage(error.message);
             }
@@ -3708,6 +3942,7 @@
             event.preventDefault();
             elements.securityUserStatus.textContent = "";
             const fullName = document.getElementById("securityFullNameInput").value.trim();
+            const employeeId = document.getElementById("securityEmployeeIdInput").value.trim();
             const phone = document.getElementById("securityPhoneInput").value.trim();
             const email = document.getElementById("securityEmailInput").value.trim();
             const username = document.getElementById("securityUsernameInput").value.trim();
@@ -3726,6 +3961,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         full_name: fullName,
+                        employee_id: employeeId,
                         phone,
                         email,
                         username,

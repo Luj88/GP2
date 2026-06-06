@@ -186,6 +186,8 @@ def ensure_database_schema() -> None:
             connection.execute("ALTER TABLE app_users ADD COLUMN email TEXT")
         if "phone" not in app_user_columns:
             connection.execute("ALTER TABLE app_users ADD COLUMN phone TEXT")
+        if "employee_id" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN employee_id TEXT")
 
         connection.execute(
             """
@@ -324,7 +326,7 @@ def authenticate_user(role: str, username: str, password: str) -> dict[str, Any]
     try:
         row = connection.execute(
             """
-            SELECT id, username, role, full_name, email, phone, password_hash
+            SELECT id, username, role, full_name, email, phone, employee_id, password_hash
             FROM app_users
             WHERE username = ? AND role = ?
             """,
@@ -350,6 +352,7 @@ def authenticate_user(role: str, username: str, password: str) -> dict[str, Any]
             "full_name": row["full_name"],
             "email": row["email"],
             "phone": row["phone"],
+            "employee_id": row["employee_id"],
         }
     finally:
         connection.close()
@@ -358,6 +361,7 @@ def authenticate_user(role: str, username: str, password: str) -> dict[str, Any]
 def create_app_user(
     role: str,
     full_name: str,
+    employee_id: str,
     username: str,
     password: str,
     email: str,
@@ -381,10 +385,10 @@ def create_app_user(
         password_hash = generate_password_hash(password)
         cursor = connection.execute(
             """
-            INSERT INTO app_users (username, role, full_name, email, phone, password_hash, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO app_users (username, role, full_name, employee_id, email, phone, password_hash, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (username, role, full_name, email or None, phone or None, password_hash, now),
+            (username, role, full_name, employee_id, email or None, phone or None, password_hash, now),
         )
         connection.commit()
         return {
@@ -392,6 +396,7 @@ def create_app_user(
             "username": username,
             "role": role,
             "full_name": full_name,
+            "employee_id": employee_id,
             "email": email,
             "phone": phone,
             "created_at": now,
@@ -405,7 +410,7 @@ def list_app_users(role: str) -> list[dict[str, Any]]:
     try:
         rows = connection.execute(
             """
-            SELECT id, username, role, full_name, email, phone, created_at, last_login_at
+            SELECT id, username, role, full_name, employee_id, email, phone, created_at, last_login_at
             FROM app_users
             WHERE role = ?
             ORDER BY datetime(created_at) DESC, full_name COLLATE NOCASE ASC
@@ -419,12 +424,13 @@ def list_app_users(role: str) -> list[dict[str, Any]]:
 
 def create_admissions_employee(
     full_name: str,
+    employee_id: str,
     username: str,
     password: str,
     email: str,
     phone: str,
 ) -> dict[str, Any]:
-    return create_app_user("admin", full_name, username, password, email, phone)
+    return create_app_user("admin", full_name, employee_id, username, password, email, phone)
 
 
 def admin_user_exists() -> bool:
@@ -1618,24 +1624,21 @@ def auth_login():
 
 @app.route("/api/auth/register-admissions-employee", methods=["POST"])
 def register_admissions_employee():
-    user = get_current_user()
-    if admin_user_exists() and (user is None or user.get("role") != "admin"):
-        return jsonify({"error": "Only an admin can create another admissions employee"}), 403
-
     payload = request.get_json(silent=True) or {}
     full_name = str(payload.get("full_name", "")).strip()
+    employee_id = str(payload.get("employee_id", "")).strip()
     username = str(payload.get("username", "")).strip()
     password = str(payload.get("password", ""))
     email = str(payload.get("email", "")).strip()
     phone = str(payload.get("phone", "")).strip()
 
-    if not full_name or not username or not password:
-        return jsonify({"error": "full_name, username, and password are required"}), 400
+    if not full_name or not employee_id or not username or not password:
+        return jsonify({"error": "full_name, employee_id, username, and password are required"}), 400
     if len(password) < MIN_PASSWORD_LENGTH:
         return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
 
     try:
-        user = create_admissions_employee(full_name, username, password, email, phone)
+        user = create_admissions_employee(full_name, employee_id, username, password, email, phone)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
@@ -1645,24 +1648,51 @@ def register_admissions_employee():
     }), 201
 
 
+@app.route("/api/auth/register-security-employee", methods=["POST"])
+def register_security_employee():
+    payload = request.get_json(silent=True) or {}
+    full_name = str(payload.get("full_name", "")).strip()
+    employee_id = str(payload.get("employee_id", "")).strip()
+    username = str(payload.get("username", "")).strip()
+    password = str(payload.get("password", ""))
+    email = str(payload.get("email", "")).strip()
+    phone = str(payload.get("phone", "")).strip()
+
+    if not full_name or not employee_id or not username or not password:
+        return jsonify({"error": "full_name, employee_id, username, and password are required"}), 400
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
+
+    try:
+        user = create_app_user("security", full_name, employee_id, username, password, email, phone)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    return jsonify({
+        "user": user,
+        "message": "Security employee account created successfully.",
+    }), 201
+
+
 @app.route("/api/security-users", methods=["POST"])
 @require_auth
 @require_role("admin")
 def create_security_user():
     payload = request.get_json(silent=True) or {}
     full_name = str(payload.get("full_name", "")).strip()
+    employee_id = str(payload.get("employee_id", "")).strip()
     username = str(payload.get("username", "")).strip()
     password = str(payload.get("password", ""))
     email = str(payload.get("email", "")).strip()
     phone = str(payload.get("phone", "")).strip()
 
-    if not full_name or not username or not password:
-        return jsonify({"error": "full_name, username, and password are required"}), 400
+    if not full_name or not employee_id or not username or not password:
+        return jsonify({"error": "full_name, employee_id, username, and password are required"}), 400
     if len(password) < MIN_PASSWORD_LENGTH:
         return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
 
     try:
-        user = create_app_user("security", full_name, username, password, email, phone)
+        user = create_app_user("security", full_name, employee_id, username, password, email, phone)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
@@ -1707,7 +1737,7 @@ def bootstrap():
 
 
 @app.route("/video_feed")
-@require_role("security")
+@require_role("admin", "security")
 def video_feed():
     return Response(
         processor.generate_stream(),
@@ -1749,13 +1779,13 @@ def get_capture(filename: str):
 
 
 @app.route("/api/system/status")
-@require_role("security")
+@require_role("admin", "security")
 def get_system_status():
     return jsonify(processor.system_status())
 
 
 @app.route("/api/system/camera", methods=["POST"])
-@require_role("security")
+@require_role("admin", "security")
 def set_system_camera():
     payload = request.get_json(silent=True) or {}
     if "enabled" not in payload:
@@ -1764,7 +1794,7 @@ def set_system_camera():
 
 
 @app.route("/api/security/media-scan", methods=["POST"])
-@require_role("security")
+@require_role("admin", "security")
 def security_media_scan():
     media_file = request.files.get("media")
     if media_file is None or not media_file.filename:
@@ -1777,7 +1807,7 @@ def security_media_scan():
 
 
 @app.route("/api/security/qr-verify", methods=["POST"])
-@require_role("security")
+@require_role("admin", "security")
 def security_qr_verify():
     payload = request.get_json(silent=True) or {}
     token = str(payload.get("token", "")).strip()
@@ -1798,7 +1828,7 @@ def security_qr_verify():
 
 
 @app.route("/api/security/qr-scan", methods=["POST"])
-@require_role("security")
+@require_role("admin", "security")
 def security_qr_scan():
     image_file = request.files.get("qr_image")
     if image_file is None or not image_file.filename:
@@ -1819,7 +1849,7 @@ def security_qr_scan():
 
 
 @app.route("/api/security/qr-scan-current", methods=["POST"])
-@require_role("security")
+@require_role("admin", "security")
 def security_qr_scan_current():
     try:
         token = decode_qr_from_frame(processor.capture_current_frame())
@@ -1836,7 +1866,7 @@ def security_qr_scan_current():
 
 
 @app.route("/api/security/student-id-entry", methods=["POST"])
-@require_role("security")
+@require_role("admin", "security")
 def security_student_id_entry():
     payload = request.get_json(silent=True) or {}
     student_id = str(payload.get("student_id", "")).strip()
