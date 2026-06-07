@@ -91,6 +91,9 @@ app.config["MAX_CONTENT_LENGTH"] = MEDIA_SCAN_MAX_UPLOAD_BYTES
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = env_flag("ACCESS_COOKIE_SECURE", False)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+app.jinja_env.auto_reload = True
 socketio = SocketIO(app, cors_allowed_origins=env_list("ACCESS_ALLOWED_ORIGINS"))
 qr_serializer = URLSafeSerializer(app.config["SECRET_KEY"], salt="student-entry-qr")
 
