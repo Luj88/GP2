@@ -1,5 +1,6 @@
 import pickle
 import logging
+import os
 import sqlite3
 import time
 from dataclasses import dataclass
@@ -14,7 +15,12 @@ from deepface import DeepFace
 logger = logging.getLogger(__name__)
 
 GP2_DIR = Path(__file__).resolve().parents[1]
-DATABASE_PATH = GP2_DIR / "university.db"
+DATABASE_PATH = Path(
+    os.environ.get(
+        "ACCESS_DATABASE_PATH",
+        Path.home() / "AppData" / "Local" / "GP2_LUJ" / "university.db",
+    )
+)
 MODEL_NAME = "VGG-Face"
 MATCH_THRESHOLD = 0.35
 TARGET_FPS = 30
