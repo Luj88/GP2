@@ -289,7 +289,7 @@
 
         .login-form-panel {
             position: relative;
-            width: min(420px, 100%);
+            width: min(780px, 100%);
             margin: 0 auto;
             padding: 10px;
             display: flex;
@@ -302,7 +302,301 @@
             content: none;
         }
 
-        .brand-row, .app-header, .row, .toolbar, .role-switch, .summary-grid {
+        .role-choice-panel,
+        .login-detail-panel {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            animation: loginPanelIn .46s cubic-bezier(.16, 1, .3, 1);
+        }
+
+        .role-choice-heading {
+            margin: 0 auto 18px;
+            max-width: 620px;
+            color: #f4fbff;
+            text-align: center;
+            text-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+        }
+
+        .role-choice-heading h1 {
+            margin-bottom: 10px;
+            font-size: clamp(30px, 4vw, 48px);
+            letter-spacing: 0;
+        }
+
+        .role-choice-heading p {
+            margin: 0;
+            color: rgba(235, 247, 255, 0.78);
+            line-height: 1.7;
+        }
+
+        .role-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .role-choice-card {
+            position: relative;
+            min-height: 260px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 8px;
+            padding: 22px;
+            background:
+                linear-gradient(145deg, rgba(244, 250, 255, 0.92), rgba(225, 241, 255, 0.78)),
+                repeating-linear-gradient(90deg, transparent 0 58px, rgba(21, 82, 143, 0.08) 59px, transparent 60px);
+            color: #132436;
+            text-align: start;
+            box-shadow: 0 24px 70px rgba(0, 12, 28, 0.22);
+            isolation: isolate;
+        }
+
+        .role-choice-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.84;
+            background: linear-gradient(115deg, transparent 0 42%, rgba(255, 255, 255, 0.42) 48%, transparent 54%);
+            transform: translateX(-70%);
+            transition: transform .58s ease;
+        }
+
+        .role-choice-card:hover,
+        .role-choice-card:focus {
+            transform: translateY(-4px);
+            outline: none;
+            box-shadow: 0 30px 82px rgba(0, 12, 28, 0.3);
+        }
+
+        .role-choice-card:hover::before,
+        .role-choice-card:focus::before {
+            transform: translateX(68%);
+        }
+
+        .role-choice-card.security {
+            background:
+                linear-gradient(145deg, rgba(232, 247, 255, 0.92), rgba(199, 230, 245, 0.78)),
+                repeating-linear-gradient(0deg, transparent 0 42px, rgba(15, 159, 154, 0.1) 43px, transparent 44px);
+        }
+
+        .role-choice-icon {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 74px;
+            height: 74px;
+            margin-bottom: 18px;
+            border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border) 76%);
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-size: 26px;
+            font-weight: 900;
+            box-shadow: 0 18px 36px color-mix(in srgb, var(--primary) 22%, transparent);
+        }
+
+        .role-choice-icon::after {
+            content: "";
+            position: absolute;
+            inset: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.58);
+            border-radius: 6px;
+            animation: roleIconPulse 2.8s ease-in-out infinite;
+        }
+
+        .role-choice-card h2 {
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+
+        .role-choice-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .login-detail-panel {
+            width: min(460px, 100%);
+            margin: 0 auto;
+        }
+
+        .login-role-scene {
+            position: absolute;
+            inset: -74px -110px;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: 8px;
+            filter: drop-shadow(0 24px 54px rgba(0, 0, 0, 0.22));
+        }
+
+        .login-role-scene::before,
+        .login-role-scene::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: 0.42;
+        }
+
+        .login-role-scene::before {
+            background:
+                repeating-linear-gradient(90deg, transparent 0 38px, rgba(92, 214, 255, 0.18) 39px, transparent 40px),
+                repeating-linear-gradient(0deg, transparent 0 38px, rgba(92, 214, 255, 0.12) 39px, transparent 40px);
+            animation: roleGridMove 12s linear infinite;
+        }
+
+        .login-role-scene::after {
+            background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.34) 48%, transparent 70%);
+            transform: translateX(-72%);
+            animation: roleSceneSweep 4.8s ease-in-out infinite;
+        }
+
+        .login-shell[data-login-role="admin"] .login-role-scene::before {
+            background:
+                repeating-linear-gradient(90deg, transparent 0 48px, rgba(214, 152, 82, 0.16) 49px, transparent 50px),
+                repeating-linear-gradient(0deg, transparent 0 48px, rgba(15, 159, 154, 0.12) 49px, transparent 50px);
+        }
+
+        .scene-scan-ring,
+        .scene-scan-line,
+        .scene-data-card,
+        .scene-data-stream {
+            position: absolute;
+            display: block;
+        }
+
+        .scene-scan-ring {
+            inset: 36px;
+            border: 2px solid rgba(92, 214, 255, 0.56);
+            border-radius: 8px;
+            opacity: 0;
+            box-shadow: inset 0 0 34px rgba(92, 214, 255, 0.16), 0 0 28px rgba(92, 214, 255, 0.24);
+            animation: securityScanRing 2.4s ease-in-out infinite;
+        }
+
+        .scene-scan-ring:nth-child(2) {
+            inset: 76px;
+            animation-delay: .52s;
+        }
+
+        .scene-scan-line {
+            left: 34px;
+            right: 34px;
+            top: 0;
+            height: 4px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, rgba(92, 214, 255, 0.96), rgba(52, 179, 154, 0.9), transparent);
+            box-shadow: 0 0 24px rgba(92, 214, 255, 0.82);
+            animation: securityScanLine 2.2s ease-in-out infinite;
+        }
+
+        .scene-data-card {
+            width: 128px;
+            height: 72px;
+            border: 1px solid rgba(255, 255, 255, 0.46);
+            border-radius: 8px;
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(225, 241, 255, 0.34)),
+                repeating-linear-gradient(0deg, transparent 0 13px, rgba(21, 82, 143, 0.18) 14px, transparent 15px);
+            box-shadow: 0 20px 48px rgba(0, 20, 40, 0.2);
+            opacity: 0;
+            transform: translateY(22px);
+        }
+
+        .scene-data-card::before {
+            content: "";
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+        }
+
+        .scene-data-card::after {
+            content: "";
+            position: absolute;
+            left: 58px;
+            top: 18px;
+            width: 50px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(21, 82, 143, 0.42);
+            box-shadow: 0 15px 0 rgba(15, 159, 154, 0.3), 0 30px 0 rgba(21, 82, 143, 0.24);
+        }
+
+        .scene-data-card.one {
+            top: 20px;
+            left: -34px;
+            animation: adminCardFloat 3.4s ease-in-out infinite;
+        }
+
+        .scene-data-card.two {
+            right: -38px;
+            bottom: 72px;
+            animation: adminCardFloat 3.4s ease-in-out infinite .78s;
+        }
+
+        .scene-data-stream {
+            left: 24px;
+            right: 24px;
+            bottom: 24px;
+            height: 5px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, rgba(214, 152, 82, 0.9), rgba(15, 159, 154, 0.92), transparent);
+            box-shadow: 0 0 24px rgba(214, 152, 82, 0.6);
+            transform: translateX(-80%);
+            animation: adminDataStream 1.8s ease-in-out infinite;
+        }
+
+        .login-shell[data-login-role="admin"] .scene-scan-ring,
+        .login-shell[data-login-role="admin"] .scene-scan-line,
+        .login-shell[data-login-role="security"] .scene-data-card,
+        .login-shell[data-login-role="security"] .scene-data-stream {
+            display: none;
+        }
+
+        .login-shell[data-login-role="security"] .face-scan-visual::after {
+            height: 5px;
+            animation-duration: 1.45s;
+            box-shadow: 0 0 28px rgba(92, 214, 255, 0.95);
+        }
+
+        .login-shell[data-login-role="admin"] .face-scan-visual::after {
+            background: linear-gradient(90deg, transparent, rgba(214, 152, 82, 0.96), rgba(15, 159, 154, 0.86), transparent);
+            animation-duration: 2.2s;
+            box-shadow: 0 0 24px rgba(214, 152, 82, 0.7);
+        }
+
+        .selected-role-header {
+            position: relative;
+            margin-bottom: 14px;
+            padding: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(244, 250, 255, 0.86);
+            box-shadow: 0 18px 44px rgba(0, 20, 40, 0.16);
+        }
+
+        .selected-role-header h2 {
+            margin-bottom: 4px;
+        }
+
+        .selected-role-header p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .login-back-button {
+            margin-bottom: 12px;
+        }
+
+        .brand-row, .app-header, .row, .toolbar, .summary-grid {
             display: flex;
             align-items: center;
         }
@@ -887,38 +1181,43 @@
 
         .login-language-switch {
             position: fixed;
-            top: 18px;
-            left: 18px;
-            z-index: 4;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px;
-            border: 1px solid rgba(126, 184, 236, 0.2);
-            border-radius: 10px;
-            background: #041225;
-            box-shadow: 0 12px 26px rgba(0, 8, 20, 0.24);
+            z-index: 20;
+            top: 24px;
+            left: 24px;
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 8px;
+            background: rgba(5, 18, 34, 0.52);
+            box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+            backdrop-filter: blur(12px);
             direction: ltr;
         }
 
         .language-option {
-            min-width: 34px;
-            height: 28px;
-            border: 0;
-            border-radius: 7px;
-            padding: 0 8px;
+            width: 48px;
+            min-height: 38px;
+            border: 1px solid transparent;
+            border-radius: 6px;
             background: transparent;
-            color: rgba(236, 247, 255, 0.72);
-            font-size: 12px;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 13px;
             font-weight: 900;
-            line-height: 1;
+            letter-spacing: 0;
         }
 
-        .language-option.active,
         .language-option:hover,
         .language-option:focus {
-            background: #123a68;
+            border-color: rgba(255, 255, 255, 0.28);
             color: #fff;
+            outline: none;
+        }
+
+        .language-option.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 28%, transparent);
         }
 
         .app-language-switch {
@@ -972,83 +1271,6 @@
             margin-bottom: 14px;
         }
 
-        .role-switch {
-            gap: 8px;
-            margin: 8px 0 14px;
-            padding: 6px;
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
-            align-items: stretch;
-            overflow: visible;
-            direction: ltr;
-        }
-
-        .role-menu-wrap {
-            position: relative;
-            flex: 1;
-        }
-
-        .role-button {
-            flex: 1;
-            width: 100%;
-            border: 0;
-            border-radius: 14px;
-            padding: 13px 12px;
-            background: transparent;
-            color: var(--muted);
-            font-weight: 800;
-        }
-
-        .role-button.active {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: #fff;
-            box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 38%, transparent);
-        }
-
-        .role-dropdown {
-            position: absolute;
-            z-index: 12;
-            top: calc(100% + 8px);
-            inset-inline: 0;
-            display: grid;
-            gap: 7px;
-            min-width: 220px;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: color-mix(in srgb, var(--surface) 94%, white 6%);
-            box-shadow: var(--shadow);
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-6px);
-            transition: opacity .16s ease, transform .16s ease;
-        }
-
-        .role-menu-wrap:hover .role-dropdown,
-        .role-menu-wrap:focus-within .role-dropdown {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        .role-menu-item {
-            width: 100%;
-            border: 0;
-            border-radius: 10px;
-            padding: 11px 12px;
-            background: transparent;
-            color: var(--text);
-            font-weight: 800;
-            text-align: inherit;
-        }
-
-        .role-menu-item:hover,
-        .role-menu-item:focus {
-            background: color-mix(in srgb, var(--primary) 12%, transparent);
-            color: var(--primary-strong);
-        }
-
         .primary-button, .secondary-button, .danger-button, .ghost-button {
             border: 1px solid transparent;
             border-radius: 16px;
@@ -1085,6 +1307,106 @@
             }
             72%, 100% {
                 transform: translateX(125%);
+            }
+        }
+
+        @keyframes loginPanelIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes roleIconPulse {
+            0%, 100% {
+                opacity: 0.34;
+                transform: scale(0.84);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.08);
+            }
+        }
+
+        @keyframes roleGridMove {
+            from {
+                background-position: 0 0, 0 0;
+            }
+            to {
+                background-position: 40px 0, 0 40px;
+            }
+        }
+
+        @keyframes roleSceneSweep {
+            0%, 28% {
+                transform: translateX(-72%);
+            }
+            68%, 100% {
+                transform: translateX(72%);
+            }
+        }
+
+        @keyframes securityScanRing {
+            0% {
+                opacity: 0;
+                transform: scale(0.76);
+            }
+            22% {
+                opacity: 0.9;
+            }
+            72%, 100% {
+                opacity: 0;
+                transform: scale(1.16);
+            }
+        }
+
+        @keyframes securityScanLine {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            12% {
+                opacity: 1;
+            }
+            56% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(360px);
+            }
+        }
+
+        @keyframes adminCardFloat {
+            0% {
+                opacity: 0;
+                transform: translateY(28px) scale(0.92);
+            }
+            18%, 72% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-26px) scale(0.96);
+            }
+        }
+
+        @keyframes adminDataStream {
+            0% {
+                opacity: 0;
+                transform: translateX(-82%);
+            }
+            22%, 68% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(82%);
             }
         }
 
@@ -1168,8 +1490,7 @@
 
         .secondary-button:hover,
         .ghost-button:hover,
-        .admin-tab:hover,
-        .role-button:hover {
+        .admin-tab:hover {
             transform: translateY(-1px);
         }
 
@@ -1988,6 +2309,18 @@
                 grid-template-columns: 1fr;
             }
 
+            .role-choice-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .role-choice-card {
+                min-height: 210px;
+            }
+
+            .login-geometry {
+                opacity: 0.46;
+            }
+
             .corner-camera {
                 opacity: 0.58;
                 transform: scaleX(-1) scale(0.82);
@@ -2027,6 +2360,29 @@
 
             .login-intro, .login-form-panel, .card {
                 padding: 18px;
+            }
+
+            .role-choice-heading h1 {
+                font-size: 30px;
+            }
+
+            .role-choice-card {
+                min-height: 190px;
+                padding: 18px;
+            }
+
+            .login-role-scene {
+                inset: -42px -22px;
+            }
+
+            .scene-data-card {
+                width: 102px;
+                height: 62px;
+            }
+
+            .login-language-switch {
+                top: 14px;
+                left: 14px;
             }
 
             .login-intro {
@@ -2081,6 +2437,12 @@
             .neural-network-bg,
             .corner-camera,
             .camera-beam,
+            .login-role-scene::before,
+            .login-role-scene::after,
+            .scene-scan-ring,
+            .scene-scan-line,
+            .scene-data-card,
+            .scene-data-stream,
             .primary-button::after {
                 animation: none;
             }
@@ -2096,18 +2458,47 @@
         <canvas id="neuralNetworkBg" class="neural-network-bg" aria-hidden="true"></canvas>
         <section class="login-panel">
             <div class="login-form-panel">
-                <div class="face-scan-visual" aria-hidden="true">
-                    <div class="secure-visual-frame">
-                        <img src="{{ url_for('static', filename='just-secure-logo.png') }}?v=20260607-centered" alt="" onerror="this.classList.add('logo-failed');">
+                <section id="roleChoicePanel" class="role-choice-panel">
+                    <div class="role-choice-heading">
+                        <h1 data-i18n="chooseEntryTitle">اختر طريقة الدخول</h1>
+                        <p data-i18n="chooseEntryHint">حدد بوابة العمل المناسبة لفتح شاشة دخول مهيأة لطبيعة دورك.</p>
                     </div>
-                    <strong class="just-secure-caption">JUST Secure</strong>
-                </div>
-                <div class="role-switch" aria-label="Role">
-                    <button class="role-button active" type="button" data-role="admin" data-i18n="adminRole">القبول والتسجيل</button>
-                    <button class="role-button" type="button" data-role="security" data-i18n="securityRole">الأمن الجامعي</button>
-                </div>
+                    <div class="role-choice-grid">
+                        <button class="role-choice-card admin" type="button" data-role="admin">
+                            <span class="role-choice-icon" aria-hidden="true">ID</span>
+                            <h2 data-i18n="loginAdminRole">موظف القبول والتسجيل</h2>
+                            <p data-i18n="loginAdminHint">إدارة بيانات الطلبة، المزامنة، التسجيل، وسجلات الدخول.</p>
+                        </button>
+                        <button class="role-choice-card security" type="button" data-role="security">
+                            <span class="role-choice-icon" aria-hidden="true">SC</span>
+                            <h2 data-i18n="loginSecurityRole">موظف الأمن</h2>
+                            <p data-i18n="loginSecurityHint">مراقبة الدخول المباشر، قراءة الوجوه، والتحقق الأمني السريع.</p>
+                        </button>
+                    </div>
+                </section>
 
-                <form id="loginForm" class="hidden">
+                <section id="loginDetailPanel" class="login-detail-panel hidden">
+                    <div class="login-role-scene" aria-hidden="true">
+                        <span class="scene-scan-ring"></span>
+                        <span class="scene-scan-ring"></span>
+                        <span class="scene-scan-line"></span>
+                        <span class="scene-data-card one"></span>
+                        <span class="scene-data-card two"></span>
+                        <span class="scene-data-stream"></span>
+                    </div>
+                    <button id="backToRoleChoiceButton" class="ghost-button login-back-button" type="button" data-i18n="changeRole">تغيير الدور</button>
+                    <div class="face-scan-visual" aria-hidden="true">
+                        <div class="secure-visual-frame">
+                            <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.src='{{ url_for('static', filename='university-logo.png') }}';">
+                        </div>
+                        <strong class="just-secure-caption">JUST Secure</strong>
+                    </div>
+                    <div class="selected-role-header">
+                        <h2 id="selectedRoleTitle"></h2>
+                        <p id="selectedRoleHint"></p>
+                    </div>
+
+                <form id="loginForm">
                     <div class="field">
                         <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
                         <input id="usernameInput" type="text" autocomplete="username" required>
@@ -2170,6 +2561,7 @@
                         </div>
                         <p id="employeeRegisterStatus" class="status-text full"></p>
                     </form>
+                </section>
                 </section>
             </div>
         </section>
@@ -2508,6 +2900,13 @@
                 dark: "داكن",
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
+                loginAdminRole: "موظف القبول والتسجيل",
+                loginSecurityRole: "موظف الأمن",
+                chooseEntryTitle: "اختر طريقة الدخول",
+                chooseEntryHint: "حدد بوابة العمل المناسبة لفتح شاشة دخول مهيأة لطبيعة دورك.",
+                loginAdminHint: "إدارة بيانات الطلبة، المزامنة، التسجيل، وسجلات الدخول.",
+                loginSecurityHint: "مراقبة الدخول المباشر، قراءة الوجوه، والتحقق الأمني السريع.",
+                changeRole: "تغيير الدور",
                 newAdmissionsEmployee: "موظف قبول وتسجيل جديد",
                 newSecurityEmployee: "تسجيل رجل أمن جديد",
                 existingAdmissionsLogin: "دخول موظف مسجل",
@@ -2669,6 +3068,13 @@
                 dark: "Dark",
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
+                loginAdminRole: "Admissions Employee",
+                loginSecurityRole: "Security Employee",
+                chooseEntryTitle: "Choose Entry Mode",
+                chooseEntryHint: "Select the workspace that matches your role to open a tailored sign-in screen.",
+                loginAdminHint: "Manage students, sync admissions records, registrations, and access logs.",
+                loginSecurityHint: "Monitor live entry, face recognition, and fast security verification.",
+                changeRole: "Change Role",
                 newAdmissionsEmployee: "New Admissions Employee",
                 newSecurityEmployee: "Register New Security Guard",
                 existingAdmissionsLogin: "Sign In Existing Employee",
@@ -2828,7 +3234,7 @@
         const state = {
             language: localStorage.getItem("accessLanguage") || "ar",
             theme: initialTheme,
-            selectedRole: "admin",
+            selectedRole: null,
             selectedRegistrationRole: "admin",
             adminPanel: "sync",
             user: null,
@@ -2855,11 +3261,14 @@
             neuralNetworkBg: document.getElementById("neuralNetworkBg"),
             appShell: document.getElementById("appShell"),
             loginForm: document.getElementById("loginForm"),
+            roleChoicePanel: document.getElementById("roleChoicePanel"),
+            loginDetailPanel: document.getElementById("loginDetailPanel"),
+            backToRoleChoiceButton: document.getElementById("backToRoleChoiceButton"),
+            selectedRoleTitle: document.getElementById("selectedRoleTitle"),
+            selectedRoleHint: document.getElementById("selectedRoleHint"),
             loginStatus: document.getElementById("loginStatus"),
             forgotPasswordButton: document.getElementById("forgotPasswordButton"),
             forgotPasswordPanel: document.getElementById("forgotPasswordPanel"),
-            openEmployeeRegisterButton: document.getElementById("openEmployeeRegisterButton"),
-            openSecurityRegisterButton: document.getElementById("openSecurityRegisterButton"),
             closeEmployeeRegisterButton: document.getElementById("closeEmployeeRegisterButton"),
             employeeRegisterPanel: document.getElementById("employeeRegisterPanel"),
             employeeRegisterForm: document.getElementById("employeeRegisterForm"),
@@ -3014,7 +3423,9 @@
             document.documentElement.dir = state.language === "ar" ? "rtl" : "ltr";
             document.body.dataset.theme = state.theme;
             elements.languageButtons.forEach((button) => {
-                button.classList.toggle("active", button.dataset.language === state.language);
+                const isActive = button.dataset.language === state.language;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-pressed", String(isActive));
             });
 
             document.querySelectorAll("[data-i18n]").forEach((node) => {
@@ -3022,15 +3433,28 @@
                 if (key) node.textContent = t(key);
             });
 
-            document.querySelectorAll(".role-button").forEach((button) => {
-                button.classList.toggle("active", button.dataset.role === state.selectedRole);
-            });
             setAdminPanel(state.adminPanel);
 
             renderAdmin();
             renderAlerts();
             renderMediaScanResults();
+            renderLoginRole();
             updateHeader();
+        }
+
+        function renderLoginRole() {
+            const hasRole = Boolean(state.selectedRole);
+            elements.roleChoicePanel.classList.toggle("hidden", hasRole);
+            elements.loginDetailPanel.classList.toggle("hidden", !hasRole);
+            elements.loginScreen.dataset.loginRole = state.selectedRole || "";
+            document.querySelectorAll(".role-choice-card").forEach((button) => {
+                button.classList.toggle("active", button.dataset.role === state.selectedRole);
+            });
+            if (!hasRole) return;
+            const titleKey = state.selectedRole === "security" ? "loginSecurityRole" : "loginAdminRole";
+            const hintKey = state.selectedRole === "security" ? "loginSecurityHint" : "loginAdminHint";
+            elements.selectedRoleTitle.textContent = t(titleKey);
+            elements.selectedRoleHint.textContent = t(hintKey);
         }
 
         function toggleEmployeeRegisterPanel(show, role = state.selectedRegistrationRole) {
@@ -3053,10 +3477,18 @@
         function showExistingLogin(role) {
             state.selectedRole = role;
             toggleEmployeeRegisterPanel(false);
-            elements.loginForm.classList.remove("hidden");
             elements.loginStatus.textContent = "";
             applyPreferences();
             document.getElementById("usernameInput").focus();
+        }
+
+        function showRoleChoice() {
+            state.selectedRole = null;
+            toggleEmployeeRegisterPanel(false);
+            elements.loginStatus.textContent = "";
+            elements.forgotPasswordPanel.classList.add("hidden");
+            elements.loginForm.reset();
+            applyPreferences();
         }
 
         function toggleForgotPasswordPanel() {
@@ -3071,8 +3503,9 @@
             elements.appShell.classList.add("hidden");
             elements.adminView.classList.add("hidden");
             elements.securityView.classList.add("hidden");
+            state.selectedRole = null;
             toggleEmployeeRegisterPanel(false);
-            elements.loginForm.classList.add("hidden");
+            renderLoginRole();
             elements.videoStream.removeAttribute("src");
             elements.mediaScanForm.reset();
             elements.mediaScanStatus.textContent = "";
@@ -3592,16 +4025,14 @@
             }
         }
 
-        document.querySelectorAll(".role-button").forEach((button) => {
+        document.querySelectorAll(".role-choice-card").forEach((button) => {
             button.addEventListener("click", () => {
                 showExistingLogin(button.dataset.role);
             });
         });
 
-        document.querySelectorAll(".login-role-option").forEach((button) => {
-            button.addEventListener("click", () => {
-                showExistingLogin(button.dataset.role);
-            });
+        elements.backToRoleChoiceButton.addEventListener("click", () => {
+            showRoleChoice();
         });
 
         document.querySelectorAll(".admin-tab").forEach((button) => {
@@ -3866,6 +4297,10 @@
         elements.loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             elements.loginStatus.textContent = "";
+            if (!state.selectedRole) {
+                showRoleChoice();
+                return;
+            }
             const username = document.getElementById("usernameInput").value.trim();
             const password = document.getElementById("passwordInput").value;
             try {
@@ -3880,18 +4315,6 @@
                 elements.loginStatus.textContent = localizeErrorMessage(error.message);
             }
         });
-
-        if (elements.openEmployeeRegisterButton) {
-            elements.openEmployeeRegisterButton.addEventListener("click", () => {
-                toggleEmployeeRegisterPanel(true, "admin");
-            });
-        }
-
-        if (elements.openSecurityRegisterButton) {
-            elements.openSecurityRegisterButton.addEventListener("click", () => {
-                toggleEmployeeRegisterPanel(true, "security");
-            });
-        }
 
         elements.forgotPasswordButton.addEventListener("click", () => {
             toggleForgotPasswordPanel();
