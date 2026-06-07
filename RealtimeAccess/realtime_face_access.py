@@ -8,10 +8,10 @@ from typing import Optional
 
 import cv2
 import numpy as np
-from deepface import DeepFace
 
 
 logger = logging.getLogger(__name__)
+_DEEPFACE = None
 
 GP2_DIR = Path(__file__).resolve().parents[1]
 DATABASE_PATH = GP2_DIR / "university.db"
@@ -139,8 +139,17 @@ def analyze_accessory_state(face_region: np.ndarray) -> str:
     return "clear"
 
 
+def get_deepface():
+    global _DEEPFACE
+    if _DEEPFACE is None:
+        from deepface import DeepFace
+
+        _DEEPFACE = DeepFace
+    return _DEEPFACE
+
+
 def extract_face_embeddings(frame: np.ndarray) -> list[tuple[np.ndarray, tuple[int, int, int, int]]]:
-    representations = DeepFace.represent(
+    representations = get_deepface().represent(
         img_path=frame,
         model_name=MODEL_NAME,
         detector_backend="opencv",

@@ -24,8 +24,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from realtime_face_access import (
     DATABASE_PATH,
     IDENTIFICATION_COOLDOWN_SECONDS,
+    MATCH_THRESHOLD,
     TARGET_FPS,
     FrameDecision,
+    cosine_distance,
     evaluate_face_candidate,
     evaluate_frame,
     extract_embedding,
@@ -66,7 +68,8 @@ VALID_ROLES = {"Student", "Staff", "Admin", "Security"}
 ACCOUNT_ROLES = {"admin", "security"}
 ADMISSION_SYNC_INTERVAL_SECONDS = 15
 ADMISSION_SYNC_BATCH_SIZE = 25
-MIN_PASSWORD_LENGTH = 8
+FIXED_LOGIN_USERNAME = "admin"
+FIXED_LOGIN_PASSWORD = "00"
 
 
 def env_flag(name: str, default: bool = False) -> bool:
@@ -358,53 +361,6 @@ def authenticate_user(role: str, username: str, password: str) -> dict[str, Any]
         connection.close()
 
 
-def create_app_user(
-    role: str,
-    full_name: str,
-    employee_id: str,
-    username: str,
-    password: str,
-    email: str,
-    phone: str,
-) -> dict[str, Any]:
-    if role not in ACCOUNT_ROLES:
-        raise ValueError("Unsupported account role")
-
-    connection = get_connection()
-    try:
-        existing = connection.execute(
-            "SELECT id FROM app_users WHERE username = ? AND role = ?",
-            (username, role),
-        ).fetchone()
-        if existing is not None:
-            if role == "admin":
-                raise ValueError("This username is already used by another admissions employee")
-            raise ValueError("This username is already used by another security employee")
-
-        now = datetime.now().isoformat(timespec="seconds")
-        password_hash = generate_password_hash(password)
-        cursor = connection.execute(
-            """
-            INSERT INTO app_users (username, role, full_name, employee_id, email, phone, password_hash, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (username, role, full_name, employee_id, email or None, phone or None, password_hash, now),
-        )
-        connection.commit()
-        return {
-            "id": cursor.lastrowid,
-            "username": username,
-            "role": role,
-            "full_name": full_name,
-            "employee_id": employee_id,
-            "email": email,
-            "phone": phone,
-            "created_at": now,
-        }
-    finally:
-        connection.close()
-
-
 def list_app_users(role: str) -> list[dict[str, Any]]:
     connection = get_connection()
     try:
@@ -422,24 +378,37 @@ def list_app_users(role: str) -> list[dict[str, Any]]:
         connection.close()
 
 
-def create_admissions_employee(
-    full_name: str,
-    employee_id: str,
-    username: str,
-    password: str,
-    email: str,
-    phone: str,
-) -> dict[str, Any]:
-    return create_app_user("admin", full_name, employee_id, username, password, email, phone)
-
-
-def admin_user_exists() -> bool:
+def ensure_fixed_login_accounts() -> None:
     connection = get_connection()
     try:
-        row = connection.execute(
-            "SELECT 1 FROM app_users WHERE role = 'admin' LIMIT 1"
-        ).fetchone()
-        return row is not None
+        now = datetime.now().isoformat(timespec="seconds")
+        password_hash = generate_password_hash(FIXED_LOGIN_PASSWORD)
+        for role, full_name, employee_id in (
+            ("admin", "Admissions Admin", "ADMIN-00"),
+            ("security", "Security Admin", "SECURITY-00"),
+        ):
+            row = connection.execute(
+                "SELECT id FROM app_users WHERE username = ? AND role = ?",
+                (FIXED_LOGIN_USERNAME, role),
+            ).fetchone()
+            if row is None:
+                connection.execute(
+                    """
+                    INSERT INTO app_users (username, role, full_name, employee_id, password_hash, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (FIXED_LOGIN_USERNAME, role, full_name, employee_id, password_hash, now),
+                )
+            else:
+                connection.execute(
+                    """
+                    UPDATE app_users
+                    SET full_name = ?, employee_id = ?, password_hash = ?
+                    WHERE id = ?
+                    """,
+                    (full_name, employee_id, password_hash, row["id"]),
+                )
+        connection.commit()
     finally:
         connection.close()
 
@@ -550,6 +519,11 @@ def sync_admission_students(limit: int = ADMISSION_SYNC_BATCH_SIZE) -> dict[str,
         try:
             frame = load_admission_image(row)
             embedding, _ = extract_embedding(frame)
+            duplicate = find_duplicate_face(embedding, exclude_student_id=student_id)
+            if duplicate:
+                raise ValueError(
+                    f"Face already registered for student {duplicate['student_id']} ({duplicate['name']})."
+                )
             image_path = capture_screenshot(frame, f"admission_{student_id}")
             insert_student_record(student_id, str(row["name"]).strip(), role, embedding, image_path)
 
@@ -624,6 +598,56 @@ def insert_student_record(
         )
         connection.execute("DELETE FROM graduated_students WHERE id = ?", (student_id,))
         connection.commit()
+    finally:
+        connection.close()
+
+
+def find_duplicate_face(embedding: np.ndarray, *, exclude_student_id: str = "") -> Optional[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            "SELECT id, name, role, embedding FROM students"
+        ).fetchall()
+    finally:
+        connection.close()
+
+    best_match: Optional[dict[str, Any]] = None
+    best_distance = float("inf")
+    for row in rows:
+        existing_id = str(row["id"])
+        if exclude_student_id and existing_id == exclude_student_id:
+            continue
+        existing_embedding = np.array(pickle.loads(row["embedding"]), dtype=np.float32)
+        distance = cosine_distance(embedding, existing_embedding)
+        if distance < best_distance:
+            best_distance = distance
+            best_match = {
+                "student_id": existing_id,
+                "name": row["name"],
+                "role": row["role"],
+                "distance": distance,
+            }
+
+    if best_match and best_distance <= MATCH_THRESHOLD:
+        return best_match
+    return None
+
+
+def delete_student_record(student_id: str) -> bool:
+    connection = get_connection()
+    try:
+        cursor = connection.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        connection.execute("DELETE FROM access_logs WHERE student_id = ?", (student_id,))
+        connection.execute(
+            """
+            UPDATE admission_students
+            SET synced_at = NULL, sync_error = NULL
+            WHERE id = ?
+            """,
+            (student_id,),
+        )
+        connection.commit()
+        return cursor.rowcount > 0
     finally:
         connection.close()
 
@@ -1558,8 +1582,12 @@ class WebFaceProcessor:
 
 
 ensure_database_schema()
+ensure_fixed_login_accounts()
 processor = WebFaceProcessor()
-processor.start()
+
+
+def ensure_processor_started() -> None:
+    processor.start()
 
 
 def admissions_sync_loop() -> None:
@@ -1622,87 +1650,6 @@ def auth_login():
     })
 
 
-@app.route("/api/auth/register-admissions-employee", methods=["POST"])
-def register_admissions_employee():
-    payload = request.get_json(silent=True) or {}
-    full_name = str(payload.get("full_name", "")).strip()
-    employee_id = str(payload.get("employee_id", "")).strip()
-    username = str(payload.get("username", "")).strip()
-    password = str(payload.get("password", ""))
-    email = str(payload.get("email", "")).strip()
-    phone = str(payload.get("phone", "")).strip()
-
-    if not full_name or not employee_id or not username or not password:
-        return jsonify({"error": "full_name, employee_id, username, and password are required"}), 400
-    if len(password) < MIN_PASSWORD_LENGTH:
-        return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
-
-    try:
-        user = create_admissions_employee(full_name, employee_id, username, password, email, phone)
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    return jsonify({
-        "user": user,
-        "message": "Admissions employee account created successfully.",
-    }), 201
-
-
-@app.route("/api/auth/register-security-employee", methods=["POST"])
-def register_security_employee():
-    payload = request.get_json(silent=True) or {}
-    full_name = str(payload.get("full_name", "")).strip()
-    employee_id = str(payload.get("employee_id", "")).strip()
-    username = str(payload.get("username", "")).strip()
-    password = str(payload.get("password", ""))
-    email = str(payload.get("email", "")).strip()
-    phone = str(payload.get("phone", "")).strip()
-
-    if not full_name or not employee_id or not username or not password:
-        return jsonify({"error": "full_name, employee_id, username, and password are required"}), 400
-    if len(password) < MIN_PASSWORD_LENGTH:
-        return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
-
-    try:
-        user = create_app_user("security", full_name, employee_id, username, password, email, phone)
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    return jsonify({
-        "user": user,
-        "message": "Security employee account created successfully.",
-    }), 201
-
-
-@app.route("/api/security-users", methods=["POST"])
-@require_auth
-@require_role("admin")
-def create_security_user():
-    payload = request.get_json(silent=True) or {}
-    full_name = str(payload.get("full_name", "")).strip()
-    employee_id = str(payload.get("employee_id", "")).strip()
-    username = str(payload.get("username", "")).strip()
-    password = str(payload.get("password", ""))
-    email = str(payload.get("email", "")).strip()
-    phone = str(payload.get("phone", "")).strip()
-
-    if not full_name or not employee_id or not username or not password:
-        return jsonify({"error": "full_name, employee_id, username, and password are required"}), 400
-    if len(password) < MIN_PASSWORD_LENGTH:
-        return jsonify({"error": f"Password must be at least {MIN_PASSWORD_LENGTH} characters"}), 400
-
-    try:
-        user = create_app_user("security", full_name, employee_id, username, password, email, phone)
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-
-    return jsonify({
-        "user": user,
-        "items": list_app_users("security"),
-        "message": "Security employee account created successfully.",
-    }), 201
-
-
 @app.route("/api/security-users")
 @require_auth
 @require_role("admin")
@@ -1739,6 +1686,7 @@ def bootstrap():
 @app.route("/video_feed")
 @require_role("admin", "security")
 def video_feed():
+    ensure_processor_started()
     return Response(
         processor.generate_stream(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
@@ -1748,6 +1696,7 @@ def video_feed():
 @app.route("/registration_camera_feed")
 @require_role("admin")
 def registration_camera_feed():
+    ensure_processor_started()
     return Response(
         processor.generate_registration_stream(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
@@ -1757,6 +1706,7 @@ def registration_camera_feed():
 @app.route("/api/register/capture-image")
 @require_role("admin")
 def capture_registration_image():
+    ensure_processor_started()
     try:
         frame = processor.capture_registration_frame()
     except RuntimeError as error:
@@ -1781,6 +1731,7 @@ def get_capture(filename: str):
 @app.route("/api/system/status")
 @require_role("admin", "security")
 def get_system_status():
+    ensure_processor_started()
     return jsonify(processor.system_status())
 
 
@@ -1790,6 +1741,8 @@ def set_system_camera():
     payload = request.get_json(silent=True) or {}
     if "enabled" not in payload:
         return jsonify({"error": "enabled is required"}), 400
+    if bool(payload["enabled"]):
+        ensure_processor_started()
     return jsonify(processor.set_camera_enabled(bool(payload["enabled"])))
 
 
@@ -1942,6 +1895,20 @@ def graduate_student(student_id: str):
     })
 
 
+@app.route("/api/students/<student_id>/delete", methods=["POST"])
+@require_role("admin")
+def delete_student(student_id: str):
+    if not delete_student_record(student_id):
+        return jsonify({"error": "Student not found"}), 404
+    processor.refresh_students()
+    return jsonify({
+        "message": f"Student {student_id} deleted.",
+        "students": list_students(),
+        "graduates": list_graduated_students(),
+        "logs": get_access_logs_items(),
+    })
+
+
 @app.route("/api/graduates")
 @require_role("admin")
 def get_graduates():
@@ -2063,6 +2030,12 @@ def register():
         else:
             frame = processor.capture_current_frame()
         embedding, _ = extract_embedding(frame)
+        duplicate = find_duplicate_face(embedding, exclude_student_id=student_id)
+        if duplicate:
+            return jsonify({
+                "error": "Face already registered for another student.",
+                "duplicate": duplicate,
+            }), 409
     except Exception as error:
         return jsonify({"error": str(error)}), 400
 

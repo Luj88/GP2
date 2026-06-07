@@ -363,7 +363,7 @@
             filter: drop-shadow(0 0 12px rgba(31, 95, 168, 0.28));
         }
 
-        .brand-row, .app-header, .row, .toolbar, .role-switch, .summary-grid {
+        .brand-row, .app-header, .row, .toolbar, .summary-grid {
             display: flex;
             align-items: center;
         }
@@ -846,26 +846,26 @@
         }
 
         .seal {
-            width: 108px;
-            height: 108px;
+            width: 96px;
+            height: 72px;
             border-radius: 10px;
             flex: 0 0 auto;
             display: grid;
             place-items: center;
             overflow: hidden;
-            background: #fff;
+            background: transparent;
             color: #fff;
             font-weight: 800;
             box-shadow: 0 12px 28px rgba(2, 12, 28, 0.18);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            border: 0;
         }
 
         .seal img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            padding: 2px;
-            background: #fff;
+            object-fit: contain;
+            padding: 0;
+            background: transparent;
             transform: none;
         }
 
@@ -876,8 +876,8 @@
         }
 
         .header-title .seal {
-            width: 74px;
-            height: 58px;
+            width: 92px;
+            height: 68px;
             border-radius: 8px;
         }
 
@@ -950,6 +950,66 @@
             margin-bottom: 24px;
         }
 
+        .login-language-switch {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 20;
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 8px;
+            background: rgba(4, 18, 37, 0.62);
+            box-shadow: 0 18px 38px rgba(0, 8, 20, 0.24);
+            backdrop-filter: blur(12px);
+            direction: ltr;
+        }
+
+        .language-option {
+            width: 46px;
+            min-height: 38px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(236, 247, 255, 0.76);
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        .language-option:hover,
+        .language-option:focus {
+            border-color: rgba(255, 255, 255, 0.28);
+            color: #fff;
+            outline: none;
+        }
+
+        .language-option.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 28%, transparent);
+        }
+
+        .app-language-switch {
+            position: static;
+            background: color-mix(in srgb, var(--surface-muted) 78%, white 22%);
+            border-color: var(--border);
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        .app-language-switch .language-option {
+            color: var(--muted);
+        }
+
+        .app-language-switch .language-option.active,
+        .app-language-switch .language-option:hover,
+        .app-language-switch .language-option:focus {
+            background: color-mix(in srgb, var(--primary) 14%, transparent);
+            color: var(--primary-strong);
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
@@ -979,79 +1039,32 @@
         }
 
         .role-switch {
+            display: flex;
+            align-items: stretch;
             gap: 8px;
-            margin: 8px 0 14px;
+            margin: 8px 0 18px;
             padding: 6px;
             border: 1px solid var(--border);
             border-radius: 18px;
             background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
-            align-items: stretch;
-            overflow: visible;
-            direction: ltr;
-        }
-
-        .role-menu-wrap {
-            position: relative;
-            flex: 1;
+            direction: rtl;
         }
 
         .role-button {
-            width: 100%;
+            flex: 1;
+            min-height: 52px;
             border: 0;
             border-radius: 14px;
-            padding: 13px 12px;
+            padding: 12px;
             background: transparent;
             color: var(--muted);
-            font-weight: 800;
+            font-weight: 900;
         }
 
         .role-button.active {
             background: linear-gradient(135deg, var(--primary), var(--accent));
             color: #fff;
             box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 38%, transparent);
-        }
-
-        .role-dropdown {
-            position: absolute;
-            z-index: 12;
-            top: calc(100% + 8px);
-            inset-inline: 0;
-            display: grid;
-            gap: 7px;
-            min-width: 220px;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: color-mix(in srgb, var(--surface) 94%, white 6%);
-            box-shadow: var(--shadow);
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-6px);
-            transition: opacity .16s ease, transform .16s ease;
-        }
-
-        .role-menu-wrap:hover .role-dropdown,
-        .role-menu-wrap:focus-within .role-dropdown {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-
-        .role-menu-item {
-            width: 100%;
-            border: 0;
-            border-radius: 10px;
-            padding: 11px 12px;
-            background: transparent;
-            color: var(--text);
-            font-weight: 800;
-            text-align: inherit;
-        }
-
-        .role-menu-item:hover,
-        .role-menu-item:focus {
-            background: color-mix(in srgb, var(--primary) 12%, transparent);
-            color: var(--primary-strong);
         }
 
         .primary-button, .secondary-button, .danger-button, .ghost-button {
@@ -1173,8 +1186,7 @@
 
         .secondary-button:hover,
         .ghost-button:hover,
-        .admin-tab:hover,
-        .role-button:hover {
+        .admin-tab:hover {
             transform: translateY(-1px);
         }
 
@@ -1306,6 +1318,34 @@
             display: flex;
             align-items: center;
             gap: 12px;
+        }
+
+        .app-brand-sticker {
+            flex: 0 0 auto;
+            width: 132px;
+            height: 82px;
+            display: grid;
+            place-items: center;
+            overflow: visible;
+        }
+
+        .app-brand-sticker img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 18px rgba(7, 20, 34, 0.22));
+        }
+
+        .app-brand-sticker span {
+            display: grid;
+            place-items: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-weight: 900;
         }
 
         .toolbar {
@@ -1479,8 +1519,7 @@
             min-height: 100%;
         }
 
-        .admin-page > .stack:first-of-type .admin-panel[data-admin-panel="register"],
-        .admin-page > .stack:first-of-type .admin-panel[data-admin-panel="securityUsers"] {
+        .admin-page > .stack:first-of-type .admin-panel[data-admin-panel="register"] {
             min-height: 100%;
         }
 
@@ -1988,6 +2027,595 @@
             text-align: center;
         }
 
+        .app-shell {
+            background:
+                linear-gradient(180deg, rgba(244, 250, 255, 0.96), rgba(226, 238, 248, 0.9)),
+                repeating-linear-gradient(90deg, transparent 0 76px, rgba(21, 82, 143, 0.04) 77px, transparent 78px);
+        }
+
+        .app-shell::before {
+            opacity: 0.18;
+        }
+
+        .app-shell::after {
+            opacity: 0.12;
+        }
+
+        .app-header {
+            padding: 14px 24px;
+            border-bottom-color: rgba(21, 82, 143, 0.14);
+            background: rgba(250, 253, 255, 0.88);
+            box-shadow: 0 10px 30px rgba(20, 52, 86, 0.08);
+        }
+
+        .app-header::before {
+            display: none;
+        }
+
+        .header-title .eyebrow {
+            margin-bottom: 3px;
+            color: color-mix(in srgb, var(--primary) 82%, var(--text) 18%);
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .user-badge,
+        .app-language-switch,
+        .toolbar .ghost-button {
+            border-radius: 8px;
+        }
+
+        .toolbar .ghost-button {
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, 0.72);
+            border-color: rgba(21, 82, 143, 0.12);
+        }
+
+        .main {
+            padding: 22px 20px 34px;
+        }
+
+        .admin-tabs {
+            border-radius: 8px;
+            padding: 8px;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.82);
+            box-shadow: 0 14px 34px rgba(20, 52, 86, 0.08);
+        }
+
+        .admin-tabs::before,
+        .card::before,
+        .card::after,
+        .live-panel::after,
+        .alert-card::after {
+            display: none;
+        }
+
+        .admin-tab {
+            border-radius: 6px;
+            padding: 11px 14px;
+            background: transparent;
+            border-color: transparent;
+            color: var(--muted);
+        }
+
+        .admin-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 10px 22px rgba(21, 82, 143, 0.18);
+        }
+
+        .card {
+            border-radius: 8px;
+            border-color: rgba(21, 82, 143, 0.12);
+            background: rgba(255, 255, 255, 0.88);
+            box-shadow: 0 16px 38px rgba(20, 52, 86, 0.08);
+            padding: 20px;
+        }
+
+        .card-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom-color: rgba(21, 82, 143, 0.1);
+        }
+
+        .card-header h3 {
+            margin-bottom: 0;
+            font-size: 18px;
+        }
+
+        .summary-grid {
+            gap: 12px;
+        }
+
+        .metric {
+            border-radius: 8px;
+            border-color: rgba(21, 82, 143, 0.1);
+            background:
+                linear-gradient(180deg, #ffffff, #f6fbff);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+        }
+
+        .metric::after {
+            inset-inline: 14px;
+            bottom: 9px;
+            opacity: 0.42;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            letter-spacing: 0;
+        }
+
+        .form-grid {
+            gap: 14px;
+        }
+
+        .image-choice-actions .primary-button,
+        .image-choice-actions .secondary-button,
+        .media-scan-form .primary-button,
+        #syncNowButton {
+            border-radius: 8px;
+        }
+
+        .student-name-item {
+            border-radius: 8px;
+            border-color: rgba(21, 82, 143, 0.1);
+            background: rgba(249, 252, 255, 0.86);
+        }
+
+        .student-name-item:hover,
+        .student-name-item.active {
+            background: rgba(232, 244, 255, 0.92);
+            border-color: color-mix(in srgb, var(--primary) 26%, var(--border) 74%);
+            transform: translateY(-1px);
+        }
+
+        .person-detail-panel {
+            border-radius: 8px;
+            background: rgba(249, 252, 255, 0.82);
+        }
+
+        .table-wrap {
+            border-radius: 8px;
+            border-color: rgba(21, 82, 143, 0.1);
+            background: #fff;
+        }
+
+        th {
+            background: #f2f7fc;
+            color: color-mix(in srgb, var(--primary-strong) 80%, var(--muted) 20%);
+            font-size: 12px;
+        }
+
+        td {
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        tbody tr:hover td {
+            background: #f7fbff;
+        }
+
+        .grid-security {
+            grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.8fr);
+        }
+
+        .live-panel {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .live-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(21, 82, 143, 0.1);
+            background: linear-gradient(180deg, #ffffff, #f7fbff);
+        }
+
+        .video-frame {
+            border: 0;
+            border-radius: 0;
+            background: #071422;
+        }
+
+        .decision-row {
+            margin: 0;
+            padding: 14px 18px 18px;
+            background: #fff;
+        }
+
+        .pill {
+            border-radius: 8px;
+        }
+
+        .alert-card {
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(20, 52, 86, 0.08);
+        }
+
+        .app-shell {
+            --surface: rgba(8, 27, 51, 0.86);
+            --surface-muted: rgba(12, 44, 82, 0.86);
+            --border: rgba(126, 184, 236, 0.2);
+            --text: #f4fbff;
+            --muted: rgba(215, 232, 247, 0.72);
+            --primary: #2f8cff;
+            --primary-strong: #8fc8ff;
+            --accent: #20c6bd;
+            --glow: 0 0 0 1px rgba(126, 184, 236, 0.14), 0 24px 70px rgba(0, 8, 20, 0.28);
+            color: var(--text);
+            background:
+                linear-gradient(135deg, rgba(2, 9, 22, 0.28), transparent 42%),
+                radial-gradient(circle at 10% 10%, rgba(18, 77, 139, 0.32), transparent 28%),
+                radial-gradient(circle at 90% 14%, rgba(15, 159, 154, 0.16), transparent 26%),
+                linear-gradient(135deg, #06172c 0%, #0b315f 48%, #071d38 100%);
+        }
+
+        .app-shell::before {
+            display: block;
+            background-image:
+                linear-gradient(rgba(126, 184, 236, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(126, 184, 236, 0.1) 1px, transparent 1px);
+            background-size: 56px 56px;
+            opacity: 0.42;
+            animation: appGridShift 26s linear infinite;
+        }
+
+        .app-shell::after {
+            display: block;
+            background:
+                radial-gradient(circle at 18% 16%, rgba(47, 140, 255, 0.22), transparent 24%),
+                linear-gradient(115deg, transparent 0 44%, rgba(255, 255, 255, 0.16) 49%, transparent 54%);
+            opacity: 0.24;
+            animation: appSecuritySweep 10s ease-in-out infinite;
+        }
+
+        .app-header {
+            border-bottom-color: rgba(126, 184, 236, 0.18);
+            background:
+                linear-gradient(90deg, rgba(5, 18, 34, 0.82), rgba(8, 35, 68, 0.72)),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent);
+            box-shadow: 0 18px 46px rgba(0, 8, 20, 0.22);
+        }
+
+        .app-header::before {
+            display: block;
+            opacity: 0.62;
+        }
+
+        .header-title .eyebrow {
+            color: var(--primary-strong);
+        }
+
+        .header-title h2 {
+            color: var(--text);
+        }
+
+        .user-badge,
+        .app-language-switch,
+        .toolbar .ghost-button {
+            border-color: rgba(126, 184, 236, 0.2);
+            background: rgba(5, 18, 34, 0.48);
+            color: var(--text);
+            backdrop-filter: blur(12px);
+        }
+
+        .toolbar .ghost-button:hover,
+        .toolbar .ghost-button:focus {
+            background: rgba(47, 140, 255, 0.18);
+            color: #fff;
+        }
+
+        .admin-tabs {
+            border-color: rgba(126, 184, 236, 0.22);
+            background:
+                linear-gradient(135deg, rgba(8, 27, 51, 0.9), rgba(10, 49, 95, 0.74)),
+                repeating-linear-gradient(90deg, transparent 0 58px, rgba(126, 184, 236, 0.08) 59px, transparent 60px);
+            box-shadow: var(--glow);
+        }
+
+        .admin-tab {
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(126, 184, 236, 0.08);
+        }
+
+        .admin-tab:hover,
+        .admin-tab:focus {
+            color: #fff;
+            background: rgba(47, 140, 255, 0.16);
+        }
+
+        .card,
+        .camera-modal-card {
+            border-color: rgba(126, 184, 236, 0.18);
+            background:
+                linear-gradient(145deg, rgba(8, 27, 51, 0.9), rgba(12, 44, 82, 0.78)),
+                radial-gradient(circle at top right, rgba(47, 140, 255, 0.12), transparent 36%);
+            box-shadow: var(--glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        .card-header {
+            border-bottom-color: rgba(126, 184, 236, 0.16);
+        }
+
+        .metric,
+        .student-name-item,
+        .person-detail-panel,
+        .result-item,
+        .help-panel {
+            border-color: rgba(126, 184, 236, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+        }
+
+        .student-name-item:hover,
+        .student-name-item.active {
+            background: rgba(47, 140, 255, 0.18);
+            border-color: rgba(143, 200, 255, 0.34);
+        }
+
+        input,
+        select,
+        textarea {
+            border-color: rgba(126, 184, 236, 0.2);
+            background: rgba(3, 15, 29, 0.46);
+            color: var(--text);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: rgba(215, 232, 247, 0.54);
+        }
+
+        .table-wrap {
+            border-color: rgba(126, 184, 236, 0.16);
+            background: rgba(4, 18, 34, 0.52);
+        }
+
+        table {
+            color: var(--text);
+        }
+
+        th {
+            background: rgba(47, 140, 255, 0.16);
+            color: #dff1ff;
+        }
+
+        td {
+            background: rgba(255, 255, 255, 0.035);
+            border-bottom-color: rgba(126, 184, 236, 0.1);
+        }
+
+        tbody tr:hover td {
+            background: rgba(47, 140, 255, 0.12);
+        }
+
+        .live-header,
+        .decision-row {
+            border-color: rgba(126, 184, 236, 0.16);
+            background: rgba(5, 18, 34, 0.52);
+        }
+
+        .alert-card {
+            background: rgba(8, 27, 51, 0.88);
+            border-color: rgba(126, 184, 236, 0.16);
+            color: var(--text);
+        }
+
+        .card,
+        .camera-modal-card {
+            background:
+                linear-gradient(145deg, rgba(236, 248, 255, 0.12), rgba(27, 86, 125, 0.22)),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+            border-color: rgba(151, 219, 255, 0.28);
+            box-shadow: 0 18px 48px rgba(0, 8, 20, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        }
+
+        .admin-tabs {
+            background:
+                linear-gradient(135deg, rgba(235, 248, 255, 0.16), rgba(37, 112, 147, 0.22)),
+                repeating-linear-gradient(90deg, transparent 0 58px, rgba(255, 255, 255, 0.06) 59px, transparent 60px);
+            border-color: rgba(151, 219, 255, 0.32);
+        }
+
+        .metric {
+            background:
+                linear-gradient(145deg, rgba(245, 252, 255, 0.18), rgba(24, 116, 132, 0.24));
+            border-color: rgba(49, 214, 200, 0.32);
+        }
+
+        .metric::after {
+            background: linear-gradient(90deg, #31d6c8, #f0b44b, transparent);
+            opacity: 0.78;
+        }
+
+        .metric-value {
+            color: #ffffff;
+            text-shadow: 0 0 18px rgba(49, 214, 200, 0.24);
+        }
+
+        .student-name-item,
+        .person-detail-panel,
+        .result-item,
+        .help-panel {
+            background: rgba(240, 250, 255, 0.1);
+            border-color: rgba(151, 219, 255, 0.24);
+        }
+
+        .student-name-item:hover,
+        .student-name-item.active {
+            background: rgba(49, 214, 200, 0.18);
+            border-color: rgba(49, 214, 200, 0.42);
+        }
+
+        .table-wrap {
+            background: rgba(240, 250, 255, 0.08);
+            border-color: rgba(151, 219, 255, 0.24);
+        }
+
+        th {
+            background: rgba(49, 214, 200, 0.18);
+        }
+
+        .pill.success {
+            background: rgba(49, 214, 200, 0.16);
+            border-color: rgba(49, 214, 200, 0.42);
+            color: #bffdf7;
+        }
+
+        .pill.warning {
+            background: rgba(240, 180, 75, 0.16);
+            border-color: rgba(240, 180, 75, 0.42);
+            color: #ffe0a8;
+        }
+
+        /* Final dashboard palette */
+        .app-shell {
+            --surface: rgba(10, 38, 58, 0.92);
+            --surface-muted: rgba(18, 61, 76, 0.86);
+            --border: rgba(131, 211, 220, 0.24);
+            --text: #f5fbff;
+            --muted: rgba(214, 232, 239, 0.72);
+            --primary: #1f9fc0;
+            --primary-strong: #8ce8f1;
+            --accent: #e2aa45;
+            --success: #5be0bd;
+            --warning: #e2aa45;
+            --danger: #ff6b7f;
+            --glow: 0 22px 56px rgba(0, 9, 22, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.11);
+            background:
+                radial-gradient(circle at 8% 12%, rgba(31, 159, 192, 0.28), transparent 30%),
+                radial-gradient(circle at 92% 18%, rgba(226, 170, 69, 0.16), transparent 28%),
+                linear-gradient(135deg, #06172c 0%, #082946 48%, #061a2f 100%);
+        }
+
+        .app-header {
+            background:
+                linear-gradient(90deg, rgba(5, 20, 35, 0.9), rgba(11, 49, 70, 0.82)),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent);
+            border-bottom-color: rgba(140, 232, 241, 0.22);
+        }
+
+        .admin-tabs {
+            border-radius: 10px;
+            background:
+                linear-gradient(135deg, rgba(15, 59, 78, 0.95), rgba(21, 77, 88, 0.82)),
+                linear-gradient(90deg, rgba(226, 170, 69, 0.09), transparent);
+            border-color: rgba(140, 232, 241, 0.26);
+            box-shadow: var(--glow);
+        }
+
+        .admin-tab {
+            border-radius: 8px;
+            background: rgba(245, 251, 255, 0.055);
+            border-color: rgba(140, 232, 241, 0.13);
+            color: rgba(232, 245, 250, 0.78);
+        }
+
+        .admin-tab.active {
+            background: linear-gradient(135deg, #1f9fc0, #177b93);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(31, 159, 192, 0.24);
+        }
+
+        .card,
+        .camera-modal-card {
+            border-radius: 10px;
+            border-color: rgba(140, 232, 241, 0.22);
+            background:
+                linear-gradient(145deg, rgba(11, 43, 63, 0.94), rgba(20, 69, 79, 0.84)),
+                radial-gradient(circle at top right, rgba(226, 170, 69, 0.12), transparent 34%);
+            box-shadow: var(--glow);
+        }
+
+        .card-header {
+            border-bottom-color: rgba(140, 232, 241, 0.18);
+        }
+
+        .metric {
+            border-radius: 10px;
+            border-color: rgba(226, 170, 69, 0.36);
+            background:
+                linear-gradient(145deg, rgba(226, 170, 69, 0.22), rgba(35, 99, 99, 0.34)),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+        }
+
+        .metric::after {
+            background: linear-gradient(90deg, #e2aa45, #5be0bd, transparent);
+            opacity: 0.86;
+        }
+
+        .metric-value {
+            color: #fff8e7;
+            text-shadow: 0 0 18px rgba(226, 170, 69, 0.2);
+        }
+
+        .student-name-item,
+        .person-detail-panel,
+        .result-item,
+        .help-panel,
+        .table-wrap,
+        .live-header,
+        .decision-row {
+            border-color: rgba(140, 232, 241, 0.18);
+            background: rgba(5, 24, 39, 0.45);
+        }
+
+        .student-name-item:hover,
+        .student-name-item.active {
+            background: rgba(31, 159, 192, 0.22);
+            border-color: rgba(140, 232, 241, 0.44);
+        }
+
+        th {
+            background: rgba(226, 170, 69, 0.18);
+            color: #fff3d4;
+        }
+
+        td {
+            background: rgba(255, 255, 255, 0.035);
+        }
+
+        tbody tr:hover td {
+            background: rgba(31, 159, 192, 0.14);
+        }
+
+        input,
+        select,
+        textarea {
+            border-color: rgba(140, 232, 241, 0.22);
+            background: rgba(3, 17, 30, 0.58);
+            color: var(--text);
+        }
+
+        .primary-button,
+        .image-choice-actions .primary-button,
+        .media-scan-form .primary-button,
+        #syncNowButton {
+            background: linear-gradient(135deg, #1f9fc0, #177b93);
+            box-shadow: 0 16px 30px rgba(31, 159, 192, 0.22);
+        }
+
+        .secondary-button,
+        .toolbar .ghost-button,
+        .user-badge,
+        .app-language-switch {
+            border-color: rgba(140, 232, 241, 0.18);
+            background: rgba(245, 251, 255, 0.07);
+            color: var(--text);
+        }
+
+        .alert-card {
+            background:
+                linear-gradient(145deg, rgba(12, 45, 62, 0.92), rgba(23, 64, 72, 0.82)),
+                radial-gradient(circle at top right, rgba(255, 107, 127, 0.12), transparent 34%);
+            border-color: rgba(140, 232, 241, 0.18);
+        }
+
         @media (max-width: 980px) {
             .login-panel, .grid-admin, .grid-security {
                 grid-template-columns: 1fr;
@@ -2071,9 +2699,14 @@
             }
 
             .header-title .seal {
-                width: 74px;
-                height: 74px;
-                border-radius: 20px;
+                width: 82px;
+                height: 62px;
+                border-radius: 8px;
+            }
+
+            .app-brand-sticker {
+                width: 112px;
+                height: 70px;
             }
         }
 
@@ -2102,6 +2735,10 @@
 </head>
 <body data-theme="blue">
     <div id="loginScreen" class="login-shell">
+        <div class="login-language-switch" aria-label="Language">
+            <button class="language-option" type="button" data-language="ar" aria-label="Arabic">AR</button>
+            <button class="language-option" type="button" data-language="en" aria-label="English">EN</button>
+        </div>
         <div class="login-geometry" aria-hidden="true">
             <span class="geo-frame"></span>
             <span class="geo-chip"></span>
@@ -2116,38 +2753,16 @@
             <div class="login-form-panel">
                 <div class="face-scan-visual" aria-hidden="true">
                     <div class="secure-visual-frame">
-                        <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.src='{{ url_for('static', filename='university-logo.png') }}';">
+                        <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.hidden=true;">
                     </div>
                     <strong class="just-secure-caption">JUST Secure</strong>
                 </div>
                 <div class="role-switch" aria-label="Role">
-                    <div class="role-menu-wrap">
-                        <button class="role-button active" type="button" data-role="admin" data-i18n="adminRole">القبول والتسجيل</button>
-                        <div class="role-dropdown">
-                            <button class="role-menu-item login-role-option" type="button" data-role="admin" data-i18n="existingAdmissionsLogin">دخول موظف مسجل</button>
-                            <button id="openEmployeeRegisterButton" class="role-menu-item" type="button" data-i18n="newAdmissionsEmployee">إضافة موظف جديد</button>
-                        </div>
-                    </div>
-                    <div class="role-menu-wrap">
-                        <button class="role-button" type="button" data-role="security" data-i18n="securityRole">الأمن الجامعي</button>
-                        <div class="role-dropdown">
-                            <button class="role-menu-item login-role-option" type="button" data-role="security" data-i18n="existingSecurityLogin">دخول رجل أمن مسجل</button>
-                            <button id="openSecurityRegisterButton" class="role-menu-item" type="button" data-i18n="newSecurityEmployee">إضافة رجل أمن جديد</button>
-                        </div>
-                    </div>
+                    <button class="role-button active" type="button" data-role="admin">موظف القبول والتسجيل</button>
+                    <button class="role-button" type="button" data-role="security">موظف الأمن</button>
                 </div>
 
-                <div class="settings-row">
-                    <div style="grid-column: 1 / -1;">
-                        <label for="languageSelect" data-i18n="language">اللغة</label>
-                        <select id="languageSelect">
-                            <option value="ar">العربية</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-                </div>
-
-                <form id="loginForm" class="hidden">
+                <form id="loginForm">
                     <div class="field">
                         <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
                         <input id="usernameInput" type="text" autocomplete="username" required>
@@ -2168,49 +2783,6 @@
                     </p>
                 </section>
 
-                <section id="employeeRegisterPanel" class="register-employee-panel hidden">
-                    <div class="card-header">
-                        <div>
-                            <p class="eyebrow" data-i18n="newAdmissionsEmployee">موظف قبول وتسجيل جديد</p>
-                            <h3 data-i18n="employeeInfoTitle">إنشاء حساب موظف</h3>
-                        </div>
-                    </div>
-                    <form id="employeeRegisterForm" class="form-grid">
-                        <div>
-                            <label for="employeeFullNameInput" data-i18n="fullName">الاسم الكامل</label>
-                            <input id="employeeFullNameInput" type="text" required>
-                        </div>
-                        <div>
-                            <label for="employeeIdInput" data-i18n="employeeId">رقم الموظف</label>
-                            <input id="employeeIdInput" type="text" required>
-                        </div>
-                        <div>
-                            <label for="employeePhoneInput" data-i18n="phoneOptional">رقم الهاتف (اختياري)</label>
-                            <input id="employeePhoneInput" type="text">
-                        </div>
-                        <div class="full">
-                            <label for="employeeEmailInput" data-i18n="emailOptional">البريد الإلكتروني (اختياري)</label>
-                            <input id="employeeEmailInput" type="email">
-                        </div>
-                        <div>
-                            <label for="employeeUsernameInput" data-i18n="newUsername">اسم المستخدم الجديد</label>
-                            <input id="employeeUsernameInput" type="text" autocomplete="username" required>
-                        </div>
-                        <div>
-                            <label for="employeePasswordInput" data-i18n="newPassword">كلمة المرور الجديدة</label>
-                            <input id="employeePasswordInput" type="password" autocomplete="new-password" minlength="8" required>
-                        </div>
-                        <div>
-                            <label for="employeePasswordConfirmInput" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
-                            <input id="employeePasswordConfirmInput" type="password" autocomplete="new-password" minlength="8" required>
-                        </div>
-                        <div class="full row inline-actions">
-                            <button class="primary-button" type="submit" data-i18n="createEmployeeAccount">إنشاء الحساب</button>
-                            <button id="closeEmployeeRegisterButton" class="ghost-button" type="button" data-i18n="cancel">إلغاء</button>
-                        </div>
-                        <p id="employeeRegisterStatus" class="status-text full"></p>
-                    </form>
-                </section>
             </div>
         </section>
     </div>
@@ -2218,9 +2790,9 @@
     <div id="appShell" class="app-shell hidden">
         <header class="app-header">
             <div class="header-title">
-                <div class="seal">
-                    <img src="{{ url_for('static', filename='university-logo.png') }}" alt="University logo" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
-                    <span hidden>UA</span>
+                <div class="app-brand-sticker">
+                    <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="JUST Secure" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+                    <span hidden>JS</span>
                 </div>
                 <div>
                     <p class="eyebrow" id="areaEyebrow">Admin</p>
@@ -2229,10 +2801,10 @@
             </div>
             <div class="toolbar">
                 <span id="userBadge" class="user-badge"></span>
-                <select id="appLanguageSelect" class="compact-select" aria-label="Language">
-                    <option value="ar">العربية</option>
-                    <option value="en">English</option>
-                </select>
+                <div class="login-language-switch app-language-switch" aria-label="Language">
+                    <button class="language-option" type="button" data-language="ar" aria-label="Arabic">AR</button>
+                    <button class="language-option" type="button" data-language="en" aria-label="English">EN</button>
+                </div>
                 <button id="adminAdmissionsButton" class="ghost-button hidden" type="button" data-i18n="admissionsArea">لوحة القبول</button>
                 <button id="adminSecurityButton" class="ghost-button hidden" type="button" data-i18n="securityLive">شاشة الأمن</button>
                 <button id="logoutButton" class="ghost-button" type="button" data-i18n="logout">تسجيل خروج</button>
@@ -2244,7 +2816,6 @@
                 <nav class="admin-tabs" aria-label="Admissions sections">
                     <button class="admin-tab active" type="button" data-admin-tab="sync" data-i18n="tabSync">المزامنة</button>
                     <button class="admin-tab" type="button" data-admin-tab="register" data-i18n="tabRegister">تسجيل طالب جديد</button>
-                    <button class="admin-tab" type="button" data-admin-tab="securityUsers" data-i18n="tabSecurityUsers">إضافة رجل أمن</button>
                     <button class="admin-tab" type="button" data-admin-tab="accessLogs" data-i18n="tabAccessLogs">عمليات الدخول</button>
                     <button class="admin-tab" type="button" data-admin-tab="graduates" data-i18n="tabGraduates">الخريجون</button>
                 </nav>
@@ -2337,49 +2908,6 @@
                             <p id="cameraModalStatus" class="status-text"></p>
                         </div>
                     </div>
-
-                    <section class="card admin-panel" data-admin-panel="securityUsers">
-                        <div class="card-header">
-                            <div>
-                                <p class="eyebrow" data-i18n="securityAccountManagement">إدارة حسابات الأمن</p>
-                                <h3 data-i18n="createSecurityAccount">إنشاء حساب رجل أمن</h3>
-                            </div>
-                        </div>
-                        <form id="securityUserForm" class="form-grid">
-                            <div>
-                                <label for="securityFullNameInput" data-i18n="fullName">الاسم الكامل</label>
-                                <input id="securityFullNameInput" name="full_name" type="text" required>
-                            </div>
-                            <div>
-                                <label for="securityEmployeeIdInput" data-i18n="employeeId">رقم الموظف</label>
-                                <input id="securityEmployeeIdInput" name="employee_id" type="text" required>
-                            </div>
-                            <div>
-                                <label for="securityPhoneInput" data-i18n="phoneOptional">رقم الهاتف (اختياري)</label>
-                                <input id="securityPhoneInput" name="phone" type="text">
-                            </div>
-                            <div class="full">
-                                <label for="securityEmailInput" data-i18n="emailOptional">البريد الإلكتروني (اختياري)</label>
-                                <input id="securityEmailInput" name="email" type="email">
-                            </div>
-                            <div>
-                                <label for="securityUsernameInput" data-i18n="newUsername">اسم المستخدم الجديد</label>
-                                <input id="securityUsernameInput" name="username" type="text" autocomplete="username" required>
-                            </div>
-                            <div>
-                                <label for="securityPasswordInput" data-i18n="newPassword">كلمة المرور الجديدة</label>
-                                <input id="securityPasswordInput" name="password" type="password" autocomplete="new-password" minlength="8" required>
-                            </div>
-                            <div>
-                                <label for="securityPasswordConfirmInput" data-i18n="confirmPassword">تأكيد كلمة المرور</label>
-                                <input id="securityPasswordConfirmInput" name="password_confirm" type="password" autocomplete="new-password" minlength="8" required>
-                            </div>
-                            <div class="full">
-                                <button id="createSecurityUserButton" class="primary-button" type="submit" data-i18n="createSecurityAccountButton">حفظ حساب رجل الأمن</button>
-                                <p id="securityUserStatus" class="status-text"></p>
-                            </div>
-                        </form>
-                    </section>
                 </div>
 
                 <div class="stack">
@@ -2392,17 +2920,6 @@
                         </div>
                         <div id="registeredStudentsList" class="student-name-list"></div>
                         <div id="registeredStudentDetails" class="person-detail-panel"></div>
-                    </section>
-
-                    <section class="card admin-panel registered-students-list" data-admin-panel="securityUsers">
-                        <div class="card-header">
-                            <div>
-                                <p class="eyebrow" data-i18n="registeredSecurityUsers">رجال الأمن المسجلون</p>
-                                <h3><span id="registeredSecurityUsersCount">0</span> <span data-i18n="securityUsers">رجال أمن</span></h3>
-                            </div>
-                        </div>
-                        <div id="registeredSecurityUsersList" class="student-name-list"></div>
-                        <div id="registeredSecurityUserDetails" class="person-detail-panel"></div>
                     </section>
 
                     <section class="card admin-panel" data-admin-panel="graduates">
@@ -2548,34 +3065,20 @@
                 dark: "داكن",
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
-                newAdmissionsEmployee: "موظف قبول وتسجيل جديد",
-                newSecurityEmployee: "تسجيل رجل أمن جديد",
-                existingAdmissionsLogin: "دخول موظف مسجل",
-                existingSecurityLogin: "دخول رجل أمن مسجل",
-                employeeInfoTitle: "إنشاء حساب موظف",
-                employeeId: "رقم الموظف",
+                adminLoginHint: "سيتم فتح لوحة القبول بعد تسجيل الدخول.",
+                securityLoginHint: "سيتم فتح شاشة الأمن المباشرة بعد تسجيل الدخول.",
                 admissionsArea: "لوحة القبول",
                 tabSync: "المزامنة",
                 tabRegister: "تسجيل طالب جديد",
-                tabSecurityUsers: "إضافة رجل أمن",
                 tabAccessLogs: "عمليات الدخول",
                 tabGraduates: "الخريجون",
-                securityAccountManagement: "إدارة حسابات الأمن",
-                createSecurityAccount: "إنشاء حساب رجل أمن",
-                createSecurityAccountButton: "حفظ حساب رجل الأمن",
                 username: "اسم المستخدم",
                 password: "كلمة المرور",
                 forgotPassword: "هل نسيت كلمة السر؟",
                 forgotPasswordHelp: "إذا نسيت كلمة المرور، راجع مسؤول القبول والتسجيل أو أنشئ حسابًا جديدًا إذا كانت هذه أول مرة تستخدم النظام.",
                 fullName: "الاسم الكامل",
                 phone: "رقم الهاتف",
-                phoneOptional: "رقم الهاتف (اختياري)",
                 email: "البريد الإلكتروني",
-                emailOptional: "البريد الإلكتروني (اختياري)",
-                newUsername: "اسم المستخدم الجديد",
-                newPassword: "كلمة المرور الجديدة",
-                confirmPassword: "تأكيد كلمة المرور",
-                createEmployeeAccount: "إنشاء الحساب",
                 cancel: "إلغاء",
                 signIn: "دخول",
                 logout: "تسجيل خروج",
@@ -2608,9 +3111,6 @@
                 registeredStudents: "الطلاب المسجلون",
                 students: "طلاب",
                 noStudentsList: "لا يوجد طلاب مسجلون بعد.",
-                registeredSecurityUsers: "رجال الأمن المسجلون",
-                securityUsers: "رجال أمن",
-                noSecurityUsersList: "لا يوجد رجال أمن مسجلون بعد.",
                 selectedDetails: "بيانات الشخص",
                 selectPersonForDetails: "اضغط على اسم من القائمة لعرض بياناته.",
                 fullNameLabel: "الاسم الكامل",
@@ -2628,6 +3128,9 @@
                 selectAll: "تحديد الكل",
                 clearSelection: "إلغاء التحديد",
                 deleteSelected: "حذف المحدد",
+                deleteStudent: "حذف الطالب",
+                studentDeleted: "تم حذف الطالب.",
+                duplicateStudentFace: "لا يمكن تسجيل هذا الطالب لأن صورة الوجه مطابقة لطالب مسجل مسبقاً.",
                 completed: "أنهى المتطلبات",
                 graduatedAt: "تاريخ التخرج",
                 accessLogs: "عمليات الدخول",
@@ -2688,14 +3191,6 @@
                 synced: "تمت المزامنة.",
                 deleted: "تم حذف السجلات المحددة.",
                 selectGraduateFirst: "اختر طالبًا واحدًا على الأقل.",
-                employeeCreated: "تم إنشاء حساب الموظف. يمكنك الآن تسجيل الدخول.",
-                securityUserCreated: "تم إنشاء حساب رجل الأمن بنجاح.",
-                passwordsMismatch: "كلمتا المرور غير متطابقتين.",
-                employeeRequiredFields: "لازم تعبّي الاسم الكامل ورقم الموظف واسم المستخدم وكلمة المرور.",
-                employeePasswordShort: "كلمة المرور لازم تكون 8 أحرف أو أكثر.",
-                adminRequiredForEmployeeCreate: "لازم تكون مدير حتى تنشئ موظف قبول جديد.",
-                employeeUsernameTaken: "اسم المستخدم مستخدم من قبل موظف آخر.",
-                securityUsernameTaken: "اسم المستخدم مستخدم من قبل رجل أمن آخر.",
                 unexpectedServerResponse: "الاستجابة من السيرفر غير متوقعة.",
                 signedIn: "تم تسجيل الدخول.",
                 signedOut: "تم تسجيل الخروج."
@@ -2709,34 +3204,20 @@
                 dark: "Dark",
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
-                newAdmissionsEmployee: "New Admissions Employee",
-                newSecurityEmployee: "Register New Security Guard",
-                existingAdmissionsLogin: "Sign In Existing Employee",
-                existingSecurityLogin: "Sign In Existing Security Guard",
-                employeeInfoTitle: "Create Employee Account",
-                employeeId: "Employee ID",
+                adminLoginHint: "Signing in opens the admissions dashboard.",
+                securityLoginHint: "Signing in opens the live security screen.",
                 admissionsArea: "Admissions Area",
                 tabSync: "Sync",
                 tabRegister: "Register Student",
-                tabSecurityUsers: "Add Security Guard",
                 tabAccessLogs: "Access Logs",
                 tabGraduates: "Graduates",
-                securityAccountManagement: "Security Account Management",
-                createSecurityAccount: "Create Security Account",
-                createSecurityAccountButton: "Save Security Account",
                 username: "Username",
                 password: "Password",
                 forgotPassword: "Forgot your password?",
                 forgotPasswordHelp: "If you forgot your password, contact the admissions administrator or create a new account if this is your first time using the system.",
                 fullName: "Full Name",
                 phone: "Phone",
-                phoneOptional: "Phone (optional)",
                 email: "Email",
-                emailOptional: "Email (optional)",
-                newUsername: "New Username",
-                newPassword: "New Password",
-                confirmPassword: "Confirm Password",
-                createEmployeeAccount: "Create Account",
                 cancel: "Cancel",
                 signIn: "Sign In",
                 logout: "Sign Out",
@@ -2769,9 +3250,6 @@
                 registeredStudents: "Registered Students",
                 students: "Students",
                 noStudentsList: "No registered students yet.",
-                registeredSecurityUsers: "Registered Security Guards",
-                securityUsers: "Security Guards",
-                noSecurityUsersList: "No security guards registered yet.",
                 selectedDetails: "Person Details",
                 selectPersonForDetails: "Click a name in the list to show details.",
                 fullNameLabel: "Full Name",
@@ -2789,6 +3267,9 @@
                 selectAll: "Select All",
                 clearSelection: "Clear",
                 deleteSelected: "Delete Selected",
+                deleteStudent: "Delete Student",
+                studentDeleted: "Student deleted.",
+                duplicateStudentFace: "This student cannot be registered because the face image matches an existing student.",
                 completed: "Completed",
                 graduatedAt: "Graduated At",
                 accessLogs: "Access Logs",
@@ -2849,14 +3330,6 @@
                 synced: "Sync completed.",
                 deleted: "Selected records deleted.",
                 selectGraduateFirst: "Select at least one graduate.",
-                employeeCreated: "Employee account created. You can sign in now.",
-                securityUserCreated: "Security employee account created successfully.",
-                passwordsMismatch: "Passwords do not match.",
-                employeeRequiredFields: "Full name, employee ID, username, and password are required.",
-                employeePasswordShort: "Password must be at least 8 characters.",
-                adminRequiredForEmployeeCreate: "Only an admin can create another admissions employee.",
-                employeeUsernameTaken: "This username is already used by another admissions employee.",
-                securityUsernameTaken: "This username is already used by another security employee.",
                 unexpectedServerResponse: "Unexpected server response.",
                 signedIn: "Signed in.",
                 signedOut: "Signed out."
@@ -2869,15 +3342,12 @@
             language: localStorage.getItem("accessLanguage") || "ar",
             theme: initialTheme,
             selectedRole: "admin",
-            selectedRegistrationRole: "admin",
             adminPanel: "sync",
             user: null,
             students: [],
             graduates: [],
-            securityUsers: [],
             accessLogs: [],
             selectedStudentId: null,
-            selectedSecurityUserId: null,
             expandedAccessLogStudentId: null,
             selectedGraduateIds: new Set(),
             selectedAccessLogIds: new Set(),
@@ -2897,14 +3367,7 @@
             loginStatus: document.getElementById("loginStatus"),
             forgotPasswordButton: document.getElementById("forgotPasswordButton"),
             forgotPasswordPanel: document.getElementById("forgotPasswordPanel"),
-            openEmployeeRegisterButton: document.getElementById("openEmployeeRegisterButton"),
-            openSecurityRegisterButton: document.getElementById("openSecurityRegisterButton"),
-            closeEmployeeRegisterButton: document.getElementById("closeEmployeeRegisterButton"),
-            employeeRegisterPanel: document.getElementById("employeeRegisterPanel"),
-            employeeRegisterForm: document.getElementById("employeeRegisterForm"),
-            employeeRegisterStatus: document.getElementById("employeeRegisterStatus"),
-            languageSelect: document.getElementById("languageSelect"),
-            appLanguageSelect: document.getElementById("appLanguageSelect"),
+            languageButtons: document.querySelectorAll(".language-option"),
             areaEyebrow: document.getElementById("areaEyebrow"),
             areaTitle: document.getElementById("areaTitle"),
             userBadge: document.getElementById("userBadge"),
@@ -2929,15 +3392,9 @@
             closeCameraModalButton: document.getElementById("closeCameraModalButton"),
             cameraModalStatus: document.getElementById("cameraModalStatus"),
             registerStatus: document.getElementById("registerStatus"),
-            securityUserForm: document.getElementById("securityUserForm"),
-            createSecurityUserButton: document.getElementById("createSecurityUserButton"),
-            securityUserStatus: document.getElementById("securityUserStatus"),
             registeredStudentsListCount: document.getElementById("registeredStudentsListCount"),
             registeredStudentsList: document.getElementById("registeredStudentsList"),
             registeredStudentDetails: document.getElementById("registeredStudentDetails"),
-            registeredSecurityUsersCount: document.getElementById("registeredSecurityUsersCount"),
-            registeredSecurityUsersList: document.getElementById("registeredSecurityUsersList"),
-            registeredSecurityUserDetails: document.getElementById("registeredSecurityUserDetails"),
             graduatesCount: document.getElementById("graduatesCount"),
             graduatesTableBody: document.getElementById("graduatesTableBody"),
             selectAllGraduatesButton: document.getElementById("selectAllGraduatesButton"),
@@ -2973,21 +3430,18 @@
 
         function localizeErrorMessage(message) {
             const map = {
-                "full_name, username, and password are required": t("employeeRequiredFields"),
-                "full_name, employee_id, username, and password are required": t("employeeRequiredFields"),
-                "Password must be at least 4 characters": t("employeePasswordShort"),
-                "Password must be at least 8 characters": t("employeePasswordShort"),
-                "Only an admin can create another admissions employee": t("adminRequiredForEmployeeCreate"),
-                "This username is already used by another admissions employee": t("employeeUsernameTaken"),
-                "This username is already used by another security employee": t("securityUsernameTaken"),
                 "Unexpected server response.": t("unexpectedServerResponse"),
                 "media file is required": t("selectMediaFile"),
                 "The uploaded image could not be read.": t("uploadedImageUnreadable"),
                 "Unsupported media type. Please upload an image or video file.": t("unsupportedMediaType"),
+                "Face already registered for another student.": t("duplicateStudentFace"),
                 "Student was not found": t("studentNotFound"),
                 "student_id is required": t("studentIdRequired"),
                 "log_ids is required": t("selectAccessLogFirst"),
             };
+            if (String(message || "").startsWith("Face already registered for student ")) {
+                return t("duplicateStudentFace");
+            }
             return map[message] || message;
         }
 
@@ -3053,8 +3507,11 @@
             document.documentElement.lang = state.language;
             document.documentElement.dir = state.language === "ar" ? "rtl" : "ltr";
             document.body.dataset.theme = state.theme;
-            elements.languageSelect.value = state.language;
-            elements.appLanguageSelect.value = state.language;
+            elements.languageButtons.forEach((button) => {
+                const isActive = button.dataset.language === state.language;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-pressed", String(isActive));
+            });
 
             document.querySelectorAll("[data-i18n]").forEach((node) => {
                 const key = node.dataset.i18n;
@@ -3062,40 +3519,25 @@
             });
 
             document.querySelectorAll(".role-button").forEach((button) => {
-                button.classList.toggle("active", button.dataset.role === state.selectedRole);
+                const labels = {
+                    ar: {
+                        admin: "موظف القبول والتسجيل",
+                        security: "موظف الأمن"
+                    },
+                    en: {
+                        admin: "Admissions Employee",
+                        security: "Security Employee"
+                    }
+                };
+                button.textContent = labels[state.language][button.dataset.role] || button.textContent;
             });
+
             setAdminPanel(state.adminPanel);
 
             renderAdmin();
             renderAlerts();
             renderMediaScanResults();
             updateHeader();
-        }
-
-        function toggleEmployeeRegisterPanel(show, role = state.selectedRegistrationRole) {
-            state.selectedRegistrationRole = role;
-            elements.employeeRegisterPanel.classList.toggle("hidden", !show);
-            elements.employeeRegisterStatus.textContent = "";
-            if (show) {
-                elements.loginForm.classList.add("hidden");
-                state.selectedRole = role;
-                applyPreferences();
-                const titleKey = role === "security" ? "newSecurityEmployee" : "newAdmissionsEmployee";
-                const titleNode = elements.employeeRegisterPanel.querySelector("[data-i18n='newAdmissionsEmployee'], [data-i18n='newSecurityEmployee']");
-                if (titleNode) {
-                    titleNode.dataset.i18n = titleKey;
-                    titleNode.textContent = t(titleKey);
-                }
-            }
-        }
-
-        function showExistingLogin(role) {
-            state.selectedRole = role;
-            toggleEmployeeRegisterPanel(false);
-            elements.loginForm.classList.remove("hidden");
-            elements.loginStatus.textContent = "";
-            applyPreferences();
-            document.getElementById("usernameInput").focus();
         }
 
         function toggleForgotPasswordPanel() {
@@ -3110,8 +3552,14 @@
             elements.appShell.classList.add("hidden");
             elements.adminView.classList.add("hidden");
             elements.securityView.classList.add("hidden");
-            toggleEmployeeRegisterPanel(false);
-            elements.loginForm.classList.add("hidden");
+            state.selectedRole = "admin";
+            elements.loginForm.classList.remove("hidden");
+            document.querySelectorAll(".role-button").forEach((button) => {
+                button.classList.toggle("active", button.dataset.role === state.selectedRole);
+            });
+            elements.loginStatus.textContent = "";
+            elements.forgotPasswordPanel.classList.add("hidden");
+            applyPreferences();
             elements.videoStream.removeAttribute("src");
             elements.mediaScanForm.reset();
             elements.mediaScanStatus.textContent = "";
@@ -3181,16 +3629,14 @@
         }
 
         async function refreshAdminData() {
-            const [studentsPayload, graduatesPayload, securityUsersPayload, admissionsPayload, logsPayload] = await Promise.all([
+            const [studentsPayload, graduatesPayload, admissionsPayload, logsPayload] = await Promise.all([
                 fetchJson("/api/students"),
                 fetchJson("/api/graduates"),
-                fetchJson("/api/security-users"),
                 fetchJson("/api/admissions/status"),
                 fetchJson("/api/logs")
             ]);
             state.students = studentsPayload.items || [];
             state.graduates = graduatesPayload.items || [];
-            state.securityUsers = securityUsersPayload.items || [];
             state.accessLogs = logsPayload.items || [];
             const validIds = new Set(state.graduates.map((graduate) => graduate.id));
             state.selectedGraduateIds = new Set([...state.selectedGraduateIds].filter((id) => validIds.has(id)));
@@ -3235,27 +3681,8 @@
                     { label: t("createdAtLabel"), value: student.created_at }
                 ])}
                 <button class="secondary-button show-student-qr-button" type="button" data-id="${escapeHtml(student.id)}">${t("showQrToken")}</button>
+                <button class="danger-button delete-student-button" type="button" data-id="${escapeHtml(student.id)}">${t("deleteStudent")}</button>
                 <div id="studentQrTokenPanel" class="hidden"></div>
-            `;
-        }
-
-        function renderSecurityUserDetails(user) {
-            if (!user) {
-                elements.registeredSecurityUserDetails.innerHTML = `<p class="muted compact-note">${t("selectPersonForDetails")}</p>`;
-                return;
-            }
-
-            elements.registeredSecurityUserDetails.innerHTML = `
-                <h3>${t("selectedDetails")}</h3>
-                ${renderDetailItems([
-                    { label: t("fullNameLabel"), value: user.full_name },
-                    { label: t("employeeId"), value: user.employee_id },
-                    { label: t("usernameLabel"), value: user.username },
-                    { label: t("emailLabel"), value: user.email },
-                    { label: t("phoneLabel"), value: user.phone },
-                    { label: t("createdAtLabel"), value: user.created_at },
-                    { label: t("lastLoginLabel"), value: user.last_login_at }
-                ])}
             `;
         }
 
@@ -3304,13 +3731,6 @@
             if (state.selectedStudentId && !state.students.some((student) => student.id === state.selectedStudentId)) {
                 state.selectedStudentId = null;
             }
-            if (
-                state.selectedSecurityUserId &&
-                !state.securityUsers.some((user) => String(user.id) === String(state.selectedSecurityUserId))
-            ) {
-                state.selectedSecurityUserId = null;
-            }
-
             if (state.students.length === 0) {
                 elements.registeredStudentsList.innerHTML = `<p class="empty-state">${t("noStudentsList")}</p>`;
             } else {
@@ -3327,29 +3747,8 @@
                 `).join("");
             }
 
-            elements.registeredSecurityUsersCount.textContent = state.securityUsers.length;
-            if (state.securityUsers.length === 0) {
-                elements.registeredSecurityUsersList.innerHTML = `<p class="empty-state">${t("noSecurityUsersList")}</p>`;
-            } else {
-                elements.registeredSecurityUsersList.innerHTML = state.securityUsers.map((user) => {
-                    const displayName = user.full_name || user.username;
-                    const meta = [user.employee_id, user.username, user.phone || user.email].filter(Boolean).join(" / ");
-                    return `
-                        <button class="student-name-item registered-security-user-item ${String(state.selectedSecurityUserId) === String(user.id) ? "active" : ""}" type="button" data-id="${escapeHtml(String(user.id))}">
-                            <span class="student-name-avatar">${escapeHtml((displayName || "?").slice(0, 1))}</span>
-                            <span class="student-name-info">
-                                <strong>${escapeHtml(displayName)}</strong>
-                                <span class="muted meta-text">${escapeHtml(meta)}</span>
-                            </span>
-                        </button>
-                    `;
-                }).join("");
-            }
-
             const selectedStudent = state.students.find((student) => student.id === state.selectedStudentId);
-            const selectedSecurityUser = state.securityUsers.find((user) => String(user.id) === String(state.selectedSecurityUserId));
             renderStudentDetails(selectedStudent);
-            renderSecurityUserDetails(selectedSecurityUser);
 
             const accessLogGroups = groupedAccessLogs();
             elements.accessLogsCount.textContent = accessLogGroups.length;
@@ -3634,16 +4033,10 @@
         document.querySelectorAll(".role-button").forEach((button) => {
             button.addEventListener("click", () => {
                 state.selectedRole = button.dataset.role;
-                toggleEmployeeRegisterPanel(false);
-                elements.loginForm.classList.add("hidden");
+                document.querySelectorAll(".role-button").forEach((roleButton) => {
+                    roleButton.classList.toggle("active", roleButton === button);
+                });
                 elements.loginStatus.textContent = "";
-                applyPreferences();
-            });
-        });
-
-        document.querySelectorAll(".login-role-option").forEach((button) => {
-            button.addEventListener("click", () => {
-                showExistingLogin(button.dataset.role);
             });
         });
 
@@ -3669,12 +4062,10 @@
             }, 320);
         }
 
-        elements.languageSelect.addEventListener("change", (event) => {
-            setLanguage(event.target.value);
-        });
-
-        elements.appLanguageSelect.addEventListener("change", (event) => {
-            setLanguage(event.target.value);
+        elements.languageButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                setLanguage(button.dataset.language);
+            });
         });
 
         elements.loginForm.addEventListener("submit", async (event) => {
@@ -3695,20 +4086,8 @@
             }
         });
 
-        elements.openEmployeeRegisterButton.addEventListener("click", () => {
-            toggleEmployeeRegisterPanel(true, "admin");
-        });
-
-        elements.openSecurityRegisterButton.addEventListener("click", () => {
-            toggleEmployeeRegisterPanel(true, "security");
-        });
-
         elements.forgotPasswordButton.addEventListener("click", () => {
             toggleForgotPasswordPanel();
-        });
-
-        elements.closeEmployeeRegisterButton.addEventListener("click", () => {
-            toggleEmployeeRegisterPanel(false);
         });
 
         elements.adminAdmissionsButton.addEventListener("click", () => {
@@ -3721,51 +4100,6 @@
             showSecurityArea().catch((error) => {
                 elements.loginStatus.textContent = localizeErrorMessage(error.message);
             });
-        });
-
-        elements.employeeRegisterForm.addEventListener("submit", async (event) => {
-            event.preventDefault();
-            elements.employeeRegisterStatus.textContent = "";
-            const fullName = document.getElementById("employeeFullNameInput").value.trim();
-            const employeeId = document.getElementById("employeeIdInput").value.trim();
-            const phone = document.getElementById("employeePhoneInput").value.trim();
-            const email = document.getElementById("employeeEmailInput").value.trim();
-            const username = document.getElementById("employeeUsernameInput").value.trim();
-            const password = document.getElementById("employeePasswordInput").value;
-            const passwordConfirm = document.getElementById("employeePasswordConfirmInput").value;
-
-            if (password !== passwordConfirm) {
-                elements.employeeRegisterStatus.textContent = t("passwordsMismatch");
-                return;
-            }
-
-            try {
-                const registerUrl = state.selectedRegistrationRole === "security"
-                    ? "/api/auth/register-security-employee"
-                    : "/api/auth/register-admissions-employee";
-                await fetchJson(registerUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        full_name: fullName,
-                        employee_id: employeeId,
-                        phone,
-                        email,
-                        username,
-                        password
-                    })
-                });
-                const successKey = state.selectedRegistrationRole === "security" ? "securityUserCreated" : "employeeCreated";
-                elements.employeeRegisterStatus.textContent = t(successKey);
-                document.getElementById("usernameInput").value = username;
-                elements.employeeRegisterForm.reset();
-                state.selectedRole = state.selectedRegistrationRole;
-                toggleEmployeeRegisterPanel(false);
-                elements.loginForm.classList.remove("hidden");
-                elements.loginStatus.textContent = t(successKey);
-            } catch (error) {
-                elements.employeeRegisterStatus.textContent = localizeErrorMessage(error.message);
-            }
         });
 
         elements.logoutButton.addEventListener("click", async () => {
@@ -3875,7 +4209,7 @@
                 elements.studentImageSelectionStatus.textContent = "";
                 elements.registerStatus.textContent = t("saved");
             } catch (error) {
-                elements.registerStatus.textContent = error.message;
+                elements.registerStatus.textContent = localizeErrorMessage(error.message);
             }
         });
 
@@ -3938,53 +4272,28 @@
             }
         });
 
-        elements.securityUserForm.addEventListener("submit", async (event) => {
-            event.preventDefault();
-            elements.securityUserStatus.textContent = "";
-            const fullName = document.getElementById("securityFullNameInput").value.trim();
-            const employeeId = document.getElementById("securityEmployeeIdInput").value.trim();
-            const phone = document.getElementById("securityPhoneInput").value.trim();
-            const email = document.getElementById("securityEmailInput").value.trim();
-            const username = document.getElementById("securityUsernameInput").value.trim();
-            const password = document.getElementById("securityPasswordInput").value;
-            const passwordConfirm = document.getElementById("securityPasswordConfirmInput").value;
-
-            if (password !== passwordConfirm) {
-                elements.securityUserStatus.textContent = t("passwordsMismatch");
+        document.addEventListener("click", async (event) => {
+            const deleteStudentButton = event.target.closest(".delete-student-button");
+            if (deleteStudentButton) {
+                deleteStudentButton.disabled = true;
+                elements.registerStatus.textContent = "";
+                try {
+                    const payload = await fetchJson(`/api/students/${encodeURIComponent(deleteStudentButton.dataset.id)}/delete`, {
+                        method: "POST"
+                    });
+                    state.students = payload.students || [];
+                    state.graduates = payload.graduates || [];
+                    state.accessLogs = payload.logs || state.accessLogs;
+                    state.selectedStudentId = null;
+                    renderAdmin();
+                    elements.registerStatus.textContent = t("studentDeleted");
+                } catch (error) {
+                    elements.registerStatus.textContent = localizeErrorMessage(error.message);
+                    deleteStudentButton.disabled = false;
+                }
                 return;
             }
 
-            elements.createSecurityUserButton.disabled = true;
-            try {
-                const payload = await fetchJson("/api/security-users", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        full_name: fullName,
-                        employee_id: employeeId,
-                        phone,
-                        email,
-                        username,
-                        password
-                    })
-                });
-                state.securityUsers = payload.items || [
-                    payload.user,
-                    ...state.securityUsers
-                ].filter(Boolean);
-                state.selectedSecurityUserId = payload.user ? payload.user.id : state.selectedSecurityUserId;
-                elements.securityUserForm.reset();
-                elements.securityUserStatus.textContent = t("securityUserCreated");
-                renderAdmin();
-                setAdminPanel("securityUsers");
-            } catch (error) {
-                elements.securityUserStatus.textContent = localizeErrorMessage(error.message);
-            } finally {
-                elements.createSecurityUserButton.disabled = false;
-            }
-        });
-
-        document.addEventListener("click", async (event) => {
             const showQrButton = event.target.closest(".show-student-qr-button");
             if (showQrButton) {
                 const panel = document.getElementById("studentQrTokenPanel");
@@ -4010,13 +4319,6 @@
             const registeredStudentButton = event.target.closest(".registered-student-item");
             if (registeredStudentButton) {
                 state.selectedStudentId = registeredStudentButton.dataset.id;
-                renderAdmin();
-                return;
-            }
-
-            const registeredSecurityUserButton = event.target.closest(".registered-security-user-item");
-            if (registeredSecurityUserButton) {
-                state.selectedSecurityUserId = registeredSecurityUserButton.dataset.id;
                 renderAdmin();
                 return;
             }
@@ -4137,15 +4439,11 @@
         async function initialize() {
             applyPreferences();
             try {
-                const payload = await fetchJson("/api/auth/me");
-                if (payload.user) {
-                    await showApp(payload.user);
-                } else {
-                    showLogin();
-                }
+                await fetchJson("/api/auth/logout", { method: "POST" });
             } catch (error) {
-                showLogin();
+                console.warn(error);
             }
+            showLogin();
         }
 
         initialize();
