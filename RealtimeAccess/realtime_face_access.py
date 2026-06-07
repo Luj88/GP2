@@ -1,3 +1,4 @@
+import os
 import pickle
 import sqlite3
 import time
@@ -11,7 +12,7 @@ from deepface import DeepFace
 
 
 GP2_DIR = Path(__file__).resolve().parents[1]
-DATABASE_PATH = GP2_DIR / "university.db"
+DATABASE_PATH = Path(os.environ.get("GP2_DATABASE_PATH", GP2_DIR / "university.db")).resolve()
 MODEL_NAME = "VGG-Face"
 MATCH_THRESHOLD = 0.35
 TARGET_FPS = 30
