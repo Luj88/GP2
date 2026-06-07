@@ -127,28 +127,75 @@
 
         .login-shell::before {
             background:
-                radial-gradient(circle at 50% 42%, rgba(74, 183, 255, 0.16), transparent 24%),
-                radial-gradient(circle at 18% 78%, rgba(18, 104, 173, 0.18), transparent 28%);
-            opacity: 0.82;
+                repeating-linear-gradient(90deg, transparent 0 70px, rgba(255, 255, 255, 0.13) 71px, transparent 72px),
+                repeating-linear-gradient(0deg, transparent 0 70px, rgba(255, 255, 255, 0.08) 71px, transparent 72px);
+            opacity: 0.32;
+            transform: perspective(900px) rotateX(62deg) translateY(-18%);
+            transform-origin: top;
+            animation: securityGridDrift 20s linear infinite;
         }
 
         .login-shell::after {
-            background: linear-gradient(180deg, transparent 0 62%, rgba(2, 10, 22, 0.46) 100%);
+            background:
+                linear-gradient(112deg, transparent 0 42%, rgba(120, 195, 255, 0.2) 47%, transparent 52%),
+                linear-gradient(180deg, transparent 0 62%, rgba(2, 10, 22, 0.46) 100%);
             opacity: 0.46;
+            transform: translateX(-68%);
+            animation: securitySweep 8s ease-in-out infinite;
         }
 
-        .neural-network-bg {
+        .login-geometry {
             position: fixed;
             inset: 0;
             z-index: 0;
-            width: 100%;
-            height: 100%;
             pointer-events: none;
-            opacity: 0.82;
+            overflow: hidden;
+            direction: ltr;
+        }
+
+        .login-geometry span {
+            position: absolute;
+            display: block;
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+                repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.1) 19px, transparent 20px);
+            box-shadow: 0 22px 56px rgba(8, 40, 68, 0.13);
+            backdrop-filter: blur(8px);
+            opacity: 0.68;
+        }
+
+        .geo-frame {
+            display: none;
+            width: 190px;
+            height: 190px;
+            inset-block-start: 9%;
+            inset-inline-end: 7%;
+            clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+            animation: geometricFloat 10s ease-in-out infinite;
+        }
+
+        .geo-chip {
+            width: 150px;
+            height: 82px;
+            inset-block-end: 13%;
+            left: 7%;
+            border-radius: 8px;
+            animation: geometricFloat 12s ease-in-out infinite reverse;
+        }
+
+        .geo-line {
+            width: 280px;
+            height: 2px;
+            inset-block-start: 67%;
+            right: 13%;
+            border: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
+            box-shadow: 0 0 24px rgba(255, 255, 255, 0.42);
+            animation: signalLine 5s ease-in-out infinite;
         }
 
         .corner-camera {
-            display: none;
             position: fixed;
             z-index: 1;
             inset-block-start: 38px;
@@ -289,7 +336,7 @@
 
         .login-form-panel {
             position: relative;
-            width: min(780px, 100%);
+            width: min(460px, 100%);
             margin: 0 auto;
             padding: 10px;
             display: flex;
@@ -299,304 +346,24 @@
         }
 
         .login-form-panel::before {
-            content: none;
-        }
-
-        .role-choice-panel,
-        .login-detail-panel {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            animation: loginPanelIn .46s cubic-bezier(.16, 1, .3, 1);
-        }
-
-        .role-choice-heading {
-            margin: 0 auto 18px;
-            max-width: 620px;
-            color: #f4fbff;
-            text-align: center;
-            text-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
-        }
-
-        .role-choice-heading h1 {
-            margin-bottom: 10px;
-            font-size: clamp(30px, 4vw, 48px);
-            letter-spacing: 0;
-        }
-
-        .role-choice-heading p {
-            margin: 0;
-            color: rgba(235, 247, 255, 0.78);
-            line-height: 1.7;
-        }
-
-        .role-choice-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .role-choice-card {
-            position: relative;
-            min-height: 260px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.26);
-            border-radius: 8px;
-            padding: 22px;
-            background:
-                linear-gradient(145deg, rgba(244, 250, 255, 0.92), rgba(225, 241, 255, 0.78)),
-                repeating-linear-gradient(90deg, transparent 0 58px, rgba(21, 82, 143, 0.08) 59px, transparent 60px);
-            color: #132436;
-            text-align: start;
-            box-shadow: 0 24px 70px rgba(0, 12, 28, 0.22);
-            isolation: isolate;
-        }
-
-        .role-choice-card::before {
             content: "";
             position: absolute;
-            inset: 0;
-            z-index: -1;
-            opacity: 0.84;
-            background: linear-gradient(115deg, transparent 0 42%, rgba(255, 255, 255, 0.42) 48%, transparent 54%);
-            transform: translateX(-70%);
-            transition: transform .58s ease;
-        }
-
-        .role-choice-card:hover,
-        .role-choice-card:focus {
-            transform: translateY(-4px);
-            outline: none;
-            box-shadow: 0 30px 82px rgba(0, 12, 28, 0.3);
-        }
-
-        .role-choice-card:hover::before,
-        .role-choice-card:focus::before {
-            transform: translateX(68%);
-        }
-
-        .role-choice-card.security {
-            background:
-                linear-gradient(145deg, rgba(232, 247, 255, 0.92), rgba(199, 230, 245, 0.78)),
-                repeating-linear-gradient(0deg, transparent 0 42px, rgba(15, 159, 154, 0.1) 43px, transparent 44px);
-        }
-
-        .role-choice-icon {
-            position: relative;
-            display: grid;
-            place-items: center;
-            width: 74px;
-            height: 74px;
-            margin-bottom: 18px;
-            border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border) 76%);
-            border-radius: 8px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: #fff;
-            font-size: 26px;
-            font-weight: 900;
-            box-shadow: 0 18px 36px color-mix(in srgb, var(--primary) 22%, transparent);
-        }
-
-        .role-choice-icon::after {
-            content: "";
-            position: absolute;
-            inset: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.58);
-            border-radius: 6px;
-            animation: roleIconPulse 2.8s ease-in-out infinite;
-        }
-
-        .role-choice-card h2 {
-            margin-bottom: 8px;
-            font-size: 24px;
-        }
-
-        .role-choice-card p {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.7;
-        }
-
-        .login-detail-panel {
-            width: min(460px, 100%);
-            margin: 0 auto;
-        }
-
-        .login-role-scene {
-            position: absolute;
-            inset: -74px -110px;
-            z-index: -1;
+            inset: -10px;
             pointer-events: none;
-            overflow: hidden;
-            border-radius: 8px;
-            filter: drop-shadow(0 24px 54px rgba(0, 0, 0, 0.22));
-        }
-
-        .login-role-scene::before,
-        .login-role-scene::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            opacity: 0.42;
-        }
-
-        .login-role-scene::before {
+            opacity: 0.58;
             background:
-                repeating-linear-gradient(90deg, transparent 0 38px, rgba(92, 214, 255, 0.18) 39px, transparent 40px),
-                repeating-linear-gradient(0deg, transparent 0 38px, rgba(92, 214, 255, 0.12) 39px, transparent 40px);
-            animation: roleGridMove 12s linear infinite;
+                linear-gradient(var(--primary), var(--primary)) top left / 58px 2px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) top left / 2px 58px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) top right / 58px 2px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) top right / 2px 58px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) bottom left / 58px 2px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) bottom left / 2px 58px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) bottom right / 58px 2px no-repeat,
+                linear-gradient(var(--primary), var(--primary)) bottom right / 2px 58px no-repeat;
+            filter: drop-shadow(0 0 12px rgba(31, 95, 168, 0.28));
         }
 
-        .login-role-scene::after {
-            background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.34) 48%, transparent 70%);
-            transform: translateX(-72%);
-            animation: roleSceneSweep 4.8s ease-in-out infinite;
-        }
-
-        .login-shell[data-login-role="admin"] .login-role-scene::before {
-            background:
-                repeating-linear-gradient(90deg, transparent 0 48px, rgba(214, 152, 82, 0.16) 49px, transparent 50px),
-                repeating-linear-gradient(0deg, transparent 0 48px, rgba(15, 159, 154, 0.12) 49px, transparent 50px);
-        }
-
-        .scene-scan-ring,
-        .scene-scan-line,
-        .scene-data-card,
-        .scene-data-stream {
-            position: absolute;
-            display: block;
-        }
-
-        .scene-scan-ring {
-            inset: 36px;
-            border: 2px solid rgba(92, 214, 255, 0.56);
-            border-radius: 8px;
-            opacity: 0;
-            box-shadow: inset 0 0 34px rgba(92, 214, 255, 0.16), 0 0 28px rgba(92, 214, 255, 0.24);
-            animation: securityScanRing 2.4s ease-in-out infinite;
-        }
-
-        .scene-scan-ring:nth-child(2) {
-            inset: 76px;
-            animation-delay: .52s;
-        }
-
-        .scene-scan-line {
-            left: 34px;
-            right: 34px;
-            top: 0;
-            height: 4px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, transparent, rgba(92, 214, 255, 0.96), rgba(52, 179, 154, 0.9), transparent);
-            box-shadow: 0 0 24px rgba(92, 214, 255, 0.82);
-            animation: securityScanLine 2.2s ease-in-out infinite;
-        }
-
-        .scene-data-card {
-            width: 128px;
-            height: 72px;
-            border: 1px solid rgba(255, 255, 255, 0.46);
-            border-radius: 8px;
-            background:
-                linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(225, 241, 255, 0.34)),
-                repeating-linear-gradient(0deg, transparent 0 13px, rgba(21, 82, 143, 0.18) 14px, transparent 15px);
-            box-shadow: 0 20px 48px rgba(0, 20, 40, 0.2);
-            opacity: 0;
-            transform: translateY(22px);
-        }
-
-        .scene-data-card::before {
-            content: "";
-            position: absolute;
-            left: 14px;
-            top: 14px;
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-        }
-
-        .scene-data-card::after {
-            content: "";
-            position: absolute;
-            left: 58px;
-            top: 18px;
-            width: 50px;
-            height: 5px;
-            border-radius: 999px;
-            background: rgba(21, 82, 143, 0.42);
-            box-shadow: 0 15px 0 rgba(15, 159, 154, 0.3), 0 30px 0 rgba(21, 82, 143, 0.24);
-        }
-
-        .scene-data-card.one {
-            top: 20px;
-            left: -34px;
-            animation: adminCardFloat 3.4s ease-in-out infinite;
-        }
-
-        .scene-data-card.two {
-            right: -38px;
-            bottom: 72px;
-            animation: adminCardFloat 3.4s ease-in-out infinite .78s;
-        }
-
-        .scene-data-stream {
-            left: 24px;
-            right: 24px;
-            bottom: 24px;
-            height: 5px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, transparent, rgba(214, 152, 82, 0.9), rgba(15, 159, 154, 0.92), transparent);
-            box-shadow: 0 0 24px rgba(214, 152, 82, 0.6);
-            transform: translateX(-80%);
-            animation: adminDataStream 1.8s ease-in-out infinite;
-        }
-
-        .login-shell[data-login-role="admin"] .scene-scan-ring,
-        .login-shell[data-login-role="admin"] .scene-scan-line,
-        .login-shell[data-login-role="security"] .scene-data-card,
-        .login-shell[data-login-role="security"] .scene-data-stream {
-            display: none;
-        }
-
-        .login-shell[data-login-role="security"] .face-scan-visual::after {
-            height: 5px;
-            animation-duration: 1.45s;
-            box-shadow: 0 0 28px rgba(92, 214, 255, 0.95);
-        }
-
-        .login-shell[data-login-role="admin"] .face-scan-visual::after {
-            background: linear-gradient(90deg, transparent, rgba(214, 152, 82, 0.96), rgba(15, 159, 154, 0.86), transparent);
-            animation-duration: 2.2s;
-            box-shadow: 0 0 24px rgba(214, 152, 82, 0.7);
-        }
-
-        .selected-role-header {
-            position: relative;
-            margin-bottom: 14px;
-            padding: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            background: rgba(244, 250, 255, 0.86);
-            box-shadow: 0 18px 44px rgba(0, 20, 40, 0.16);
-        }
-
-        .selected-role-header h2 {
-            margin-bottom: 4px;
-        }
-
-        .selected-role-header p {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .login-back-button {
-            margin-bottom: 12px;
-        }
-
-        .brand-row, .app-header, .row, .toolbar, .summary-grid {
+        .brand-row, .app-header, .row, .toolbar, .role-switch, .summary-grid {
             display: flex;
             align-items: center;
         }
@@ -634,85 +401,51 @@
 
         .face-scan-visual {
             position: relative;
-            z-index: 2;
-            margin: 0 auto 18px;
-            width: min(100%, 340px);
+            margin: 0 auto 14px;
+            width: min(100%, 240px);
             min-height: 0;
             display: grid;
             justify-items: center;
             align-content: center;
-            gap: 6px;
+            gap: 8px;
             overflow: visible;
             transform: none;
         }
 
         .face-scan-visual::after {
-            content: none;
+            content: "";
+            position: absolute;
+            left: 9%;
+            right: 9%;
+            top: 12%;
+            height: 3px;
+            z-index: 3;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, rgba(92, 214, 255, 0.96), transparent);
+            box-shadow: 0 0 18px rgba(92, 214, 255, 0.72);
+            animation: imageScanSweep 3.2s ease-in-out infinite;
         }
 
         .secure-visual-frame {
             position: relative;
-            width: min(100%, 310px);
+            width: min(100%, 198px);
             aspect-ratio: 1 / 1;
             display: grid;
             place-items: center;
             overflow: hidden;
-            filter:
-                drop-shadow(0 0 24px rgba(108, 211, 255, 0.38))
-                drop-shadow(0 24px 42px rgba(2, 14, 34, 0.44));
-        }
-
-        .secure-visual-frame::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            border-radius: 50%;
-            background:
-                radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.18), transparent 16%),
-                radial-gradient(circle, rgba(12, 41, 80, 0.96) 0 48%, rgba(6, 24, 50, 0.98) 49% 70%, transparent 71%),
-                linear-gradient(135deg, #143a68, #061a34);
-            box-shadow:
-                inset 0 0 0 2px rgba(114, 203, 255, 0.28),
-                inset 0 0 42px rgba(81, 181, 255, 0.22);
-        }
-
-        .secure-visual-frame::after {
-            content: "JUST\A SECURE";
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 23%;
-            z-index: 1;
-            color: rgba(226, 250, 255, 0.9);
-            font-size: 34px;
-            font-weight: 900;
-            line-height: 0.86;
-            white-space: pre;
-            text-align: center;
-            text-shadow: 0 0 16px rgba(107, 219, 255, 0.78);
         }
 
         .secure-visual-frame img {
-            display: block;
-            grid-area: 1 / 1;
-            position: relative;
-            z-index: 2;
-            width: 94%;
-            height: 94%;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
-            object-position: center;
-            opacity: 1;
-            transform: translate(0, 0);
-        }
-
-        .secure-visual-frame img.logo-failed {
-            display: none;
+            background: transparent;
+            filter: drop-shadow(0 24px 42px rgba(2, 14, 34, 0.34));
         }
 
         .just-secure-caption {
             color: #f4fbff;
-            font-size: clamp(22px, 3vw, 32px);
+            font-size: clamp(18px, 2.4vw, 24px);
             font-weight: 900;
             letter-spacing: 0;
             line-height: 1.1;
@@ -950,6 +683,44 @@
             letter-spacing: 0.12em;
         }
 
+        @keyframes securityGridDrift {
+            from {
+                background-position: 0 0, 0 0;
+            }
+            to {
+                background-position: 0 72px, 72px 0;
+            }
+        }
+
+        @keyframes securitySweep {
+            0%, 28% {
+                transform: translateX(-70%);
+            }
+            62%, 100% {
+                transform: translateX(70%);
+            }
+        }
+
+        @keyframes geometricFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-18px) rotate(3deg);
+            }
+        }
+
+        @keyframes signalLine {
+            0%, 100% {
+                opacity: 0.18;
+                transform: scaleX(0.62);
+            }
+            48% {
+                opacity: 0.82;
+                transform: scaleX(1);
+            }
+        }
+
         @keyframes cameraPatrol {
             0%, 100% {
                 transform: rotate(-12deg) translateX(0);
@@ -1179,70 +950,6 @@
             margin-bottom: 24px;
         }
 
-        .login-language-switch {
-            position: fixed;
-            z-index: 20;
-            top: 24px;
-            left: 24px;
-            display: flex;
-            gap: 8px;
-            padding: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.26);
-            border-radius: 8px;
-            background: rgba(5, 18, 34, 0.52);
-            box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
-            backdrop-filter: blur(12px);
-            direction: ltr;
-        }
-
-        .language-option {
-            width: 48px;
-            min-height: 38px;
-            border: 1px solid transparent;
-            border-radius: 6px;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.76);
-            font-size: 13px;
-            font-weight: 900;
-            letter-spacing: 0;
-        }
-
-        .language-option:hover,
-        .language-option:focus {
-            border-color: rgba(255, 255, 255, 0.28);
-            color: #fff;
-            outline: none;
-        }
-
-        .language-option.active {
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            color: #fff;
-            box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 28%, transparent);
-        }
-
-        .app-language-switch {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            background: color-mix(in srgb, var(--surface-muted) 78%, white 22%);
-            box-shadow: none;
-            direction: ltr;
-        }
-
-        .app-language-switch .language-option {
-            color: var(--muted);
-        }
-
-        .app-language-switch .language-option.active,
-        .app-language-switch .language-option:hover,
-        .app-language-switch .language-option:focus {
-            background: color-mix(in srgb, var(--primary) 14%, transparent);
-            color: var(--primary-strong);
-        }
-
         label {
             display: block;
             margin-bottom: 8px;
@@ -1269,6 +976,82 @@
 
         .field {
             margin-bottom: 14px;
+        }
+
+        .role-switch {
+            gap: 8px;
+            margin: 8px 0 14px;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
+            align-items: stretch;
+            overflow: visible;
+            direction: ltr;
+        }
+
+        .role-menu-wrap {
+            position: relative;
+            flex: 1;
+        }
+
+        .role-button {
+            width: 100%;
+            border: 0;
+            border-radius: 14px;
+            padding: 13px 12px;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .role-button.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 38%, transparent);
+        }
+
+        .role-dropdown {
+            position: absolute;
+            z-index: 12;
+            top: calc(100% + 8px);
+            inset-inline: 0;
+            display: grid;
+            gap: 7px;
+            min-width: 220px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface) 94%, white 6%);
+            box-shadow: var(--shadow);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-6px);
+            transition: opacity .16s ease, transform .16s ease;
+        }
+
+        .role-menu-wrap:hover .role-dropdown,
+        .role-menu-wrap:focus-within .role-dropdown {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .role-menu-item {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 12px;
+            background: transparent;
+            color: var(--text);
+            font-weight: 800;
+            text-align: inherit;
+        }
+
+        .role-menu-item:hover,
+        .role-menu-item:focus {
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            color: var(--primary-strong);
         }
 
         .primary-button, .secondary-button, .danger-button, .ghost-button {
@@ -1307,106 +1090,6 @@
             }
             72%, 100% {
                 transform: translateX(125%);
-            }
-        }
-
-        @keyframes loginPanelIn {
-            from {
-                opacity: 0;
-                transform: translateY(18px) scale(0.98);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        @keyframes roleIconPulse {
-            0%, 100% {
-                opacity: 0.34;
-                transform: scale(0.84);
-            }
-            50% {
-                opacity: 0.9;
-                transform: scale(1.08);
-            }
-        }
-
-        @keyframes roleGridMove {
-            from {
-                background-position: 0 0, 0 0;
-            }
-            to {
-                background-position: 40px 0, 0 40px;
-            }
-        }
-
-        @keyframes roleSceneSweep {
-            0%, 28% {
-                transform: translateX(-72%);
-            }
-            68%, 100% {
-                transform: translateX(72%);
-            }
-        }
-
-        @keyframes securityScanRing {
-            0% {
-                opacity: 0;
-                transform: scale(0.76);
-            }
-            22% {
-                opacity: 0.9;
-            }
-            72%, 100% {
-                opacity: 0;
-                transform: scale(1.16);
-            }
-        }
-
-        @keyframes securityScanLine {
-            0% {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            12% {
-                opacity: 1;
-            }
-            56% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(360px);
-            }
-        }
-
-        @keyframes adminCardFloat {
-            0% {
-                opacity: 0;
-                transform: translateY(28px) scale(0.92);
-            }
-            18%, 72% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-26px) scale(0.96);
-            }
-        }
-
-        @keyframes adminDataStream {
-            0% {
-                opacity: 0;
-                transform: translateX(-82%);
-            }
-            22%, 68% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(82%);
             }
         }
 
@@ -1490,7 +1173,8 @@
 
         .secondary-button:hover,
         .ghost-button:hover,
-        .admin-tab:hover {
+        .admin-tab:hover,
+        .role-button:hover {
             transform: translateY(-1px);
         }
 
@@ -2309,14 +1993,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .role-choice-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .role-choice-card {
-                min-height: 210px;
-            }
-
             .login-geometry {
                 opacity: 0.46;
             }
@@ -2354,35 +2030,16 @@
                 padding: 14px;
             }
 
+            .login-geometry {
+                display: none;
+            }
+
             .corner-camera {
                 display: none;
             }
 
             .login-intro, .login-form-panel, .card {
                 padding: 18px;
-            }
-
-            .role-choice-heading h1 {
-                font-size: 30px;
-            }
-
-            .role-choice-card {
-                min-height: 190px;
-                padding: 18px;
-            }
-
-            .login-role-scene {
-                inset: -42px -22px;
-            }
-
-            .scene-data-card {
-                width: 102px;
-                height: 62px;
-            }
-
-            .login-language-switch {
-                top: 14px;
-                left: 14px;
             }
 
             .login-intro {
@@ -2434,15 +2091,9 @@
             .scan-line,
             .scan-radar::before,
             .scan-radar::after,
-            .neural-network-bg,
+            .login-geometry span,
             .corner-camera,
             .camera-beam,
-            .login-role-scene::before,
-            .login-role-scene::after,
-            .scene-scan-ring,
-            .scene-scan-line,
-            .scene-data-card,
-            .scene-data-stream,
             .primary-button::after {
                 animation: none;
             }
@@ -2451,54 +2102,52 @@
 </head>
 <body data-theme="blue">
     <div id="loginScreen" class="login-shell">
-        <div class="login-language-switch" aria-label="Language">
-            <button class="language-option" type="button" data-language="ar" aria-label="Arabic">AR</button>
-            <button class="language-option" type="button" data-language="en" aria-label="English">EN</button>
+        <div class="login-geometry" aria-hidden="true">
+            <span class="geo-frame"></span>
+            <span class="geo-chip"></span>
+            <span class="geo-line"></span>
         </div>
-        <canvas id="neuralNetworkBg" class="neural-network-bg" aria-hidden="true"></canvas>
+        <div class="corner-camera" aria-hidden="true">
+            <span class="camera-arm"></span>
+            <span class="camera-body"></span>
+            <span class="camera-beam"></span>
+        </div>
         <section class="login-panel">
             <div class="login-form-panel">
-                <section id="roleChoicePanel" class="role-choice-panel">
-                    <div class="role-choice-heading">
-                        <h1 data-i18n="chooseEntryTitle">اختر طريقة الدخول</h1>
-                        <p data-i18n="chooseEntryHint">حدد بوابة العمل المناسبة لفتح شاشة دخول مهيأة لطبيعة دورك.</p>
+                <div class="face-scan-visual" aria-hidden="true">
+                    <div class="secure-visual-frame">
+                        <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.src='{{ url_for('static', filename='university-logo.png') }}';">
                     </div>
-                    <div class="role-choice-grid">
-                        <button class="role-choice-card admin" type="button" data-role="admin">
-                            <span class="role-choice-icon" aria-hidden="true">ID</span>
-                            <h2 data-i18n="loginAdminRole">موظف القبول والتسجيل</h2>
-                            <p data-i18n="loginAdminHint">إدارة بيانات الطلبة، المزامنة، التسجيل، وسجلات الدخول.</p>
-                        </button>
-                        <button class="role-choice-card security" type="button" data-role="security">
-                            <span class="role-choice-icon" aria-hidden="true">SC</span>
-                            <h2 data-i18n="loginSecurityRole">موظف الأمن</h2>
-                            <p data-i18n="loginSecurityHint">مراقبة الدخول المباشر، قراءة الوجوه، والتحقق الأمني السريع.</p>
-                        </button>
-                    </div>
-                </section>
-
-                <section id="loginDetailPanel" class="login-detail-panel hidden">
-                    <div class="login-role-scene" aria-hidden="true">
-                        <span class="scene-scan-ring"></span>
-                        <span class="scene-scan-ring"></span>
-                        <span class="scene-scan-line"></span>
-                        <span class="scene-data-card one"></span>
-                        <span class="scene-data-card two"></span>
-                        <span class="scene-data-stream"></span>
-                    </div>
-                    <button id="backToRoleChoiceButton" class="ghost-button login-back-button" type="button" data-i18n="changeRole">تغيير الدور</button>
-                    <div class="face-scan-visual" aria-hidden="true">
-                        <div class="secure-visual-frame">
-                            <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.src='{{ url_for('static', filename='university-logo.png') }}';">
+                    <strong class="just-secure-caption">JUST Secure</strong>
+                </div>
+                <div class="role-switch" aria-label="Role">
+                    <div class="role-menu-wrap">
+                        <button class="role-button active" type="button" data-role="admin" data-i18n="adminRole">القبول والتسجيل</button>
+                        <div class="role-dropdown">
+                            <button class="role-menu-item login-role-option" type="button" data-role="admin" data-i18n="existingAdmissionsLogin">دخول موظف مسجل</button>
+                            <button id="openEmployeeRegisterButton" class="role-menu-item" type="button" data-i18n="newAdmissionsEmployee">إضافة موظف جديد</button>
                         </div>
-                        <strong class="just-secure-caption">JUST Secure</strong>
                     </div>
-                    <div class="selected-role-header">
-                        <h2 id="selectedRoleTitle"></h2>
-                        <p id="selectedRoleHint"></p>
+                    <div class="role-menu-wrap">
+                        <button class="role-button" type="button" data-role="security" data-i18n="securityRole">الأمن الجامعي</button>
+                        <div class="role-dropdown">
+                            <button class="role-menu-item login-role-option" type="button" data-role="security" data-i18n="existingSecurityLogin">دخول رجل أمن مسجل</button>
+                            <button id="openSecurityRegisterButton" class="role-menu-item" type="button" data-i18n="newSecurityEmployee">إضافة رجل أمن جديد</button>
+                        </div>
                     </div>
+                </div>
 
-                <form id="loginForm">
+                <div class="settings-row">
+                    <div style="grid-column: 1 / -1;">
+                        <label for="languageSelect" data-i18n="language">اللغة</label>
+                        <select id="languageSelect">
+                            <option value="ar">العربية</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <form id="loginForm" class="hidden">
                     <div class="field">
                         <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
                         <input id="usernameInput" type="text" autocomplete="username" required>
@@ -2562,7 +2211,6 @@
                         <p id="employeeRegisterStatus" class="status-text full"></p>
                     </form>
                 </section>
-                </section>
             </div>
         </section>
     </div>
@@ -2581,10 +2229,10 @@
             </div>
             <div class="toolbar">
                 <span id="userBadge" class="user-badge"></span>
-                <div class="app-language-switch" aria-label="Language">
-                    <button class="language-option" type="button" data-language="ar" aria-label="Arabic">AR</button>
-                    <button class="language-option" type="button" data-language="en" aria-label="English">EN</button>
-                </div>
+                <select id="appLanguageSelect" class="compact-select" aria-label="Language">
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                </select>
                 <button id="adminAdmissionsButton" class="ghost-button hidden" type="button" data-i18n="admissionsArea">لوحة القبول</button>
                 <button id="adminSecurityButton" class="ghost-button hidden" type="button" data-i18n="securityLive">شاشة الأمن</button>
                 <button id="logoutButton" class="ghost-button" type="button" data-i18n="logout">تسجيل خروج</button>
@@ -2900,13 +2548,6 @@
                 dark: "داكن",
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
-                loginAdminRole: "موظف القبول والتسجيل",
-                loginSecurityRole: "موظف الأمن",
-                chooseEntryTitle: "اختر طريقة الدخول",
-                chooseEntryHint: "حدد بوابة العمل المناسبة لفتح شاشة دخول مهيأة لطبيعة دورك.",
-                loginAdminHint: "إدارة بيانات الطلبة، المزامنة، التسجيل، وسجلات الدخول.",
-                loginSecurityHint: "مراقبة الدخول المباشر، قراءة الوجوه، والتحقق الأمني السريع.",
-                changeRole: "تغيير الدور",
                 newAdmissionsEmployee: "موظف قبول وتسجيل جديد",
                 newSecurityEmployee: "تسجيل رجل أمن جديد",
                 existingAdmissionsLogin: "دخول موظف مسجل",
@@ -3068,13 +2709,6 @@
                 dark: "Dark",
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
-                loginAdminRole: "Admissions Employee",
-                loginSecurityRole: "Security Employee",
-                chooseEntryTitle: "Choose Entry Mode",
-                chooseEntryHint: "Select the workspace that matches your role to open a tailored sign-in screen.",
-                loginAdminHint: "Manage students, sync admissions records, registrations, and access logs.",
-                loginSecurityHint: "Monitor live entry, face recognition, and fast security verification.",
-                changeRole: "Change Role",
                 newAdmissionsEmployee: "New Admissions Employee",
                 newSecurityEmployee: "Register New Security Guard",
                 existingAdmissionsLogin: "Sign In Existing Employee",
@@ -3234,7 +2868,7 @@
         const state = {
             language: localStorage.getItem("accessLanguage") || "ar",
             theme: initialTheme,
-            selectedRole: null,
+            selectedRole: "admin",
             selectedRegistrationRole: "admin",
             adminPanel: "sync",
             user: null,
@@ -3258,22 +2892,19 @@
 
         const elements = {
             loginScreen: document.getElementById("loginScreen"),
-            neuralNetworkBg: document.getElementById("neuralNetworkBg"),
             appShell: document.getElementById("appShell"),
             loginForm: document.getElementById("loginForm"),
-            roleChoicePanel: document.getElementById("roleChoicePanel"),
-            loginDetailPanel: document.getElementById("loginDetailPanel"),
-            backToRoleChoiceButton: document.getElementById("backToRoleChoiceButton"),
-            selectedRoleTitle: document.getElementById("selectedRoleTitle"),
-            selectedRoleHint: document.getElementById("selectedRoleHint"),
             loginStatus: document.getElementById("loginStatus"),
             forgotPasswordButton: document.getElementById("forgotPasswordButton"),
             forgotPasswordPanel: document.getElementById("forgotPasswordPanel"),
+            openEmployeeRegisterButton: document.getElementById("openEmployeeRegisterButton"),
+            openSecurityRegisterButton: document.getElementById("openSecurityRegisterButton"),
             closeEmployeeRegisterButton: document.getElementById("closeEmployeeRegisterButton"),
             employeeRegisterPanel: document.getElementById("employeeRegisterPanel"),
             employeeRegisterForm: document.getElementById("employeeRegisterForm"),
             employeeRegisterStatus: document.getElementById("employeeRegisterStatus"),
-            languageButtons: document.querySelectorAll(".language-option"),
+            languageSelect: document.getElementById("languageSelect"),
+            appLanguageSelect: document.getElementById("appLanguageSelect"),
             areaEyebrow: document.getElementById("areaEyebrow"),
             areaTitle: document.getElementById("areaTitle"),
             userBadge: document.getElementById("userBadge"),
@@ -3422,39 +3053,23 @@
             document.documentElement.lang = state.language;
             document.documentElement.dir = state.language === "ar" ? "rtl" : "ltr";
             document.body.dataset.theme = state.theme;
-            elements.languageButtons.forEach((button) => {
-                const isActive = button.dataset.language === state.language;
-                button.classList.toggle("active", isActive);
-                button.setAttribute("aria-pressed", String(isActive));
-            });
+            elements.languageSelect.value = state.language;
+            elements.appLanguageSelect.value = state.language;
 
             document.querySelectorAll("[data-i18n]").forEach((node) => {
                 const key = node.dataset.i18n;
                 if (key) node.textContent = t(key);
             });
 
+            document.querySelectorAll(".role-button").forEach((button) => {
+                button.classList.toggle("active", button.dataset.role === state.selectedRole);
+            });
             setAdminPanel(state.adminPanel);
 
             renderAdmin();
             renderAlerts();
             renderMediaScanResults();
-            renderLoginRole();
             updateHeader();
-        }
-
-        function renderLoginRole() {
-            const hasRole = Boolean(state.selectedRole);
-            elements.roleChoicePanel.classList.toggle("hidden", hasRole);
-            elements.loginDetailPanel.classList.toggle("hidden", !hasRole);
-            elements.loginScreen.dataset.loginRole = state.selectedRole || "";
-            document.querySelectorAll(".role-choice-card").forEach((button) => {
-                button.classList.toggle("active", button.dataset.role === state.selectedRole);
-            });
-            if (!hasRole) return;
-            const titleKey = state.selectedRole === "security" ? "loginSecurityRole" : "loginAdminRole";
-            const hintKey = state.selectedRole === "security" ? "loginSecurityHint" : "loginAdminHint";
-            elements.selectedRoleTitle.textContent = t(titleKey);
-            elements.selectedRoleHint.textContent = t(hintKey);
         }
 
         function toggleEmployeeRegisterPanel(show, role = state.selectedRegistrationRole) {
@@ -3477,18 +3092,10 @@
         function showExistingLogin(role) {
             state.selectedRole = role;
             toggleEmployeeRegisterPanel(false);
+            elements.loginForm.classList.remove("hidden");
             elements.loginStatus.textContent = "";
             applyPreferences();
             document.getElementById("usernameInput").focus();
-        }
-
-        function showRoleChoice() {
-            state.selectedRole = null;
-            toggleEmployeeRegisterPanel(false);
-            elements.loginStatus.textContent = "";
-            elements.forgotPasswordPanel.classList.add("hidden");
-            elements.loginForm.reset();
-            applyPreferences();
         }
 
         function toggleForgotPasswordPanel() {
@@ -3503,9 +3110,8 @@
             elements.appShell.classList.add("hidden");
             elements.adminView.classList.add("hidden");
             elements.securityView.classList.add("hidden");
-            state.selectedRole = null;
             toggleEmployeeRegisterPanel(false);
-            renderLoginRole();
+            elements.loginForm.classList.add("hidden");
             elements.videoStream.removeAttribute("src");
             elements.mediaScanForm.reset();
             elements.mediaScanStatus.textContent = "";
@@ -4025,14 +3631,20 @@
             }
         }
 
-        document.querySelectorAll(".role-choice-card").forEach((button) => {
+        document.querySelectorAll(".role-button").forEach((button) => {
             button.addEventListener("click", () => {
-                showExistingLogin(button.dataset.role);
+                state.selectedRole = button.dataset.role;
+                toggleEmployeeRegisterPanel(false);
+                elements.loginForm.classList.add("hidden");
+                elements.loginStatus.textContent = "";
+                applyPreferences();
             });
         });
 
-        elements.backToRoleChoiceButton.addEventListener("click", () => {
-            showRoleChoice();
+        document.querySelectorAll(".login-role-option").forEach((button) => {
+            button.addEventListener("click", () => {
+                showExistingLogin(button.dataset.role);
+            });
         });
 
         document.querySelectorAll(".admin-tab").forEach((button) => {
@@ -4040,237 +3652,6 @@
                 setAdminPanel(button.dataset.adminTab);
             });
         });
-
-        function createNeuralNetworkBackground() {
-            const canvas = elements.neuralNetworkBg;
-            if (!canvas) return;
-            const context = canvas.getContext("2d");
-            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            let width = 0;
-            let height = 0;
-            let nodes = [];
-            let edges = [];
-            let adjacency = new Map();
-            let pulses = [];
-            let nextPulseAt = 0;
-            const pauseAfterPulse = 2000;
-
-            function resizeCanvas() {
-                const ratio = Math.min(window.devicePixelRatio || 1, 2);
-                width = window.innerWidth;
-                height = window.innerHeight;
-                canvas.width = Math.floor(width * ratio);
-                canvas.height = Math.floor(height * ratio);
-                canvas.style.width = `${width}px`;
-                canvas.style.height = `${height}px`;
-                context.setTransform(ratio, 0, 0, ratio, 0, 0);
-                buildNetwork();
-            }
-
-            function buildNetwork() {
-                const columns = Math.max(11, Math.ceil(width / 105));
-                const rows = Math.max(8, Math.ceil(height / 100));
-                const centerX = width * 0.5;
-                const centerY = height * 0.43;
-                const quietRadius = Math.min(width, height) * 0.22;
-                nodes = [];
-
-                for (let row = 0; row <= rows; row += 1) {
-                    for (let column = 0; column <= columns; column += 1) {
-                        const baseX = (column / columns) * width;
-                        const baseY = (row / rows) * height;
-                        const jitterX = Math.sin(column * 12.989 + row * 78.233) * 22;
-                        const jitterY = Math.cos(column * 34.17 + row * 19.91) * 20;
-                        const x = Math.min(width + 40, Math.max(-40, baseX + jitterX));
-                        const y = Math.min(height + 40, Math.max(-40, baseY + jitterY));
-                        const distanceFromCenter = Math.hypot(x - centerX, y - centerY);
-                        if (distanceFromCenter < quietRadius) continue;
-                        nodes.push({
-                            id: nodes.length,
-                            x,
-                            y,
-                            radius: 1.15 + ((row + column) % 3) * 0.28
-                        });
-                    }
-                }
-
-                edges = [];
-                adjacency = new Map(nodes.map((node) => [node.id, []]));
-                const edgeKeys = new Set();
-
-                function addEdge(fromId, toId) {
-                    if (fromId === toId) return;
-                    const from = Math.min(fromId, toId);
-                    const to = Math.max(fromId, toId);
-                    const key = `${from}-${to}`;
-                    if (edgeKeys.has(key)) return;
-                    edgeKeys.add(key);
-                    const distance = Math.hypot(nodes[from].x - nodes[to].x, nodes[from].y - nodes[to].y);
-                    const edge = { from, to, distance };
-                    edges.push(edge);
-                    adjacency.get(from).push(edge);
-                    adjacency.get(to).push(edge);
-                }
-
-                nodes.forEach((source) => {
-                    nodes
-                        .filter((target) => target.id !== source.id)
-                        .map((target) => ({
-                            id: target.id,
-                            distance: Math.hypot(source.x - target.x, source.y - target.y)
-                        }))
-                        .sort((a, b) => a.distance - b.distance)
-                        .slice(0, 4)
-                        .forEach((target) => addEdge(source.id, target.id));
-                });
-
-                function getComponents() {
-                    const unseen = new Set(nodes.map((node) => node.id));
-                    const components = [];
-                    while (unseen.size > 0) {
-                        const start = unseen.values().next().value;
-                        const stack = [start];
-                        const component = [];
-                        unseen.delete(start);
-                        while (stack.length > 0) {
-                            const nodeId = stack.pop();
-                            component.push(nodeId);
-                            adjacency.get(nodeId).forEach((edge) => {
-                                const nextId = edge.from === nodeId ? edge.to : edge.from;
-                                if (unseen.has(nextId)) {
-                                    unseen.delete(nextId);
-                                    stack.push(nextId);
-                                }
-                            });
-                        }
-                        components.push(component);
-                    }
-                    return components;
-                }
-
-                let components = getComponents();
-                while (components.length > 1) {
-                    const base = components[0];
-                    let bestBridge = null;
-                    components.slice(1).forEach((component, componentIndex) => {
-                        base.forEach((fromId) => {
-                            component.forEach((toId) => {
-                                const distance = Math.hypot(nodes[fromId].x - nodes[toId].x, nodes[fromId].y - nodes[toId].y);
-                                if (!bestBridge || distance < bestBridge.distance) {
-                                    bestBridge = { fromId, toId, componentIndex: componentIndex + 1, distance };
-                                }
-                            });
-                        });
-                    });
-                    if (!bestBridge) break;
-                    addEdge(bestBridge.fromId, bestBridge.toId);
-                    components = getComponents();
-                }
-            }
-
-            function drawBase() {
-                context.clearRect(0, 0, width, height);
-                context.save();
-                context.strokeStyle = "rgba(105, 197, 255, 0.11)";
-                context.lineWidth = 0.8;
-                edges.forEach((edge) => {
-                    const from = nodes[edge.from];
-                    const to = nodes[edge.to];
-                    context.beginPath();
-                    context.moveTo(from.x, from.y);
-                    context.lineTo(to.x, to.y);
-                    context.stroke();
-                });
-
-                nodes.forEach((node) => {
-                    context.beginPath();
-                    context.fillStyle = "rgba(126, 216, 255, 0.42)";
-                    context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-                    context.fill();
-                });
-                context.restore();
-            }
-
-            function triggerPulse(now) {
-                if (!nodes.length || !edges.length) return now + pauseAfterPulse;
-                const startNode = nodes[Math.floor(Math.random() * nodes.length)];
-                const visitedNodes = new Set([startNode.id]);
-                const visitedEdges = new Set();
-                let frontier = [startNode.id];
-                const maxLayers = 6;
-                const maxPulseEdges = 42;
-                let pulseIndex = 0;
-                let latestEnd = now;
-
-                for (let layer = 0; layer < maxLayers && frontier.length > 0 && pulseIndex < maxPulseEdges; layer += 1) {
-                    const nextFrontier = [];
-                    frontier.forEach((nodeId) => {
-                        const connectedEdges = [...adjacency.get(nodeId)].sort(() => Math.random() - 0.5);
-                        connectedEdges.forEach((edge) => {
-                            const edgeKey = `${edge.from}-${edge.to}`;
-                            if (visitedEdges.has(edgeKey) || pulseIndex >= maxPulseEdges) return;
-                            visitedEdges.add(edgeKey);
-                            const nextId = edge.from === nodeId ? edge.to : edge.from;
-                            const start = now + layer * 560 + pulseIndex * 52;
-                            const duration = 3300;
-                            pulses.push({
-                                edge,
-                                start,
-                                duration,
-                                layer
-                            });
-                            latestEnd = Math.max(latestEnd, start + duration);
-                            pulseIndex += 1;
-                            if (!visitedNodes.has(nextId)) {
-                                visitedNodes.add(nextId);
-                                nextFrontier.push(nextId);
-                            }
-                        });
-                    });
-                    frontier = nextFrontier.sort(() => Math.random() - 0.5).slice(0, 8);
-                }
-                return latestEnd;
-            }
-
-            function drawPulse(pulse, now) {
-                const progress = (now - pulse.start) / pulse.duration;
-                if (progress < 0 || progress > 1) return;
-                const from = nodes[pulse.edge.from];
-                const to = nodes[pulse.edge.to];
-                const travel = Math.min(progress / 0.62, 1);
-                const fade = progress < 0.62 ? 1 : Math.max(0, 1 - ((progress - 0.62) / 0.38));
-                const x = from.x + (to.x - from.x) * travel;
-                const y = from.y + (to.y - from.y) * travel;
-                const glow = Math.sin(Math.min(progress, 1) * Math.PI);
-
-                context.save();
-                context.shadowBlur = 10;
-                context.shadowColor = `rgba(116, 219, 255, ${0.42 * fade})`;
-                context.strokeStyle = `rgba(202, 248, 255, ${(0.42 + glow * 0.5) * fade})`;
-                context.lineWidth = 0.85;
-                context.beginPath();
-                context.moveTo(from.x, from.y);
-                context.lineTo(x, y);
-                context.stroke();
-                context.restore();
-            }
-
-            function animate(now) {
-                drawBase();
-                pulses = pulses.filter((pulse) => now - pulse.start <= pulse.duration);
-                if (!reducedMotion && pulses.length === 0 && now >= nextPulseAt) {
-                    nextPulseAt = triggerPulse(now) + pauseAfterPulse;
-                }
-                pulses.forEach((pulse) => drawPulse(pulse, now));
-                window.requestAnimationFrame(animate);
-            }
-
-            resizeCanvas();
-            window.addEventListener("resize", resizeCanvas);
-            window.requestAnimationFrame(animate);
-        }
-
-        createNeuralNetworkBackground();
 
         let languageTransitionTimer = null;
 
@@ -4288,19 +3669,17 @@
             }, 320);
         }
 
-        elements.languageButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-                setLanguage(button.dataset.language);
-            });
+        elements.languageSelect.addEventListener("change", (event) => {
+            setLanguage(event.target.value);
+        });
+
+        elements.appLanguageSelect.addEventListener("change", (event) => {
+            setLanguage(event.target.value);
         });
 
         elements.loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             elements.loginStatus.textContent = "";
-            if (!state.selectedRole) {
-                showRoleChoice();
-                return;
-            }
             const username = document.getElementById("usernameInput").value.trim();
             const password = document.getElementById("passwordInput").value;
             try {
@@ -4314,6 +3693,14 @@
             } catch (error) {
                 elements.loginStatus.textContent = localizeErrorMessage(error.message);
             }
+        });
+
+        elements.openEmployeeRegisterButton.addEventListener("click", () => {
+            toggleEmployeeRegisterPanel(true, "admin");
+        });
+
+        elements.openSecurityRegisterButton.addEventListener("click", () => {
+            toggleEmployeeRegisterPanel(true, "security");
         });
 
         elements.forgotPasswordButton.addEventListener("click", () => {
