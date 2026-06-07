@@ -2616,6 +2616,64 @@
             border-color: rgba(140, 232, 241, 0.18);
         }
 
+        .filter-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 0 0 14px;
+        }
+
+        .filter-bar input,
+        .filter-bar select {
+            min-height: 42px;
+            border-radius: 8px;
+        }
+
+        .security-result-panel {
+            display: grid;
+            gap: 10px;
+            margin: 0 18px 18px;
+            padding: 14px;
+            border: 1px solid rgba(140, 232, 241, 0.2);
+            border-radius: 10px;
+            background: rgba(5, 24, 39, 0.58);
+        }
+
+        .security-result-panel.hidden {
+            display: none;
+        }
+
+        .security-result-panel strong,
+        .security-result-panel span {
+            overflow-wrap: anywhere;
+        }
+
+        .toast-container {
+            position: fixed;
+            inset-block-end: 18px;
+            inset-inline-end: 18px;
+            z-index: 80;
+            display: grid;
+            gap: 10px;
+            width: min(360px, calc(100vw - 36px));
+            pointer-events: none;
+        }
+
+        .toast {
+            border: 1px solid rgba(140, 232, 241, 0.26);
+            border-inline-start: 4px solid var(--primary);
+            border-radius: 10px;
+            background: rgba(8, 28, 45, 0.94);
+            color: var(--text);
+            box-shadow: 0 18px 38px rgba(0, 9, 22, 0.34);
+            padding: 13px 14px;
+            pointer-events: auto;
+        }
+
+        .toast.success { border-inline-start-color: var(--success); }
+        .toast.warning { border-inline-start-color: var(--warning); }
+        .toast.danger { border-inline-start-color: var(--danger); }
+
         @media (max-width: 980px) {
             .login-panel, .grid-admin, .grid-security {
                 grid-template-columns: 1fr;
@@ -2918,6 +2976,16 @@
                                 <h3><span id="registeredStudentsListCount">0</span> <span data-i18n="students">طلاب</span></h3>
                             </div>
                         </div>
+                        <div class="filter-bar">
+                            <input id="studentSearchInput" type="search" data-i18n-placeholder="searchStudents" placeholder="Search students">
+                            <select id="studentRoleFilter">
+                                <option value="" data-i18n="allRoles">All Roles</option>
+                                <option value="Student">Student</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Security">Security</option>
+                            </select>
+                        </div>
                         <div id="registeredStudentsList" class="student-name-list"></div>
                         <div id="registeredStudentDetails" class="person-detail-panel"></div>
                     </section>
@@ -2930,8 +2998,11 @@
                             </div>
                             <div class="toolbar">
                                 <button id="selectAllGraduatesButton" class="secondary-button" type="button" data-i18n="selectAll">تحديد الكل</button>
-                                <button id="deleteSelectedGraduates" class="danger-button" type="button" data-i18n="deleteSelected">حذف المحدد</button>
+                                <button id="deleteSelectedGraduates" class="danger-button" type="button" data-i18n="removeFromArchive">Remove From Archive</button>
                             </div>
+                        </div>
+                        <div class="filter-bar">
+                            <input id="graduateSearchInput" type="search" data-i18n-placeholder="searchGraduates" placeholder="Search archived graduates">
                         </div>
                         <div class="table-wrap">
                             <table>
@@ -2961,6 +3032,17 @@
                                 <button id="selectAllAccessLogsButton" class="secondary-button" type="button" data-i18n="selectAll">تحديد الكل</button>
                                 <button id="deleteSelectedAccessLogsButton" class="danger-button" type="button" data-i18n="deleteSelected">حذف المحدد</button>
                             </div>
+                        </div>
+                        <div class="filter-bar">
+                            <input id="accessLogSearchInput" type="search" data-i18n-placeholder="searchLogs" placeholder="Search logs">
+                            <input id="accessLogDateFilter" type="date">
+                            <select id="accessLogStatusFilter">
+                                <option value="" data-i18n="allStatuses">All Statuses</option>
+                                <option value="Allowed">Allowed</option>
+                                <option value="Unknown">Unknown</option>
+                                <option value="Denied">Denied</option>
+                                <option value="Manual ID Required">Manual ID Required</option>
+                            </select>
                         </div>
                         <div class="table-wrap">
                             <table>
@@ -2992,6 +3074,7 @@
                                 </div>
                                 <div class="live-actions">
                                     <span id="cameraBadge" class="pill" data-i18n="checking">جاري الفحص</span>
+                                    <button id="cameraTestButton" class="secondary-button camera-toggle-button" type="button" data-i18n="testCamera">Test Camera</button>
                                     <button id="cameraToggleButton" class="danger-button camera-toggle-button" type="button" data-i18n="turnCameraOff">إيقاف الكاميرا</button>
                                 </div>
                             </div>
@@ -3001,6 +3084,7 @@
                             <span id="decisionBadge" class="pill" data-i18n="waitingDecision">بانتظار القراءة</span>
                             <span id="cooldownBadge" class="pill">10s</span>
                         </div>
+                        <div id="cameraTestResult" class="security-result-panel hidden"></div>
                     </section>
 
                     <section class="card media-scan-panel">
@@ -3052,6 +3136,8 @@
             </section>
         </main>
     </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
@@ -3193,6 +3279,21 @@
                 selectGraduateFirst: "اختر طالبًا واحدًا على الأقل.",
                 unexpectedServerResponse: "الاستجابة من السيرفر غير متوقعة.",
                 signedIn: "تم تسجيل الدخول.",
+                searchStudents: "ابحث عن طالب",
+                searchGraduates: "ابحث في أرشيف الخريجين",
+                searchLogs: "ابحث في سجل الدخول",
+                allRoles: "كل الأدوار",
+                allStatuses: "كل الحالات",
+                removeFromArchive: "إزالة من الأرشيف",
+                confirmDeleteStudent: "هل تريد حذف هذا الطالب؟",
+                confirmRemoveArchive: "هل تريد إزالة السجل من الأرشيف؟",
+                imageChecking: "جاري فحص الصورة...",
+                imageReady: "الصورة واضحة وجاهزة للتسجيل.",
+                unclearFace: "الصورة غير مناسبة. استخدم صورة وجه واضحة لشخص واحد فقط.",
+                testCamera: "اختبار الكاميرا",
+                cameraTestReady: "الكاميرا تعمل وتم فحص الوجه.",
+                cameraTestNoFace: "الكاميرا تعمل، لكن لم يتم رصد وجه واضح.",
+                toastSuccess: "تمت العملية بنجاح.",
                 signedOut: "تم تسجيل الخروج."
             },
             en: {
@@ -3332,6 +3433,21 @@
                 selectGraduateFirst: "Select at least one graduate.",
                 unexpectedServerResponse: "Unexpected server response.",
                 signedIn: "Signed in.",
+                searchStudents: "Search students",
+                searchGraduates: "Search archived graduates",
+                searchLogs: "Search access logs",
+                allRoles: "All roles",
+                allStatuses: "All statuses",
+                removeFromArchive: "Remove From Archive",
+                confirmDeleteStudent: "Delete this student?",
+                confirmRemoveArchive: "Remove selected records from the archive?",
+                imageChecking: "Checking image...",
+                imageReady: "Image is clear and ready for registration.",
+                unclearFace: "The image is not suitable. Use one clear face photo.",
+                testCamera: "Test Camera",
+                cameraTestReady: "Camera is working and face check completed.",
+                cameraTestNoFace: "Camera is working, but no clear face was detected.",
+                toastSuccess: "Done successfully.",
                 signedOut: "Signed out."
             }
         };
@@ -3351,6 +3467,12 @@
             expandedAccessLogStudentId: null,
             selectedGraduateIds: new Set(),
             selectedAccessLogIds: new Set(),
+            studentSearch: "",
+            studentRoleFilter: "",
+            graduateSearch: "",
+            accessLogSearch: "",
+            accessLogDate: "",
+            accessLogStatus: "",
             alerts: [],
             cameraEnabled: true,
             socket: null,
@@ -3393,20 +3515,28 @@
             cameraModalStatus: document.getElementById("cameraModalStatus"),
             registerStatus: document.getElementById("registerStatus"),
             registeredStudentsListCount: document.getElementById("registeredStudentsListCount"),
+            studentSearchInput: document.getElementById("studentSearchInput"),
+            studentRoleFilter: document.getElementById("studentRoleFilter"),
             registeredStudentsList: document.getElementById("registeredStudentsList"),
             registeredStudentDetails: document.getElementById("registeredStudentDetails"),
             graduatesCount: document.getElementById("graduatesCount"),
+            graduateSearchInput: document.getElementById("graduateSearchInput"),
             graduatesTableBody: document.getElementById("graduatesTableBody"),
             selectAllGraduatesButton: document.getElementById("selectAllGraduatesButton"),
             deleteSelectedGraduates: document.getElementById("deleteSelectedGraduates"),
             graduatesStatus: document.getElementById("graduatesStatus"),
             accessLogsCount: document.getElementById("accessLogsCount"),
+            accessLogSearchInput: document.getElementById("accessLogSearchInput"),
+            accessLogDateFilter: document.getElementById("accessLogDateFilter"),
+            accessLogStatusFilter: document.getElementById("accessLogStatusFilter"),
             accessLogsTableBody: document.getElementById("accessLogsTableBody"),
             selectAllAccessLogsButton: document.getElementById("selectAllAccessLogsButton"),
             deleteSelectedAccessLogsButton: document.getElementById("deleteSelectedAccessLogsButton"),
             accessLogsStatus: document.getElementById("accessLogsStatus"),
             videoStream: document.getElementById("videoStream"),
             cameraBadge: document.getElementById("cameraBadge"),
+            cameraTestButton: document.getElementById("cameraTestButton"),
+            cameraTestResult: document.getElementById("cameraTestResult"),
             cameraToggleButton: document.getElementById("cameraToggleButton"),
             decisionBadge: document.getElementById("decisionBadge"),
             cooldownBadge: document.getElementById("cooldownBadge"),
@@ -3421,7 +3551,8 @@
             qrStatus: document.getElementById("qrStatus"),
             qrResult: document.getElementById("qrResult"),
             alertsCount: document.getElementById("alertsCount"),
-            alertsContainer: document.getElementById("alertsContainer")
+            alertsContainer: document.getElementById("alertsContainer"),
+            toastContainer: document.getElementById("toastContainer")
         };
 
         function t(key) {
@@ -3435,6 +3566,11 @@
                 "The uploaded image could not be read.": t("uploadedImageUnreadable"),
                 "Unsupported media type. Please upload an image or video file.": t("unsupportedMediaType"),
                 "Face already registered for another student.": t("duplicateStudentFace"),
+                "Registration image must contain exactly one clear face.": t("unclearFace"),
+                "Registration image face is too small or unclear.": t("unclearFace"),
+                "Registration image is too blurry.": t("unclearFace"),
+                "Registration image lighting is not clear.": t("unclearFace"),
+                "image is required": t("studentImageRequired"),
                 "Student was not found": t("studentNotFound"),
                 "student_id is required": t("studentIdRequired"),
                 "log_ids is required": t("selectAccessLogFirst"),
@@ -3488,8 +3624,11 @@
             clearCapturedStudentImage();
             elements.studentImageInput.value = "";
             state.capturedStudentImage = new File([blob], `captured-student-${Date.now()}.jpg`, { type: "image/jpeg" });
-            elements.studentImageSelectionStatus.textContent = t("imageCaptured");
             closeCameraModal();
+            elements.studentImageSelectionStatus.textContent = t("imageChecking");
+            await validateStudentImage(state.capturedStudentImage);
+            elements.studentImageSelectionStatus.textContent = t("imageCaptured");
+            showToast(t("imageReady"), "success");
         }
 
         async function fetchJson(url, options = {}) {
@@ -3518,6 +3657,11 @@
                 if (key) node.textContent = t(key);
             });
 
+            document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+                const key = node.dataset.i18nPlaceholder;
+                if (key) node.setAttribute("placeholder", t(key));
+            });
+
             document.querySelectorAll(".role-button").forEach((button) => {
                 const labels = {
                     ar: {
@@ -3542,6 +3686,64 @@
 
         function toggleForgotPasswordPanel() {
             elements.forgotPasswordPanel.classList.toggle("hidden");
+        }
+
+        function showToast(message, tone = "success") {
+            if (!elements.toastContainer) return;
+            const toast = document.createElement("div");
+            toast.className = `toast ${tone}`;
+            toast.textContent = message;
+            elements.toastContainer.appendChild(toast);
+            window.setTimeout(() => toast.remove(), 3600);
+        }
+
+        function normalized(value) {
+            return String(value || "").trim().toLowerCase();
+        }
+
+        function filteredStudents() {
+            const search = normalized(state.studentSearch);
+            return state.students.filter((student) => {
+                const matchesSearch = !search ||
+                    normalized(student.name).includes(search) ||
+                    normalized(student.id).includes(search) ||
+                    normalized(student.role).includes(search);
+                const matchesRole = !state.studentRoleFilter || student.role === state.studentRoleFilter;
+                return matchesSearch && matchesRole;
+            });
+        }
+
+        function filteredGraduates() {
+            const search = normalized(state.graduateSearch);
+            return state.graduates.filter((graduate) => !search ||
+                normalized(graduate.name).includes(search) ||
+                normalized(graduate.id).includes(search) ||
+                normalized(graduate.role).includes(search)
+            );
+        }
+
+        function filteredAccessLogs() {
+            const search = normalized(state.accessLogSearch);
+            return state.accessLogs.filter((log) => {
+                const matchesSearch = !search ||
+                    normalized(log.student_id).includes(search) ||
+                    normalized(log.student_name).includes(search) ||
+                    normalized(log.label).includes(search) ||
+                    normalized(log.status).includes(search);
+                const matchesDate = !state.accessLogDate || log.date === state.accessLogDate;
+                const matchesStatus = !state.accessLogStatus || log.status === state.accessLogStatus;
+                return matchesSearch && matchesDate && matchesStatus;
+            });
+        }
+
+        async function validateStudentImage(file, excludeStudentId = "") {
+            const formData = new FormData();
+            formData.set("image", file);
+            if (excludeStudentId) formData.set("exclude_student_id", excludeStudentId);
+            return fetchJson("/api/register/validate-image", {
+                method: "POST",
+                body: formData
+            });
         }
 
         function showLogin() {
@@ -3699,9 +3901,9 @@
             };
         }
 
-        function groupedAccessLogs() {
+        function groupedAccessLogs(logs = state.accessLogs) {
             const groups = new Map();
-            state.accessLogs.forEach((log) => {
+            logs.forEach((log) => {
                 const key = log.student_id || "unknown";
                 if (!groups.has(key)) groups.set(key, { studentId: key, logs: [] });
                 groups.get(key).logs.push(log);
@@ -3726,15 +3928,18 @@
         }
 
         function renderAdmin() {
-            elements.registeredStudentsListCount.textContent = state.students.length;
-            elements.graduatesCount.textContent = state.graduates.length;
+            const visibleStudents = filteredStudents();
+            const visibleGraduates = filteredGraduates();
+            const visibleAccessLogs = filteredAccessLogs();
+            elements.registeredStudentsListCount.textContent = visibleStudents.length;
+            elements.graduatesCount.textContent = visibleGraduates.length;
             if (state.selectedStudentId && !state.students.some((student) => student.id === state.selectedStudentId)) {
                 state.selectedStudentId = null;
             }
-            if (state.students.length === 0) {
+            if (visibleStudents.length === 0) {
                 elements.registeredStudentsList.innerHTML = `<p class="empty-state">${t("noStudentsList")}</p>`;
             } else {
-                elements.registeredStudentsList.innerHTML = state.students.map((student) => `
+                elements.registeredStudentsList.innerHTML = visibleStudents.map((student) => `
                     <button class="student-name-item registered-student-item ${state.selectedStudentId === student.id ? "active" : ""}" type="button" data-id="${escapeHtml(student.id)}">
                         <span class="student-name-avatar">
                             ${student.image_path ? `<img src="${escapeHtml(student.image_path)}" alt="">` : escapeHtml((student.name || "?").slice(0, 1))}
@@ -3750,10 +3955,10 @@
             const selectedStudent = state.students.find((student) => student.id === state.selectedStudentId);
             renderStudentDetails(selectedStudent);
 
-            const accessLogGroups = groupedAccessLogs();
+            const accessLogGroups = groupedAccessLogs(visibleAccessLogs);
             elements.accessLogsCount.textContent = accessLogGroups.length;
             elements.selectAllAccessLogsButton.textContent =
-                state.selectedAccessLogIds.size === state.accessLogs.length && state.accessLogs.length > 0
+                state.selectedAccessLogIds.size === visibleAccessLogs.length && visibleAccessLogs.length > 0
                     ? t("clearSelection")
                     : t("selectAll");
             elements.deleteSelectedAccessLogsButton.disabled = state.selectedAccessLogIds.size === 0;
@@ -3800,15 +4005,15 @@
             }
 
             elements.selectAllGraduatesButton.textContent =
-                state.selectedGraduateIds.size === state.graduates.length && state.graduates.length > 0
+                state.selectedGraduateIds.size === visibleGraduates.length && visibleGraduates.length > 0
                     ? t("clearSelection")
                     : t("selectAll");
             elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
 
-            if (state.graduates.length === 0) {
+            if (visibleGraduates.length === 0) {
                 elements.graduatesTableBody.innerHTML = `<tr><td colspan="6" class="empty-state">${t("noGraduates")}</td></tr>`;
             } else {
-                elements.graduatesTableBody.innerHTML = state.graduates.map((graduate) => `
+                elements.graduatesTableBody.innerHTML = visibleGraduates.map((graduate) => `
                     <tr>
                         <td><input class="graduate-checkbox" type="checkbox" data-id="${escapeHtml(graduate.id)}" ${state.selectedGraduateIds.has(graduate.id) ? "checked" : ""}></td>
                         <td>${escapeHtml(graduate.name)}</td>
@@ -4112,6 +4317,36 @@
             elements.loginStatus.textContent = t("signedOut");
         });
 
+        elements.cameraTestButton.addEventListener("click", async () => {
+            elements.cameraTestButton.disabled = true;
+            elements.cameraTestResult.classList.remove("hidden");
+            elements.cameraTestResult.innerHTML = `<p class="muted compact-note">${t("checking")}</p>`;
+            try {
+                const payload = await fetchJson("/api/system/camera-test", { method: "POST" });
+                const matches = payload.matches || [];
+                elements.cameraTestResult.innerHTML = `
+                    <strong>${matches.length > 0 ? t("cameraTestReady") : t("cameraTestNoFace")}</strong>
+                    <span class="muted meta-text">${t("detectedFaces")}: ${payload.face_count || 0}</span>
+                    ${matches.map((match) => `
+                        <div class="result-item ${match.severity === "green" ? "success" : "danger"}">
+                            <div>
+                                <strong>${escapeHtml(match.student_name || match.label || match.status)}</strong>
+                                <p class="muted meta-text">${escapeHtml(match.student_id || "")} ${escapeHtml(match.role || "")}</p>
+                            </div>
+                            <span class="pill ${match.severity === "green" ? "success" : "danger"}">${escapeHtml(match.status)}</span>
+                        </div>
+                    `).join("")}
+                `;
+                showToast(matches.length > 0 ? t("cameraTestReady") : t("cameraTestNoFace"), matches.length > 0 ? "success" : "warning");
+            } catch (error) {
+                const message = localizeErrorMessage(error.message) || t("cameraTestNoFace");
+                elements.cameraTestResult.innerHTML = `<strong>${escapeHtml(message)}</strong>`;
+                showToast(message, "danger");
+            } finally {
+                elements.cameraTestButton.disabled = false;
+            }
+        });
+
         elements.cameraToggleButton.addEventListener("click", async () => {
             const nextEnabled = !state.cameraEnabled;
             elements.cameraToggleButton.disabled = true;
@@ -4153,7 +4388,17 @@
         elements.studentImageInput.addEventListener("change", () => {
             if (elements.studentImageInput.files && elements.studentImageInput.files.length > 0) {
                 clearCapturedStudentImage();
-                elements.studentImageSelectionStatus.textContent = t("imageSelected");
+                const selectedFile = elements.studentImageInput.files[0];
+                elements.studentImageSelectionStatus.textContent = t("imageChecking");
+                validateStudentImage(selectedFile)
+                    .then(() => {
+                        elements.studentImageSelectionStatus.textContent = t("imageReady");
+                        showToast(t("imageReady"), "success");
+                    })
+                    .catch((error) => {
+                        elements.studentImageSelectionStatus.textContent = localizeErrorMessage(error.message) || t("unclearFace");
+                        showToast(localizeErrorMessage(error.message) || t("unclearFace"), "danger");
+                    });
             }
         });
 
@@ -4181,6 +4426,36 @@
             closeCameraModal();
         });
 
+        elements.studentSearchInput.addEventListener("input", () => {
+            state.studentSearch = elements.studentSearchInput.value;
+            renderAdmin();
+        });
+
+        elements.studentRoleFilter.addEventListener("change", () => {
+            state.studentRoleFilter = elements.studentRoleFilter.value;
+            renderAdmin();
+        });
+
+        elements.graduateSearchInput.addEventListener("input", () => {
+            state.graduateSearch = elements.graduateSearchInput.value;
+            renderAdmin();
+        });
+
+        elements.accessLogSearchInput.addEventListener("input", () => {
+            state.accessLogSearch = elements.accessLogSearchInput.value;
+            renderAdmin();
+        });
+
+        elements.accessLogDateFilter.addEventListener("change", () => {
+            state.accessLogDate = elements.accessLogDateFilter.value;
+            renderAdmin();
+        });
+
+        elements.accessLogStatusFilter.addEventListener("change", () => {
+            state.accessLogStatus = elements.accessLogStatusFilter.value;
+            renderAdmin();
+        });
+
         elements.registerForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             elements.registerStatus.textContent = "";
@@ -4196,6 +4471,8 @@
             }
             formData.set("image", selectedImage);
             try {
+                elements.registerStatus.textContent = t("imageChecking");
+                await validateStudentImage(selectedImage, studentId);
                 const payload = await fetchJson("/api/register", {
                     method: "POST",
                     body: formData
@@ -4208,8 +4485,10 @@
                 clearCapturedStudentImage();
                 elements.studentImageSelectionStatus.textContent = "";
                 elements.registerStatus.textContent = t("saved");
+                showToast(t("saved"), "success");
             } catch (error) {
                 elements.registerStatus.textContent = localizeErrorMessage(error.message);
+                showToast(localizeErrorMessage(error.message), "danger");
             }
         });
 
@@ -4275,6 +4554,7 @@
         document.addEventListener("click", async (event) => {
             const deleteStudentButton = event.target.closest(".delete-student-button");
             if (deleteStudentButton) {
+                if (!window.confirm(t("confirmDeleteStudent"))) return;
                 deleteStudentButton.disabled = true;
                 elements.registerStatus.textContent = "";
                 try {
@@ -4287,8 +4567,10 @@
                     state.selectedStudentId = null;
                     renderAdmin();
                     elements.registerStatus.textContent = t("studentDeleted");
+                    showToast(t("studentDeleted"), "success");
                 } catch (error) {
                     elements.registerStatus.textContent = localizeErrorMessage(error.message);
+                    showToast(localizeErrorMessage(error.message), "danger");
                     deleteStudentButton.disabled = false;
                 }
                 return;
@@ -4342,8 +4624,10 @@
                 state.students = payload.students || [];
                 state.graduates = payload.graduates || [];
                 renderAdmin();
+                showToast(t("removeFromArchive"), "success");
             } catch (error) {
                 elements.registerStatus.textContent = error.message;
+                showToast(localizeErrorMessage(error.message), "danger");
             } finally {
                 graduateButton.disabled = false;
             }
@@ -4369,10 +4653,12 @@
         });
 
         elements.selectAllGraduatesButton.addEventListener("click", () => {
-            if (state.selectedGraduateIds.size === state.graduates.length) {
-                state.selectedGraduateIds.clear();
+            const visibleIds = filteredGraduates().map((graduate) => graduate.id);
+            const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => state.selectedGraduateIds.has(id));
+            if (allVisibleSelected) {
+                visibleIds.forEach((id) => state.selectedGraduateIds.delete(id));
             } else {
-                state.graduates.forEach((graduate) => state.selectedGraduateIds.add(graduate.id));
+                visibleIds.forEach((id) => state.selectedGraduateIds.add(id));
             }
             renderAdmin();
         });
@@ -4383,6 +4669,7 @@
                 elements.graduatesStatus.textContent = t("selectGraduateFirst");
                 return;
             }
+            if (!window.confirm(t("confirmRemoveArchive"))) return;
 
             elements.deleteSelectedGraduates.disabled = true;
             try {
@@ -4395,18 +4682,22 @@
                 state.graduates = payload.graduates || [];
                 renderAdmin();
                 elements.graduatesStatus.textContent = t("deleted");
+                showToast(t("deleted"), "success");
             } catch (error) {
                 elements.graduatesStatus.textContent = error.message;
+                showToast(localizeErrorMessage(error.message), "danger");
             } finally {
                 elements.deleteSelectedGraduates.disabled = state.selectedGraduateIds.size === 0;
             }
         });
 
         elements.selectAllAccessLogsButton.addEventListener("click", () => {
-            if (state.selectedAccessLogIds.size === state.accessLogs.length) {
-                state.selectedAccessLogIds.clear();
+            const visibleIds = filteredAccessLogs().map((log) => String(log.id));
+            const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => state.selectedAccessLogIds.has(id));
+            if (allVisibleSelected) {
+                visibleIds.forEach((id) => state.selectedAccessLogIds.delete(id));
             } else {
-                state.accessLogs.forEach((log) => state.selectedAccessLogIds.add(String(log.id)));
+                visibleIds.forEach((id) => state.selectedAccessLogIds.add(id));
             }
             renderAdmin();
         });
@@ -4429,8 +4720,10 @@
                 state.accessLogs = payload.items || [];
                 renderAdmin();
                 elements.accessLogsStatus.textContent = t("deleted");
+                showToast(t("deleted"), "success");
             } catch (error) {
                 elements.accessLogsStatus.textContent = localizeErrorMessage(error.message);
+                showToast(localizeErrorMessage(error.message), "danger");
             } finally {
                 elements.deleteSelectedAccessLogsButton.disabled = state.selectedAccessLogIds.size === 0;
             }

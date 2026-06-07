@@ -30,7 +30,6 @@ from realtime_face_access import (
     cosine_distance,
     evaluate_face_candidate,
     evaluate_frame,
-    extract_embedding,
     extract_face_embeddings,
     fallback_person_box,
     load_database,
@@ -518,7 +517,7 @@ def sync_admission_students(limit: int = ADMISSION_SYNC_BATCH_SIZE) -> dict[str,
 
         try:
             frame = load_admission_image(row)
-            embedding, _ = extract_embedding(frame)
+            embedding, _ = validate_registration_face(frame)
             duplicate = find_duplicate_face(embedding, exclude_student_id=student_id)
             if duplicate:
                 raise ValueError(
@@ -631,6 +630,37 @@ def find_duplicate_face(embedding: np.ndarray, *, exclude_student_id: str = "") 
     if best_match and best_distance <= MATCH_THRESHOLD:
         return best_match
     return None
+
+
+def validate_registration_face(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    faces = extract_face_embeddings(frame)
+    if len(faces) != 1:
+        raise ValueError("Registration image must contain exactly one clear face.")
+
+    embedding, bbox = faces[0]
+    x, y, w, h = bbox
+    frame_h, frame_w = frame.shape[:2]
+    face_area_ratio = (max(0, w) * max(0, h)) / max(1, frame_w * frame_h)
+    if w < 80 or h < 80 or face_area_ratio < 0.045:
+        raise ValueError("Registration image face is too small or unclear.")
+
+    x = max(0, min(x, frame_w - 1))
+    y = max(0, min(y, frame_h - 1))
+    w = max(1, min(w, frame_w - x))
+    h = max(1, min(h, frame_h - y))
+    face_region = frame[y:y + h, x:x + w]
+    if face_region.size == 0:
+        raise ValueError("Registration image face is too small or unclear.")
+
+    gray_face = cv2.cvtColor(face_region, cv2.COLOR_BGR2GRAY)
+    blur_score = float(cv2.Laplacian(gray_face, cv2.CV_64F).var())
+    brightness = float(gray_face.mean())
+    if blur_score < 22.0:
+        raise ValueError("Registration image is too blurry.")
+    if brightness < 35.0 or brightness > 225.0:
+        raise ValueError("Registration image lighting is not clear.")
+
+    return embedding, (x, y, w, h)
 
 
 def delete_student_record(student_id: str) -> bool:
@@ -837,6 +867,14 @@ def move_student_to_graduated(student_id: str) -> bool:
             ),
         )
         connection.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        connection.execute(
+            """
+            UPDATE admission_students
+            SET is_graduated = 1
+            WHERE id = ?
+            """,
+            (student_id,),
+        )
         connection.commit()
         return True
     finally:
@@ -852,8 +890,6 @@ def bulk_delete_graduates(student_ids: list[str]) -> int:
             student_ids,
         ).fetchone()["count"]
         connection.execute(f"DELETE FROM graduated_students WHERE id IN ({placeholders})", student_ids)
-        connection.execute(f"DELETE FROM students WHERE id IN ({placeholders})", student_ids)
-        connection.execute(f"DELETE FROM access_logs WHERE student_id IN ({placeholders})", student_ids)
         connection.commit()
         return int(deleted_count)
     finally:
@@ -1735,6 +1771,51 @@ def get_system_status():
     return jsonify(processor.system_status())
 
 
+@app.route("/api/system/camera-test", methods=["POST"])
+@require_role("admin", "security")
+def camera_test():
+    ensure_processor_started()
+    try:
+        frame = processor.capture_current_frame()
+    except Exception as error:
+        return jsonify({
+            "ok": False,
+            "message": str(error),
+            "camera_ready": processor.system_status().get("camera_ready", False),
+        }), 400
+
+    try:
+        faces = extract_face_embeddings(frame)
+    except Exception:
+        return jsonify({
+            "ok": True,
+            "face_count": 0,
+            "matches": [],
+            "message": "Camera is working, but no clear face was detected.",
+        })
+
+    students = load_database()
+    now = time.time()
+    matches = []
+    for embedding, bbox in faces:
+        decision = evaluate_face_candidate(frame, bbox, embedding, students, now)
+        matches.append({
+            "status": decision.log_status,
+            "label": decision.label,
+            "student_id": decision.student_id,
+            "student_name": decision.student_name,
+            "role": decision.role,
+            "severity": "green" if decision.log_status == "Allowed" else "red",
+        })
+
+    return jsonify({
+        "ok": True,
+        "face_count": len(faces),
+        "matches": matches,
+        "message": "Camera test completed.",
+    })
+
+
 @app.route("/api/system/camera", methods=["POST"])
 @require_role("admin", "security")
 def set_system_camera():
@@ -2001,6 +2082,35 @@ def delete_logs():
     })
 
 
+@app.route("/api/register/validate-image", methods=["POST"])
+@require_role("admin")
+def validate_register_image():
+    image_file = request.files.get("image")
+    exclude_student_id = str(request.form.get("exclude_student_id", "")).strip()
+    if image_file is None or not image_file.filename:
+        return jsonify({"error": "image is required"}), 400
+
+    try:
+        frame = decode_image_bytes(image_file.read())
+        embedding, bbox = validate_registration_face(frame)
+        duplicate = find_duplicate_face(embedding, exclude_student_id=exclude_student_id)
+        if duplicate:
+            return jsonify({
+                "valid": False,
+                "error": "Face already registered for another student.",
+                "duplicate": duplicate,
+            }), 409
+    except Exception as error:
+        return jsonify({"valid": False, "error": str(error)}), 400
+
+    x, y, w, h = bbox
+    return jsonify({
+        "valid": True,
+        "message": "Image is clear and ready for registration.",
+        "face": {"x": x, "y": y, "w": w, "h": h},
+    })
+
+
 @app.route("/api/register", methods=["POST"])
 @require_role("admin")
 def register():
@@ -2029,7 +2139,7 @@ def register():
             frame = decode_image_bytes(image_file.read())
         else:
             frame = processor.capture_current_frame()
-        embedding, _ = extract_embedding(frame)
+        embedding, _ = validate_registration_face(frame)
         duplicate = find_duplicate_face(embedding, exclude_student_id=student_id)
         if duplicate:
             return jsonify({
