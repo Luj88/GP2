@@ -4088,9 +4088,26 @@
                 elements.cameraBadge.className = "pill danger";
             }
 
-            if (status.current_decision) {
-                elements.decisionBadge.textContent = status.current_decision.label;
-                const severity = status.current_decision.severity;
+            const currentDecisions = status.current_decisions || (status.current_decision ? [status.current_decision] : []);
+            if (currentDecisions.length > 0) {
+                const severity = currentDecisions.some((decision) => decision.severity === "red")
+                    ? "red"
+                    : currentDecisions.some((decision) => decision.severity === "orange")
+                        ? "orange"
+                        : "green";
+                if (currentDecisions.length === 1) {
+                    elements.decisionBadge.textContent = currentDecisions[0].label;
+                } else {
+                    const statusCounts = currentDecisions.reduce((counts, decision) => {
+                        const key = decision.status || decision.outcome || "Detected";
+                        counts[key] = (counts[key] || 0) + 1;
+                        return counts;
+                    }, {});
+                    const summary = Object.entries(statusCounts)
+                        .map(([label, count]) => `${label}: ${count}`)
+                        .join(" / ");
+                    elements.decisionBadge.textContent = `${t("detectedFaces")}: ${currentDecisions.length} / ${summary}`;
+                }
                 elements.decisionBadge.className = `pill ${severity === "green" ? "success" : severity === "orange" ? "warning" : "danger"}`;
             } else {
                 elements.decisionBadge.textContent = t("waitingDecision");

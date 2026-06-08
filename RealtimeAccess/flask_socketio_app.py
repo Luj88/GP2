@@ -1259,7 +1259,7 @@ class WebFaceProcessor:
         self.camera_enabled = True
         self.running = False
         self.current_frame: Optional[np.ndarray] = None
-        self.current_decision: Optional[FrameDecision] = None
+        self.current_decisions: list[FrameDecision] = []
         self.state_lock = threading.Lock()
         self.frame_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1)
         self.frame_index = 0
@@ -1286,7 +1286,7 @@ class WebFaceProcessor:
         self._drain_frame_queue()
         self.cooldowns.clear()
         with self.state_lock:
-            self.current_decision = None
+            self.current_decisions = []
             if not enabled:
                 self.current_frame = None
 
@@ -1367,7 +1367,7 @@ class WebFaceProcessor:
                 self.capture_error = CAMERA_DISABLED_MESSAGE
                 with self.state_lock:
                     self.current_frame = None
-                    self.current_decision = None
+                    self.current_decisions = []
                 time.sleep(0.2)
                 continue
 
@@ -1419,13 +1419,6 @@ class WebFaceProcessor:
             return KNOWN_FACE_RECHECK_COOLDOWN_SECONDS
         return IDENTIFICATION_COOLDOWN_SECONDS
 
-    def _known_face_recheck_blocked(self, now: float) -> bool:
-        with self.state_lock:
-            decision = self.current_decision
-        if not decision or decision.log_status != "Allowed" or not decision.student_id:
-            return False
-        return self.cooldowns.get(decision.cooldown_key, 0.0) > now
-
     def _worker_loop(self) -> None:
         while self.running:
             if not self.camera_enabled:
@@ -1443,42 +1436,47 @@ class WebFaceProcessor:
 
             now = time.time()
             self._cleanup_cooldowns(now)
-            if self._known_face_recheck_blocked(now):
-                continue
 
-            decision = evaluate_frame(frame, self.students)
-            if decision is None or not self.camera_enabled:
+            decisions = evaluate_frame(frame, self.students)
+            if not self.camera_enabled:
                 continue
 
             now = time.time()
             self._cleanup_cooldowns(now)
-            is_in_cooldown = self.cooldowns.get(decision.cooldown_key, 0.0) > now
 
             with self.state_lock:
-                self.current_decision = decision
+                self.current_decisions = decisions
 
-            if is_in_cooldown:
+            if not decisions:
                 continue
 
-            if not self.camera_enabled:
-                continue
+            captured_image_path: Optional[str] = None
+            for decision in decisions:
+                is_in_cooldown = self.cooldowns.get(decision.cooldown_key, 0.0) > now
+                if is_in_cooldown:
+                    continue
 
-            cooldown_seconds = self._cooldown_seconds_for_decision(decision)
-            self.cooldowns[decision.cooldown_key] = now + cooldown_seconds
-            if decision.log_status == "Allowed" and decision.student_id:
-                decision.matched_until = now + cooldown_seconds
-            insert_access_log(decision)
+                if not self.camera_enabled:
+                    continue
 
-            if decision.should_capture:
-                prefix = {
-                    "Denied": "intruder",
-                    "Manual ID Required": "manual_id",
-                }.get(decision.log_status, "unknown")
-                image_path = capture_screenshot(frame, prefix)
-                if decision.should_alert:
-                    emit_security_event(decision, image_path)
-                if decision.should_alarm:
-                    trigger_alarm()
+                cooldown_seconds = self._cooldown_seconds_for_decision(decision)
+                self.cooldowns[decision.cooldown_key] = now + cooldown_seconds
+                if decision.log_status == "Allowed" and decision.student_id:
+                    decision.matched_until = now + cooldown_seconds
+                insert_access_log(decision)
+
+                if decision.should_capture:
+                    if captured_image_path is None:
+                        prefix = {
+                            "Denied": "intruder",
+                            "Manual ID Required": "manual_id",
+                        }.get(decision.log_status, "unknown")
+                        captured_image_path = capture_screenshot(frame, prefix)
+                    if decision.should_alert:
+                        emit_security_event(decision, captured_image_path)
+                    if decision.should_alarm:
+                        trigger_alarm()
+
     def capture_current_frame(self) -> np.ndarray:
         if not self.camera_enabled:
             raise RuntimeError(CAMERA_DISABLED_MESSAGE)
@@ -1506,18 +1504,19 @@ class WebFaceProcessor:
 
         with self.state_lock:
             frame = None if self.current_frame is None else self.current_frame.copy()
-            decision = self.current_decision
+            decisions = list(self.current_decisions)
 
         if frame is None:
             return placeholder_frame(self.capture_error or "Waiting for camera...")
 
-        if decision and decision.matched_until < time.time():
-            decision = None
-            with self.state_lock:
-                if self.current_decision and self.current_decision.matched_until < time.time():
-                    self.current_decision = None
+        now = time.time()
+        decisions = [decision for decision in decisions if decision.matched_until >= now]
+        with self.state_lock:
+            self.current_decisions = [
+                decision for decision in self.current_decisions if decision.matched_until >= now
+            ]
 
-        if decision:
+        for decision in decisions:
             x, y, w, h = decision.bbox
             cv2.rectangle(frame, (x, y), (x + w, y + h), decision.color, 2)
             cv2.putText(
@@ -1531,6 +1530,24 @@ class WebFaceProcessor:
             )
 
         return optimize_image_for_web(frame)
+
+    def _decision_payload(self, decision: FrameDecision) -> dict[str, Any]:
+        return {
+            "label": decision.label,
+            "status": decision.log_status,
+            "outcome": decision.outcome,
+            "accessory_state": decision.accessory_state,
+            "student_id": decision.student_id,
+            "student_name": decision.student_name,
+            "role": decision.role,
+            "severity": (
+                "green"
+                if decision.log_status == "Allowed"
+                else "orange"
+                if decision.log_status == "Manual ID Required"
+                else "red"
+            ),
+        }
 
     def get_registration_preview_frame(self) -> np.ndarray:
         if not self.camera_enabled:
@@ -1595,7 +1612,8 @@ class WebFaceProcessor:
     def system_status(self) -> dict[str, Any]:
         with self.state_lock:
             camera_enabled = self.camera_enabled
-            decision = self.current_decision if camera_enabled else None
+            decisions = list(self.current_decisions) if camera_enabled else []
+        decision_payloads = [self._decision_payload(decision) for decision in decisions]
         return {
             "camera_enabled": camera_enabled,
             "camera_ready": camera_enabled and self.capture is not None and self.capture.isOpened(),
@@ -1604,19 +1622,9 @@ class WebFaceProcessor:
             "frame_skip_interval": FRAME_SKIP_INTERVAL,
             "identification_cooldown_seconds": IDENTIFICATION_COOLDOWN_SECONDS,
             "known_face_cooldown_seconds": KNOWN_FACE_RECHECK_COOLDOWN_SECONDS,
-            "current_decision": None if decision is None else {
-                "label": decision.label,
-                "status": decision.log_status,
-                "outcome": decision.outcome,
-                "accessory_state": decision.accessory_state,
-                "severity": (
-                    "green"
-                    if decision.log_status == "Allowed"
-                    else "orange"
-                    if decision.log_status == "Manual ID Required"
-                    else "red"
-                ),
-            },
+            "detected_faces": len(decision_payloads),
+            "current_decision": decision_payloads[0] if decision_payloads else None,
+            "current_decisions": decision_payloads,
         }
 
 

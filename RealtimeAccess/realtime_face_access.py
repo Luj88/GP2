@@ -180,15 +180,21 @@ def extract_embedding(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, in
     return extract_face_embeddings(frame)[0]
 
 
-def fallback_person_box(frame: np.ndarray) -> Optional[tuple[int, int, int, int]]:
+def fallback_person_boxes(frame: np.ndarray) -> list[tuple[int, int, int, int]]:
     if FACE_CASCADE.empty():
-        return None
+        return []
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = FACE_CASCADE.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
     if len(faces) == 0:
+        return []
+    return [(int(x), int(y), int(w), int(h)) for x, y, w, h in faces]
+
+
+def fallback_person_box(frame: np.ndarray) -> Optional[tuple[int, int, int, int]]:
+    boxes = fallback_person_boxes(frame)
+    if not boxes:
         return None
-    x, y, w, h = faces[0]
-    return int(x), int(y), int(w), int(h)
+    return boxes[0]
 
 
 def clip_bbox(bbox: tuple[int, int, int, int], frame_shape: tuple[int, int, int]) -> tuple[int, int, int, int]:
@@ -352,18 +358,21 @@ def evaluate_face_candidate(
     )
 
 
-def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> Optional[FrameDecision]:
+def evaluate_frame(frame: np.ndarray, students: list[StudentRecord]) -> list[FrameDecision]:
     now = time.time()
-    bbox: Optional[tuple[int, int, int, int]] = None
-    embedding: Optional[np.ndarray] = None
+    detections: list[tuple[Optional[np.ndarray], tuple[int, int, int, int]]] = []
 
     try:
-        embedding, bbox = extract_embedding(frame)
+        detections = [
+            (embedding, bbox)
+            for embedding, bbox in extract_face_embeddings(frame)
+        ]
     except Exception:
-        bbox = fallback_person_box(frame)
-        embedding = None
+        detections = [(None, bbox) for bbox in fallback_person_boxes(frame)]
 
-    if bbox is None:
-        return None
-
-    return evaluate_face_candidate(frame, bbox, embedding, students, now)
+    decisions: list[FrameDecision] = []
+    for embedding, bbox in detections:
+        decision = evaluate_face_candidate(frame, bbox, embedding, students, now)
+        if decision is not None:
+            decisions.append(decision)
+    return decisions
