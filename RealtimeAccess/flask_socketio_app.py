@@ -1,10 +1,14 @@
 import json
+import logging
 import os
 import pickle
 import queue
+import secrets
 import sqlite3
+import tempfile
 import threading
 import time
+import webbrowser
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
@@ -14,38 +18,84 @@ import cv2
 import numpy as np
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory, session
 from flask_socketio import SocketIO
+from itsdangerous import BadSignature, URLSafeSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from realtime_face_access import (
     DATABASE_PATH,
     IDENTIFICATION_COOLDOWN_SECONDS,
-    MAX_FACES_PER_FRAME,
+    MATCH_THRESHOLD,
     TARGET_FPS,
     FrameDecision,
+    cosine_distance,
+    evaluate_face_candidate,
     evaluate_frame,
-    extract_embedding,
+    extract_face_embeddings,
+    fallback_person_box,
     load_database,
     trigger_alarm,
 )
 
 
+logger = logging.getLogger(__name__)
+
 REALTIME_DIR = Path(__file__).resolve().parent
 SCREENSHOT_DIR = REALTIME_DIR / "captures"
 STREAM_JPEG_QUALITY = 72
-CAPTURE_MAX_WIDTH = 960
-FRAME_SKIP_INTERVAL = 10
-CAMERA_INDEX = int(os.environ.get("GP2_CAMERA_INDEX", "0"))
-CAMERA_WARMUP_FRAMES = 8
-BLANK_FRAME_MEAN_THRESHOLD = 3.0
-BLANK_FRAME_STD_THRESHOLD = 2.0
+STREAM_FPS = 30
+STREAM_FRAME_INTERVAL_SECONDS = 1 / STREAM_FPS
+CAPTURE_MAX_WIDTH = 1280
+FRAME_SKIP_INTERVAL = 1
+KNOWN_FACE_RECHECK_COOLDOWN_SECONDS = 30.0
+CAMERA_INDEX = 0
+CAMERA_INDICES = (0, 1, 2, 3, 4)
+CAMERA_MIRROR = True
+CAMERA_FRAME_WIDTH = 1280
+CAMERA_FRAME_HEIGHT = 720
+CAMERA_BACKENDS: tuple[tuple[str, Optional[int]], ...] = (
+    ("DirectShow", cv2.CAP_DSHOW),
+    ("Media Foundation", cv2.CAP_MSMF),
+    ("Default", None),
+)
+CAMERA_DISABLED_MESSAGE = "Camera is turned off by security."
+MEDIA_SCAN_MAX_UPLOAD_BYTES = 250 * 1024 * 1024
+MEDIA_SCAN_MAX_VIDEO_FRAMES = 45
+MEDIA_SCAN_MIN_VIDEO_SAMPLE_SECONDS = 1.0
+MEDIA_SCAN_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+MEDIA_SCAN_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
 VALID_ROLES = {"Student", "Staff", "Admin", "Security"}
 ACCOUNT_ROLES = {"admin", "security"}
 ADMISSION_SYNC_INTERVAL_SECONDS = 15
 ADMISSION_SYNC_BATCH_SIZE = 25
+FIXED_LOGIN_USERNAME = "admin"
+FIXED_LOGIN_PASSWORD = "00"
+
+
+def env_flag(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str) -> list[str] | None:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return None
+    return [item.strip() for item in value.split(",") if item.strip()]
+
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.config["SECRET_KEY"] = "university-face-access"
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.config["SECRET_KEY"] = os.environ.get("ACCESS_SECRET_KEY") or secrets.token_hex(32)
+app.config["MAX_CONTENT_LENGTH"] = MEDIA_SCAN_MAX_UPLOAD_BYTES
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = env_flag("ACCESS_COOKIE_SECURE", False)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+app.jinja_env.auto_reload = True
+socketio = SocketIO(app, cors_allowed_origins=env_list("ACCESS_ALLOWED_ORIGINS"))
+qr_serializer = URLSafeSerializer(app.config["SECRET_KEY"], salt="student-entry-qr")
 
 
 def get_connection() -> sqlite3.Connection:
@@ -124,6 +174,9 @@ def ensure_database_schema() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
                 role TEXT NOT NULL CHECK(role IN ('admin', 'security')),
+                full_name TEXT,
+                email TEXT,
+                phone TEXT,
                 password_hash TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_login_at TEXT,
@@ -131,6 +184,15 @@ def ensure_database_schema() -> None:
             )
             """
         )
+        app_user_columns = _column_names(connection, "app_users")
+        if "full_name" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN full_name TEXT")
+        if "email" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN email TEXT")
+        if "phone" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN phone TEXT")
+        if "employee_id" not in app_user_columns:
+            connection.execute("ALTER TABLE app_users ADD COLUMN employee_id TEXT")
 
         connection.execute(
             """
@@ -264,12 +326,12 @@ def require_role(*allowed_roles: str):
     return decorator
 
 
-def authenticate_or_create_user(role: str, username: str, password: str) -> tuple[dict[str, Any], bool]:
+def authenticate_user(role: str, username: str, password: str) -> dict[str, Any]:
     connection = get_connection()
     try:
         row = connection.execute(
             """
-            SELECT id, username, role, password_hash
+            SELECT id, username, role, full_name, email, phone, employee_id, password_hash
             FROM app_users
             WHERE username = ? AND role = ?
             """,
@@ -278,16 +340,7 @@ def authenticate_or_create_user(role: str, username: str, password: str) -> tupl
 
         now = datetime.now().isoformat(timespec="seconds")
         if row is None:
-            password_hash = generate_password_hash(password)
-            cursor = connection.execute(
-                """
-                INSERT INTO app_users (username, role, password_hash, created_at, last_login_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (username, role, password_hash, now, now),
-            )
-            connection.commit()
-            return {"id": cursor.lastrowid, "username": username, "role": role}, True
+            raise ValueError("Invalid username or password")
 
         if not check_password_hash(row["password_hash"], password):
             raise ValueError("Invalid username or password")
@@ -297,7 +350,67 @@ def authenticate_or_create_user(role: str, username: str, password: str) -> tupl
             (now, row["id"]),
         )
         connection.commit()
-        return {"id": row["id"], "username": row["username"], "role": row["role"]}, False
+        return {
+            "id": row["id"],
+            "username": row["username"],
+            "role": row["role"],
+            "full_name": row["full_name"],
+            "email": row["email"],
+            "phone": row["phone"],
+            "employee_id": row["employee_id"],
+        }
+    finally:
+        connection.close()
+
+
+def list_app_users(role: str) -> list[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            """
+            SELECT id, username, role, full_name, employee_id, email, phone, created_at, last_login_at
+            FROM app_users
+            WHERE role = ?
+            ORDER BY datetime(created_at) DESC, full_name COLLATE NOCASE ASC
+            """,
+            (role,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def ensure_fixed_login_accounts() -> None:
+    connection = get_connection()
+    try:
+        now = datetime.now().isoformat(timespec="seconds")
+        password_hash = generate_password_hash(FIXED_LOGIN_PASSWORD)
+        for role, full_name, employee_id in (
+            ("admin", "Admissions Admin", "ADMIN-00"),
+            ("security", "Security Admin", "SECURITY-00"),
+        ):
+            row = connection.execute(
+                "SELECT id FROM app_users WHERE username = ? AND role = ?",
+                (FIXED_LOGIN_USERNAME, role),
+            ).fetchone()
+            if row is None:
+                connection.execute(
+                    """
+                    INSERT INTO app_users (username, role, full_name, employee_id, password_hash, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (FIXED_LOGIN_USERNAME, role, full_name, employee_id, password_hash, now),
+                )
+            else:
+                connection.execute(
+                    """
+                    UPDATE app_users
+                    SET full_name = ?, employee_id = ?, password_hash = ?
+                    WHERE id = ?
+                    """,
+                    (full_name, employee_id, password_hash, row["id"]),
+                )
+        connection.commit()
     finally:
         connection.close()
 
@@ -407,7 +520,12 @@ def sync_admission_students(limit: int = ADMISSION_SYNC_BATCH_SIZE) -> dict[str,
 
         try:
             frame = load_admission_image(row)
-            embedding, _ = extract_embedding(frame)
+            embedding, _ = validate_registration_face(frame)
+            duplicate = find_duplicate_face(embedding, exclude_student_id=student_id)
+            if duplicate:
+                raise ValueError(
+                    f"Face already registered for student {duplicate['student_id']} ({duplicate['name']})."
+                )
             image_path = capture_screenshot(frame, f"admission_{student_id}")
             insert_student_record(student_id, str(row["name"]).strip(), role, embedding, image_path)
 
@@ -486,6 +604,87 @@ def insert_student_record(
         connection.close()
 
 
+def find_duplicate_face(embedding: np.ndarray, *, exclude_student_id: str = "") -> Optional[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            "SELECT id, name, role, embedding FROM students"
+        ).fetchall()
+    finally:
+        connection.close()
+
+    best_match: Optional[dict[str, Any]] = None
+    best_distance = float("inf")
+    for row in rows:
+        existing_id = str(row["id"])
+        if exclude_student_id and existing_id == exclude_student_id:
+            continue
+        existing_embedding = np.array(pickle.loads(row["embedding"]), dtype=np.float32)
+        distance = cosine_distance(embedding, existing_embedding)
+        if distance < best_distance:
+            best_distance = distance
+            best_match = {
+                "student_id": existing_id,
+                "name": row["name"],
+                "role": row["role"],
+                "distance": distance,
+            }
+
+    if best_match and best_distance <= MATCH_THRESHOLD:
+        return best_match
+    return None
+
+
+def validate_registration_face(frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int, int, int]]:
+    faces = extract_face_embeddings(frame)
+    if len(faces) != 1:
+        raise ValueError("Registration image must contain exactly one clear face.")
+
+    embedding, bbox = faces[0]
+    x, y, w, h = bbox
+    frame_h, frame_w = frame.shape[:2]
+    face_area_ratio = (max(0, w) * max(0, h)) / max(1, frame_w * frame_h)
+    if w < 80 or h < 80 or face_area_ratio < 0.045:
+        raise ValueError("Registration image face is too small or unclear.")
+
+    x = max(0, min(x, frame_w - 1))
+    y = max(0, min(y, frame_h - 1))
+    w = max(1, min(w, frame_w - x))
+    h = max(1, min(h, frame_h - y))
+    face_region = frame[y:y + h, x:x + w]
+    if face_region.size == 0:
+        raise ValueError("Registration image face is too small or unclear.")
+
+    gray_face = cv2.cvtColor(face_region, cv2.COLOR_BGR2GRAY)
+    blur_score = float(cv2.Laplacian(gray_face, cv2.CV_64F).var())
+    brightness = float(gray_face.mean())
+    if blur_score < 22.0:
+        raise ValueError("Registration image is too blurry.")
+    if brightness < 35.0 or brightness > 225.0:
+        raise ValueError("Registration image lighting is not clear.")
+
+    return embedding, (x, y, w, h)
+
+
+def delete_student_record(student_id: str) -> bool:
+    connection = get_connection()
+    try:
+        cursor = connection.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        connection.execute("DELETE FROM access_logs WHERE student_id = ?", (student_id,))
+        connection.execute(
+            """
+            UPDATE admission_students
+            SET synced_at = NULL, sync_error = NULL
+            WHERE id = ?
+            """,
+            (student_id,),
+        )
+        connection.commit()
+        return cursor.rowcount > 0
+    finally:
+        connection.close()
+
+
 def insert_access_log(decision: FrameDecision) -> None:
     connection = get_connection()
     now = datetime.now()
@@ -511,6 +710,103 @@ def insert_access_log(decision: FrameDecision) -> None:
         connection.commit()
     finally:
         connection.close()
+
+
+def insert_qr_access_log(student: dict[str, Any]) -> dict[str, Any]:
+    connection = get_connection()
+    now = datetime.now()
+    timestamp = now.isoformat(timespec="seconds")
+    label = f"{student['name']} - QR Verified - Access Allowed"
+    try:
+        connection.execute(
+            """
+            INSERT INTO access_logs (
+                student_id, student_name, role, timestamp, date, status, label, event_type
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                student["id"],
+                student["name"],
+                student["role"],
+                timestamp,
+                now.date().isoformat(),
+                "Allowed",
+                label,
+                "QR Verified",
+            ),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    return {
+        "student_id": student["id"],
+        "student_name": student["name"],
+        "role": student["role"],
+        "timestamp": timestamp,
+        "status": "Allowed",
+        "label": label,
+        "event_type": "QR Verified",
+        "severity": "green",
+    }
+
+
+def get_student(student_id: str) -> Optional[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        row = connection.execute(
+            """
+            SELECT id, name, role, image_path, created_at
+            FROM students
+            WHERE id = ?
+            """,
+            (student_id,),
+        ).fetchone()
+        return None if row is None else dict(row)
+    finally:
+        connection.close()
+
+
+def make_student_qr_token(student_id: str) -> str:
+    return qr_serializer.dumps({"student_id": student_id})
+
+
+def make_student_qr_image(student_id: str) -> np.ndarray:
+    token = make_student_qr_token(student_id)
+    encoder = cv2.QRCodeEncoder_create()
+    qr = encoder.encode(token)
+    qr = cv2.copyMakeBorder(qr, 4, 4, 4, 4, cv2.BORDER_CONSTANT, value=255)
+    return cv2.resize(qr, (320, 320), interpolation=cv2.INTER_NEAREST)
+
+
+def verify_student_qr_token(token: str) -> dict[str, Any]:
+    try:
+        payload = qr_serializer.loads(token)
+    except BadSignature as error:
+        raise ValueError("Invalid QR code") from error
+
+    student_id = str(payload.get("student_id", "")).strip()
+    if not student_id:
+        raise ValueError("Invalid QR code")
+
+    student = get_student(student_id)
+    if student is None:
+        raise ValueError("Student was not found")
+    return student
+
+
+def decode_qr_from_frame(frame: np.ndarray) -> str:
+    detector = cv2.QRCodeDetector()
+    value, _, _ = detector.detectAndDecode(frame)
+    value = str(value or "").strip()
+    if not value:
+        raise ValueError("No QR code was detected")
+    return value
+
+
+def decode_qr_from_image(image_bytes: bytes) -> str:
+    return decode_qr_from_frame(decode_image_bytes(image_bytes))
 
 
 def list_students() -> list[dict[str, Any]]:
@@ -574,6 +870,14 @@ def move_student_to_graduated(student_id: str) -> bool:
             ),
         )
         connection.execute("DELETE FROM students WHERE id = ?", (student_id,))
+        connection.execute(
+            """
+            UPDATE admission_students
+            SET is_graduated = 1
+            WHERE id = ?
+            """,
+            (student_id,),
+        )
         connection.commit()
         return True
     finally:
@@ -589,10 +893,39 @@ def bulk_delete_graduates(student_ids: list[str]) -> int:
             student_ids,
         ).fetchone()["count"]
         connection.execute(f"DELETE FROM graduated_students WHERE id IN ({placeholders})", student_ids)
-        connection.execute(f"DELETE FROM students WHERE id IN ({placeholders})", student_ids)
-        connection.execute(f"DELETE FROM access_logs WHERE student_id IN ({placeholders})", student_ids)
         connection.commit()
         return int(deleted_count)
+    finally:
+        connection.close()
+
+
+def bulk_delete_access_logs(log_ids: list[int]) -> int:
+    connection = get_connection()
+    try:
+        placeholders = ", ".join("?" for _ in log_ids)
+        deleted_count = connection.execute(
+            f"SELECT COUNT(*) AS count FROM access_logs WHERE id IN ({placeholders})",
+            log_ids,
+        ).fetchone()["count"]
+        connection.execute(f"DELETE FROM access_logs WHERE id IN ({placeholders})", log_ids)
+        connection.commit()
+        return int(deleted_count)
+    finally:
+        connection.close()
+
+
+def get_access_logs_items() -> list[dict[str, Any]]:
+    connection = get_connection()
+    try:
+        rows = connection.execute(
+            """
+            SELECT id, student_id, student_name, role, timestamp, date, status, label, event_type
+            FROM access_logs
+            ORDER BY timestamp DESC
+            LIMIT 500
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
     finally:
         connection.close()
 
@@ -613,43 +946,7 @@ def emit_security_event(decision: FrameDecision, image_path: str) -> None:
         "image_path": image_path,
     }
     socketio.emit("security_event", payload)
-    print(f"EVENT: {json.dumps(payload)}")
-
-
-def decision_severity(decision: FrameDecision) -> str:
-    if decision.log_status == "Allowed":
-        return "green"
-    if decision.log_status == "Manual ID Required":
-        return "orange"
-    return "red"
-
-
-def decision_priority(decision: FrameDecision) -> int:
-    return {
-        "red": 3,
-        "orange": 2,
-        "green": 1,
-    }.get(decision_severity(decision), 0)
-
-
-def serialize_decision(decision: FrameDecision) -> dict[str, Any]:
-    return {
-        "label": decision.label,
-        "status": decision.log_status,
-        "outcome": decision.outcome,
-        "student_id": decision.student_id,
-        "student_name": decision.student_name,
-        "role": decision.role,
-        "accessory_state": decision.accessory_state,
-        "severity": decision_severity(decision),
-        "bbox": decision.bbox,
-    }
-
-
-def choose_primary_decision(decisions: list[FrameDecision]) -> Optional[FrameDecision]:
-    if not decisions:
-        return None
-    return max(decisions, key=decision_priority)
+    logger.info("EVENT: %s", json.dumps(payload))
 
 
 def placeholder_frame(message: str) -> np.ndarray:
@@ -660,9 +957,296 @@ def placeholder_frame(message: str) -> np.ndarray:
     return frame
 
 
-def is_blank_camera_frame(frame: np.ndarray) -> bool:
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    return float(gray.mean()) < BLANK_FRAME_MEAN_THRESHOLD and float(gray.std()) < BLANK_FRAME_STD_THRESHOLD
+def detect_media_upload_type(media_file: Any) -> str:
+    filename = str(getattr(media_file, "filename", "") or "")
+    content_type = str(getattr(media_file, "mimetype", "") or "").lower()
+    extension = Path(filename).suffix.lower()
+
+    if content_type.startswith("image/") or extension in MEDIA_SCAN_IMAGE_EXTENSIONS:
+        return "image"
+    if content_type.startswith("video/") or extension in MEDIA_SCAN_VIDEO_EXTENSIONS:
+        return "video"
+    raise ValueError("Unsupported media type. Please upload an image or video file.")
+
+
+def media_decision_severity(decision: FrameDecision) -> str:
+    if decision.log_status in {"Unknown", "Denied"}:
+        return "red"
+    if decision.log_status == "Manual ID Required":
+        return "orange"
+    if decision.student_id is None:
+        return "orange"
+    return "green"
+
+
+def analyze_media_frame(frame: np.ndarray, students: list[Any]) -> list[FrameDecision]:
+    detections: list[tuple[Optional[np.ndarray], tuple[int, int, int, int]]] = []
+    try:
+        detections = [
+            (embedding, bbox)
+            for embedding, bbox in extract_face_embeddings(frame)
+        ]
+    except Exception:
+        fallback_bbox = fallback_person_box(frame)
+        if fallback_bbox is not None:
+            detections = [(None, fallback_bbox)]
+
+    now = time.time()
+    decisions: list[FrameDecision] = []
+    for embedding, bbox in detections:
+        decision = evaluate_face_candidate(frame, bbox, embedding, students, now)
+        if decision is not None:
+            decisions.append(decision)
+    return decisions
+
+
+def annotate_media_frame(frame: np.ndarray, decisions: list[FrameDecision]) -> np.ndarray:
+    annotated = frame.copy()
+    for decision in decisions:
+        x, y, w, h = decision.bbox
+        cv2.rectangle(annotated, (x, y), (x + w, y + h), decision.color, 2)
+        label = (decision.student_name or decision.label)[:48]
+        cv2.putText(
+            annotated,
+            label,
+            (x, max(28, y - 8)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.62,
+            decision.color,
+            2,
+        )
+    return annotated
+
+
+def add_media_scan_decisions(
+    *,
+    decisions: list[FrameDecision],
+    entered_by_id: dict[str, dict[str, Any]],
+    alerts_by_key: dict[str, dict[str, Any]],
+    frame_number: int,
+    second: Optional[float],
+) -> int:
+    detected_faces = 0
+    rounded_second = None if second is None else round(second, 2)
+
+    for decision in decisions:
+        detected_faces += 1
+        if decision.student_id:
+            entry = entered_by_id.setdefault(
+                decision.student_id,
+                {
+                    "student_id": decision.student_id,
+                    "name": decision.student_name,
+                    "role": decision.role,
+                    "first_frame": frame_number,
+                    "first_second": rounded_second,
+                    "detections": 0,
+                },
+            )
+            entry["detections"] += 1
+            continue
+
+        severity = media_decision_severity(decision)
+        alert_key = f"{decision.log_status}:{decision.accessory_state}:{decision.label}"
+        alert = alerts_by_key.setdefault(
+            alert_key,
+            {
+                "status": decision.log_status,
+                "label": decision.label,
+                "event_type": decision.event_type or decision.log_status,
+                "accessory_state": decision.accessory_state,
+                "severity": severity,
+                "first_frame": frame_number,
+                "first_second": rounded_second,
+                "detections": 0,
+            },
+        )
+        alert["detections"] += 1
+
+    return detected_faces
+
+
+def build_media_scan_payload(
+    *,
+    filename: str,
+    media_type: str,
+    students: list[Any],
+    entered_by_id: dict[str, dict[str, Any]],
+    alerts_by_key: dict[str, dict[str, Any]],
+    processed_frames: int,
+    detected_faces: int,
+    duration_seconds: Optional[float] = None,
+    snapshot_path: Optional[str] = None,
+) -> dict[str, Any]:
+    entered_ids = set(entered_by_id)
+    missing = [
+        {
+            "student_id": student.student_id,
+            "name": student.name,
+            "role": student.role,
+        }
+        for student in students
+        if student.student_id not in entered_ids
+    ]
+    entered = sorted(
+        entered_by_id.values(),
+        key=lambda item: (item["first_frame"], str(item["name"] or "").lower()),
+    )
+    alerts = sorted(
+        alerts_by_key.values(),
+        key=lambda item: (item["first_frame"], str(item["label"] or "").lower()),
+    )
+
+    return {
+        "message": "Media scan completed.",
+        "filename": filename,
+        "media_type": media_type,
+        "processed_frames": processed_frames,
+        "detected_faces": detected_faces,
+        "duration_seconds": None if duration_seconds is None else round(duration_seconds, 2),
+        "entered": entered,
+        "entered_count": len(entered),
+        "missing": missing,
+        "missing_count": len(missing),
+        "alerts": alerts,
+        "alert_count": len(alerts),
+        "snapshot_path": snapshot_path,
+    }
+
+
+def scan_image_media(frame: np.ndarray, filename: str, students: list[Any]) -> dict[str, Any]:
+    entered_by_id: dict[str, dict[str, Any]] = {}
+    alerts_by_key: dict[str, dict[str, Any]] = {}
+    decisions = analyze_media_frame(frame, students)
+    detected_faces = add_media_scan_decisions(
+        decisions=decisions,
+        entered_by_id=entered_by_id,
+        alerts_by_key=alerts_by_key,
+        frame_number=0,
+        second=0.0,
+    )
+    snapshot_path = capture_screenshot(annotate_media_frame(frame, decisions), "media_scan_image") if decisions else None
+
+    return build_media_scan_payload(
+        filename=filename,
+        media_type="image",
+        students=students,
+        entered_by_id=entered_by_id,
+        alerts_by_key=alerts_by_key,
+        processed_frames=1,
+        detected_faces=detected_faces,
+        duration_seconds=None,
+        snapshot_path=snapshot_path,
+    )
+
+
+def iter_video_sample_frames(video_path: Path):
+    capture = cv2.VideoCapture(str(video_path))
+    if not capture.isOpened():
+        capture.release()
+        raise ValueError("The uploaded video could not be opened.")
+
+    try:
+        fps = float(capture.get(cv2.CAP_PROP_FPS) or TARGET_FPS or 30)
+        if fps <= 0:
+            fps = float(TARGET_FPS or 30)
+        frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        sample_every = max(1, int(fps * MEDIA_SCAN_MIN_VIDEO_SAMPLE_SECONDS))
+        duration_seconds = frame_count / fps if frame_count > 0 else None
+
+        if frame_count > 0:
+            estimated_samples = max(1, (frame_count + sample_every - 1) // sample_every)
+            if estimated_samples > MEDIA_SCAN_MAX_VIDEO_FRAMES:
+                sample_every = max(sample_every, frame_count // MEDIA_SCAN_MAX_VIDEO_FRAMES)
+
+            emitted = 0
+            for frame_number in range(0, frame_count, sample_every):
+                if emitted >= MEDIA_SCAN_MAX_VIDEO_FRAMES:
+                    break
+                capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+                ok, frame = capture.read()
+                if not ok:
+                    continue
+                emitted += 1
+                yield frame, frame_number, frame_number / fps, duration_seconds
+            return
+
+        frame_number = 0
+        emitted = 0
+        while emitted < MEDIA_SCAN_MAX_VIDEO_FRAMES:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            if frame_number % sample_every == 0:
+                emitted += 1
+                yield frame, frame_number, frame_number / fps, duration_seconds
+            frame_number += 1
+    finally:
+        capture.release()
+
+
+def scan_video_media(video_path: Path, filename: str, students: list[Any]) -> dict[str, Any]:
+    entered_by_id: dict[str, dict[str, Any]] = {}
+    alerts_by_key: dict[str, dict[str, Any]] = {}
+    processed_frames = 0
+    detected_faces = 0
+    snapshot_path: Optional[str] = None
+    duration_seconds: Optional[float] = None
+
+    for frame, frame_number, second, video_duration in iter_video_sample_frames(video_path):
+        processed_frames += 1
+        duration_seconds = video_duration
+        decisions = analyze_media_frame(frame, students)
+        detected_faces += add_media_scan_decisions(
+            decisions=decisions,
+            entered_by_id=entered_by_id,
+            alerts_by_key=alerts_by_key,
+            frame_number=frame_number,
+            second=second,
+        )
+        if decisions and snapshot_path is None:
+            snapshot_path = capture_screenshot(annotate_media_frame(frame, decisions), "media_scan_video")
+
+    if processed_frames == 0:
+        raise ValueError("The uploaded video did not contain readable frames.")
+
+    return build_media_scan_payload(
+        filename=filename,
+        media_type="video",
+        students=students,
+        entered_by_id=entered_by_id,
+        alerts_by_key=alerts_by_key,
+        processed_frames=processed_frames,
+        detected_faces=detected_faces,
+        duration_seconds=duration_seconds,
+        snapshot_path=snapshot_path,
+    )
+
+
+def scan_uploaded_media(media_file: Any) -> dict[str, Any]:
+    filename = str(getattr(media_file, "filename", "") or "").strip()
+    if not filename:
+        raise ValueError("media file is required")
+
+    media_type = detect_media_upload_type(media_file)
+    students = load_database()
+
+    if media_type == "image":
+        frame = decode_image_bytes(media_file.read())
+        return scan_image_media(frame, filename, students)
+
+    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in MEDIA_SCAN_VIDEO_EXTENSIONS:
+        suffix = ".mp4"
+    with tempfile.NamedTemporaryFile(dir=SCREENSHOT_DIR, suffix=suffix, delete=False) as temp_file:
+        media_file.save(temp_file)
+        temp_path = Path(temp_file.name)
+
+    try:
+        return scan_video_media(temp_path, filename, students)
+    finally:
+        temp_path.unlink(missing_ok=True)
 
 
 class WebFaceProcessor:
@@ -670,10 +1254,11 @@ class WebFaceProcessor:
         self.students = load_database()
         self.capture: Optional[cv2.VideoCapture] = None
         self.capture_error: Optional[str] = None
-        self.camera_source: Optional[str] = None
+        self.camera_backend: Optional[str] = None
+        self.read_failures = 0
+        self.camera_enabled = True
         self.running = False
         self.current_frame: Optional[np.ndarray] = None
-        self.current_decision: Optional[FrameDecision] = None
         self.current_decisions: list[FrameDecision] = []
         self.state_lock = threading.Lock()
         self.frame_queue: queue.Queue[np.ndarray] = queue.Queue(maxsize=1)
@@ -683,62 +1268,92 @@ class WebFaceProcessor:
     def refresh_students(self) -> None:
         self.students = load_database()
 
+    def _drain_frame_queue(self) -> None:
+        while True:
+            try:
+                self.frame_queue.get_nowait()
+            except queue.Empty:
+                return
+
+    def _release_camera(self) -> None:
+        if self.capture is not None:
+            self.capture.release()
+        self.capture = None
+        self.camera_backend = None
+
+    def set_camera_enabled(self, enabled: bool) -> dict[str, Any]:
+        self.camera_enabled = enabled
+        self._drain_frame_queue()
+        self.cooldowns.clear()
+        with self.state_lock:
+            self.current_decisions = []
+            if not enabled:
+                self.current_frame = None
+
+        if enabled:
+            self.capture_error = None
+            self._open_camera()
+        else:
+            self._release_camera()
+            self.capture_error = CAMERA_DISABLED_MESSAGE
+
+        return self.system_status()
+
+    def _configure_camera(self, capture: cv2.VideoCapture) -> None:
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_FRAME_WIDTH)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_FRAME_HEIGHT)
+        capture.set(cv2.CAP_PROP_FPS, TARGET_FPS)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+
+    def _mirror_frame(self, frame: np.ndarray) -> np.ndarray:
+        return cv2.flip(frame, 1) if CAMERA_MIRROR else frame
+
     def _open_camera(self) -> None:
+        if not self.camera_enabled:
+            self._release_camera()
+            self.capture_error = CAMERA_DISABLED_MESSAGE
+            return
+
         if self.capture is not None and self.capture.isOpened():
             return
 
-        camera_indexes = [CAMERA_INDEX] + [index for index in range(4) if index != CAMERA_INDEX]
-        backends = [
-            ("DirectShow", cv2.CAP_DSHOW),
-            ("MSMF", cv2.CAP_MSMF),
-            ("default backend", cv2.CAP_ANY),
-        ]
-        errors: list[str] = []
-
-        for camera_index in camera_indexes:
-            for backend_name, backend in backends:
-                capture = cv2.VideoCapture(camera_index, backend)
+        self._release_camera()
+        attempted_sources: list[str] = []
+        ordered_indices = (CAMERA_INDEX,) + tuple(index for index in CAMERA_INDICES if index != CAMERA_INDEX)
+        for camera_index in ordered_indices:
+            for backend_name, backend in CAMERA_BACKENDS:
+                attempted_sources.append(f"{backend_name}:{camera_index}")
+                capture = (
+                    cv2.VideoCapture(camera_index)
+                    if backend is None
+                    else cv2.VideoCapture(camera_index, backend)
+                )
                 if not capture.isOpened():
                     capture.release()
-                    errors.append(f"camera {camera_index} via {backend_name}: not opened")
                     continue
 
-                capture.set(cv2.CAP_PROP_FPS, TARGET_FPS)
-                usable_frame = None
-                for _ in range(CAMERA_WARMUP_FRAMES):
-                    ok, frame = capture.read()
-                    if ok and frame is not None and frame.size:
-                        usable_frame = frame
-                        if not is_blank_camera_frame(frame):
-                            break
-                    time.sleep(0.03)
-
-                if usable_frame is None:
+                self._configure_camera(capture)
+                ok, frame = capture.read()
+                if not ok or frame is None or frame.size == 0:
                     capture.release()
-                    errors.append(f"camera {camera_index} via {backend_name}: no frames")
                     continue
 
-                if is_blank_camera_frame(usable_frame):
-                    capture.release()
-                    errors.append(f"camera {camera_index} via {backend_name}: blank frames")
-                    continue
-
+                frame = self._mirror_frame(frame)
                 self.capture = capture
-                self.camera_source = f"camera {camera_index} via {backend_name}"
+                self.camera_backend = f"{backend_name} camera {camera_index}"
                 self.capture_error = None
+                self.read_failures = 0
                 with self.state_lock:
-                    self.current_frame = usable_frame.copy()
+                    self.current_frame = frame.copy()
                 return
 
-        self.capture = None
-        self.camera_source = None
-        self.capture_error = "Unable to open a camera with a visible frame. " + "; ".join(errors[-6:])
+        self.capture_error = (
+            f"Unable to open a camera. Tried: {', '.join(attempted_sources)}."
+        )
 
     def start(self) -> None:
         if self.running:
-            return
-        self._open_camera()
-        if self.capture is None or not self.capture.isOpened():
             return
         self.running = True
         threading.Thread(target=self._reader_loop, daemon=True).start()
@@ -746,17 +1361,40 @@ class WebFaceProcessor:
 
     def _reader_loop(self) -> None:
         while self.running:
+            if not self.camera_enabled:
+                self._release_camera()
+                self._drain_frame_queue()
+                self.capture_error = CAMERA_DISABLED_MESSAGE
+                with self.state_lock:
+                    self.current_frame = None
+                    self.current_decisions = []
+                time.sleep(0.2)
+                continue
+
+            if self.capture is None or not self.capture.isOpened():
+                self._open_camera()
+                if self.capture is None or not self.capture.isOpened():
+                    time.sleep(1.0)
+                    continue
+
             if self.capture is None:
-                time.sleep(0.1)
+                time.sleep(0.2)
                 continue
 
             ok, frame = self.capture.read()
-            if not ok:
+            if not ok or frame is None or frame.size == 0:
+                self.read_failures += 1
                 self.capture_error = "Camera connected but no frame could be grabbed."
-                time.sleep(0.05)
+                if self.read_failures >= 5:
+                    self._release_camera()
+                    self.capture_error = "Camera stream dropped. Reconnecting..."
+                    self.read_failures = 0
+                time.sleep(0.1)
                 continue
 
+            frame = self._mirror_frame(frame)
             self.capture_error = None
+            self.read_failures = 0
             self.frame_index += 1
             with self.state_lock:
                 self.current_frame = frame.copy()
@@ -776,45 +1414,73 @@ class WebFaceProcessor:
         for key in expired:
             self.cooldowns.pop(key, None)
 
+    def _cooldown_seconds_for_decision(self, decision: FrameDecision) -> float:
+        if decision.log_status == "Allowed" and decision.student_id:
+            return KNOWN_FACE_RECHECK_COOLDOWN_SECONDS
+        return IDENTIFICATION_COOLDOWN_SECONDS
+
     def _worker_loop(self) -> None:
         while self.running:
+            if not self.camera_enabled:
+                self._drain_frame_queue()
+                time.sleep(0.2)
+                continue
+
             try:
                 frame = self.frame_queue.get(timeout=0.2)
             except queue.Empty:
                 continue
 
-            decisions = evaluate_frame(frame, self.students)
-            if not decisions:
+            if not self.camera_enabled:
                 continue
 
             now = time.time()
             self._cleanup_cooldowns(now)
-            alarm_triggered = False
 
-            for decision in decisions:
-                if self.cooldowns.get(decision.cooldown_key, 0.0) > now:
-                    continue
+            decisions = evaluate_frame(frame, self.students)
+            if not self.camera_enabled:
+                continue
 
-                self.cooldowns[decision.cooldown_key] = now + IDENTIFICATION_COOLDOWN_SECONDS
-                insert_access_log(decision)
-
-                if decision.should_capture:
-                    prefix = {
-                        "Denied": "intruder",
-                        "Manual ID Required": "manual_id",
-                    }.get(decision.log_status, "unknown")
-                    image_path = capture_screenshot(frame, prefix)
-                    if decision.should_alert:
-                        emit_security_event(decision, image_path)
-                    if decision.should_alarm and not alarm_triggered:
-                        trigger_alarm()
-                        alarm_triggered = True
+            now = time.time()
+            self._cleanup_cooldowns(now)
 
             with self.state_lock:
                 self.current_decisions = decisions
-                self.current_decision = choose_primary_decision(decisions)
+
+            if not decisions:
+                continue
+
+            captured_image_path: Optional[str] = None
+            for decision in decisions:
+                is_in_cooldown = self.cooldowns.get(decision.cooldown_key, 0.0) > now
+                if is_in_cooldown:
+                    continue
+
+                if not self.camera_enabled:
+                    continue
+
+                cooldown_seconds = self._cooldown_seconds_for_decision(decision)
+                self.cooldowns[decision.cooldown_key] = now + cooldown_seconds
+                if decision.log_status == "Allowed" and decision.student_id:
+                    decision.matched_until = now + cooldown_seconds
+                insert_access_log(decision)
+
+                if decision.should_capture:
+                    if captured_image_path is None:
+                        prefix = {
+                            "Denied": "intruder",
+                            "Manual ID Required": "manual_id",
+                        }.get(decision.log_status, "unknown")
+                        captured_image_path = capture_screenshot(frame, prefix)
+                    if decision.should_alert:
+                        emit_security_event(decision, captured_image_path)
+                    if decision.should_alarm:
+                        trigger_alarm()
 
     def capture_current_frame(self) -> np.ndarray:
+        if not self.camera_enabled:
+            raise RuntimeError(CAMERA_DISABLED_MESSAGE)
+
         with self.state_lock:
             if self.current_frame is not None:
                 return self.current_frame.copy()
@@ -827,11 +1493,15 @@ class WebFaceProcessor:
         if not ok:
             raise RuntimeError("Unable to capture frame from camera.")
 
+        frame = self._mirror_frame(frame)
         with self.state_lock:
             self.current_frame = frame.copy()
         return frame
 
     def get_annotated_frame(self) -> np.ndarray:
+        if not self.camera_enabled:
+            return placeholder_frame(CAMERA_DISABLED_MESSAGE)
+
         with self.state_lock:
             frame = None if self.current_frame is None else self.current_frame.copy()
             decisions = list(self.current_decisions)
@@ -840,21 +1510,13 @@ class WebFaceProcessor:
             return placeholder_frame(self.capture_error or "Waiting for camera...")
 
         now = time.time()
-        active_decisions = [
-            decision
-            for decision in decisions
-            if decision.matched_until >= now
-        ]
-        if len(active_decisions) != len(decisions):
-            with self.state_lock:
-                self.current_decisions = [
-                    decision
-                    for decision in self.current_decisions
-                    if decision.matched_until >= now
-                ]
-                self.current_decision = choose_primary_decision(self.current_decisions)
+        decisions = [decision for decision in decisions if decision.matched_until >= now]
+        with self.state_lock:
+            self.current_decisions = [
+                decision for decision in self.current_decisions if decision.matched_until >= now
+            ]
 
-        for decision in active_decisions:
+        for decision in decisions:
             x, y, w, h = decision.bbox
             cv2.rectangle(frame, (x, y), (x + w, y + h), decision.color, 2)
             cv2.putText(
@@ -869,6 +1531,40 @@ class WebFaceProcessor:
 
         return optimize_image_for_web(frame)
 
+    def _decision_payload(self, decision: FrameDecision) -> dict[str, Any]:
+        return {
+            "label": decision.label,
+            "status": decision.log_status,
+            "outcome": decision.outcome,
+            "accessory_state": decision.accessory_state,
+            "student_id": decision.student_id,
+            "student_name": decision.student_name,
+            "role": decision.role,
+            "severity": (
+                "green"
+                if decision.log_status == "Allowed"
+                else "orange"
+                if decision.log_status == "Manual ID Required"
+                else "red"
+            ),
+        }
+
+    def get_registration_preview_frame(self) -> np.ndarray:
+        if not self.camera_enabled:
+            return placeholder_frame(CAMERA_DISABLED_MESSAGE)
+
+        with self.state_lock:
+            frame = None if self.current_frame is None else self.current_frame.copy()
+
+        if frame is None:
+            return placeholder_frame(self.capture_error or "Waiting for camera...")
+
+        return optimize_image_for_web(frame)
+
+    def capture_registration_frame(self) -> np.ndarray:
+        frame = self.capture_current_frame()
+        return frame if CAMERA_MIRROR else cv2.flip(frame, 1)
+
     def generate_stream(self):
         while True:
             frame = self.get_annotated_frame()
@@ -881,30 +1577,64 @@ class WebFaceProcessor:
                 time.sleep(0.03)
                 continue
 
+            frame_bytes = buffer.tobytes()
             yield (
                 b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
+                b"Content-Type: image/jpeg\r\n"
+                b"Content-Length: " + str(len(frame_bytes)).encode("ascii") + b"\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
             )
+            time.sleep(STREAM_FRAME_INTERVAL_SECONDS)
+
+    def generate_registration_stream(self):
+        while True:
+            frame = self.get_registration_preview_frame()
+            success, buffer = cv2.imencode(
+                ".jpg",
+                frame,
+                [int(cv2.IMWRITE_JPEG_QUALITY), STREAM_JPEG_QUALITY],
+            )
+            if not success:
+                time.sleep(0.03)
+                continue
+
+            frame_bytes = buffer.tobytes()
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n"
+                b"Content-Length: " + str(len(frame_bytes)).encode("ascii") + b"\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
+            )
+            time.sleep(STREAM_FRAME_INTERVAL_SECONDS)
 
     def system_status(self) -> dict[str, Any]:
         with self.state_lock:
-            decision = self.current_decision
-            decisions = list(self.current_decisions)
+            camera_enabled = self.camera_enabled
+            decisions = list(self.current_decisions) if camera_enabled else []
+        decision_payloads = [self._decision_payload(decision) for decision in decisions]
         return {
-            "camera_ready": self.capture is not None and self.capture.isOpened(),
-            "camera_error": self.capture_error,
-            "camera_source": self.camera_source,
+            "camera_enabled": camera_enabled,
+            "camera_ready": camera_enabled and self.capture is not None and self.capture.isOpened(),
+            "camera_error": CAMERA_DISABLED_MESSAGE if not camera_enabled else self.capture_error,
+            "camera_backend": self.camera_backend,
             "frame_skip_interval": FRAME_SKIP_INTERVAL,
-            "max_faces_per_frame": MAX_FACES_PER_FRAME,
-            "detected_people_count": len(decisions),
             "identification_cooldown_seconds": IDENTIFICATION_COOLDOWN_SECONDS,
-            "current_decision": None if decision is None else serialize_decision(decision),
-            "current_decisions": [serialize_decision(item) for item in decisions],
+            "known_face_cooldown_seconds": KNOWN_FACE_RECHECK_COOLDOWN_SECONDS,
+            "detected_faces": len(decision_payloads),
+            "current_decision": decision_payloads[0] if decision_payloads else None,
+            "current_decisions": decision_payloads,
         }
 
 
 ensure_database_schema()
+ensure_fixed_login_accounts()
 processor = WebFaceProcessor()
+
+
+def ensure_processor_started() -> None:
+    processor.start()
 
 
 def admissions_sync_loop() -> None:
@@ -912,7 +1642,7 @@ def admissions_sync_loop() -> None:
         try:
             sync_admission_students()
         except Exception as error:
-            print(f"ADMISSION_SYNC_ERROR: {error}")
+            logger.exception("ADMISSION_SYNC_ERROR: %s", error)
         time.sleep(ADMISSION_SYNC_INTERVAL_SECONDS)
 
 
@@ -954,7 +1684,7 @@ def auth_login():
         return jsonify({"error": "role, username, and password are required"}), 400
 
     try:
-        user, created = authenticate_or_create_user(role, username, password)
+        user = authenticate_user(role, username, password)
     except ValueError as error:
         return jsonify({"error": str(error)}), 401
 
@@ -962,9 +1692,16 @@ def auth_login():
     session["user"] = user
     return jsonify({
         "user": user,
-        "created": created,
-        "message": "Account created and signed in." if created else "Signed in successfully.",
+        "created": False,
+        "message": "Signed in successfully.",
     })
+
+
+@app.route("/api/security-users")
+@require_auth
+@require_role("admin")
+def get_security_users():
+    return jsonify({"items": list_app_users("security")})
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -983,6 +1720,7 @@ def bootstrap():
         payload.update({
             "students": list_students(),
             "graduates": list_graduated_students(),
+            "security_users": list_app_users("security"),
             "admissions": admission_sync_status(),
         })
     if user and user.get("role") == "security":
@@ -993,13 +1731,42 @@ def bootstrap():
 
 
 @app.route("/video_feed")
-@require_role("security")
+@require_role("admin", "security")
 def video_feed():
-    processor.start()
+    ensure_processor_started()
     return Response(
         processor.generate_stream(),
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
+
+
+@app.route("/registration_camera_feed")
+@require_role("admin")
+def registration_camera_feed():
+    ensure_processor_started()
+    return Response(
+        processor.generate_registration_stream(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+@app.route("/api/register/capture-image")
+@require_role("admin")
+def capture_registration_image():
+    ensure_processor_started()
+    try:
+        frame = processor.capture_registration_frame()
+    except RuntimeError as error:
+        return jsonify({"error": str(error)}), 400
+
+    success, buffer = cv2.imencode(
+        ".jpg",
+        optimize_image_for_web(frame),
+        [int(cv2.IMWRITE_JPEG_QUALITY), STREAM_JPEG_QUALITY],
+    )
+    if not success:
+        return jsonify({"error": "Unable to capture frame from camera."}), 400
+    return Response(buffer.tobytes(), mimetype="image/jpeg")
 
 
 @app.route("/captures/<path:filename>")
@@ -1009,10 +1776,159 @@ def get_capture(filename: str):
 
 
 @app.route("/api/system/status")
-@require_role("security")
+@require_role("admin", "security")
 def get_system_status():
-    processor.start()
+    ensure_processor_started()
     return jsonify(processor.system_status())
+
+
+@app.route("/api/system/camera-test", methods=["POST"])
+@require_role("admin", "security")
+def camera_test():
+    ensure_processor_started()
+    try:
+        frame = processor.capture_current_frame()
+    except Exception as error:
+        return jsonify({
+            "ok": False,
+            "message": str(error),
+            "camera_ready": processor.system_status().get("camera_ready", False),
+        }), 400
+
+    try:
+        faces = extract_face_embeddings(frame)
+    except Exception:
+        return jsonify({
+            "ok": True,
+            "face_count": 0,
+            "matches": [],
+            "message": "Camera is working, but no clear face was detected.",
+        })
+
+    students = load_database()
+    now = time.time()
+    matches = []
+    for embedding, bbox in faces:
+        decision = evaluate_face_candidate(frame, bbox, embedding, students, now)
+        matches.append({
+            "status": decision.log_status,
+            "label": decision.label,
+            "student_id": decision.student_id,
+            "student_name": decision.student_name,
+            "role": decision.role,
+            "severity": "green" if decision.log_status == "Allowed" else "red",
+        })
+
+    return jsonify({
+        "ok": True,
+        "face_count": len(faces),
+        "matches": matches,
+        "message": "Camera test completed.",
+    })
+
+
+@app.route("/api/system/camera", methods=["POST"])
+@require_role("admin", "security")
+def set_system_camera():
+    payload = request.get_json(silent=True) or {}
+    if "enabled" not in payload:
+        return jsonify({"error": "enabled is required"}), 400
+    if bool(payload["enabled"]):
+        ensure_processor_started()
+    return jsonify(processor.set_camera_enabled(bool(payload["enabled"])))
+
+
+@app.route("/api/security/media-scan", methods=["POST"])
+@require_role("admin", "security")
+def security_media_scan():
+    media_file = request.files.get("media")
+    if media_file is None or not media_file.filename:
+        return jsonify({"error": "media file is required"}), 400
+
+    try:
+        return jsonify(scan_uploaded_media(media_file))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+
+@app.route("/api/security/qr-verify", methods=["POST"])
+@require_role("admin", "security")
+def security_qr_verify():
+    payload = request.get_json(silent=True) or {}
+    token = str(payload.get("token", "")).strip()
+    if not token:
+        return jsonify({"error": "QR token is required"}), 400
+
+    try:
+        student = verify_student_qr_token(token)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "QR verified and access recorded.",
+        "student": student,
+        "event": event,
+    })
+
+
+@app.route("/api/security/qr-scan", methods=["POST"])
+@require_role("admin", "security")
+def security_qr_scan():
+    image_file = request.files.get("qr_image")
+    if image_file is None or not image_file.filename:
+        return jsonify({"error": "QR image is required"}), 400
+
+    try:
+        token = decode_qr_from_image(image_file.read())
+        student = verify_student_qr_token(token)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "QR verified and access recorded.",
+        "student": student,
+        "event": event,
+    })
+
+
+@app.route("/api/security/qr-scan-current", methods=["POST"])
+@require_role("admin", "security")
+def security_qr_scan_current():
+    try:
+        token = decode_qr_from_frame(processor.capture_current_frame())
+        student = verify_student_qr_token(token)
+    except (RuntimeError, ValueError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "QR verified and access recorded.",
+        "student": student,
+        "event": event,
+    })
+
+
+@app.route("/api/security/student-id-entry", methods=["POST"])
+@require_role("admin", "security")
+def security_student_id_entry():
+    payload = request.get_json(silent=True) or {}
+    student_id = str(payload.get("student_id", "")).strip()
+    if not student_id:
+        return jsonify({"error": "student_id is required"}), 400
+
+    student = get_student(student_id)
+    if student is None:
+        return jsonify({"error": "Student was not found"}), 404
+
+    event = insert_qr_access_log(student)
+    return jsonify({
+        "message": "Student verified and access recorded.",
+        "student": student,
+        "event": event,
+        "qr_image_url": f"/api/students/{student_id}/qr-image",
+    })
 
 
 @app.route("/api/admissions/status")
@@ -1033,6 +1949,31 @@ def get_students():
     return jsonify({"items": list_students()})
 
 
+@app.route("/api/students/<student_id>/qr-token")
+@require_role("admin")
+def get_student_qr_token(student_id: str):
+    student = get_student(student_id)
+    if student is None:
+        return jsonify({"error": "Student not found"}), 404
+    return jsonify({
+        "student": student,
+        "token": make_student_qr_token(student_id),
+    })
+
+
+@app.route("/api/students/<student_id>/qr-image")
+@require_role("admin", "security")
+def get_student_qr_image(student_id: str):
+    student = get_student(student_id)
+    if student is None:
+        return jsonify({"error": "Student not found"}), 404
+
+    success, buffer = cv2.imencode(".png", make_student_qr_image(student_id))
+    if not success:
+        return jsonify({"error": "Unable to generate QR image"}), 500
+    return Response(buffer.tobytes(), mimetype="image/png")
+
+
 @app.route("/api/students/<student_id>/graduate", methods=["POST"])
 @require_role("admin")
 def graduate_student(student_id: str):
@@ -1043,6 +1984,20 @@ def graduate_student(student_id: str):
         "message": f"Student {student_id} moved to graduated records.",
         "students": list_students(),
         "graduates": list_graduated_students(),
+    })
+
+
+@app.route("/api/students/<student_id>/delete", methods=["POST"])
+@require_role("admin")
+def delete_student(student_id: str):
+    if not delete_student_record(student_id):
+        return jsonify({"error": "Student not found"}), 404
+    processor.refresh_students()
+    return jsonify({
+        "message": f"Student {student_id} deleted.",
+        "students": list_students(),
+        "graduates": list_graduated_students(),
+        "logs": get_access_logs_items(),
     })
 
 
@@ -1116,6 +2071,57 @@ def get_logs():
     return jsonify({"items": items})
 
 
+@app.route("/api/logs/delete", methods=["POST"])
+@require_role("admin")
+def delete_logs():
+    payload = request.get_json(silent=True) or {}
+    log_ids: list[int] = []
+    for raw_id in payload.get("log_ids", []):
+        try:
+            log_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    if not log_ids:
+        return jsonify({"error": "log_ids is required"}), 400
+
+    deleted_count = bulk_delete_access_logs(log_ids)
+    return jsonify({
+        "message": "Selected access logs deleted.",
+        "deleted_count": deleted_count,
+        "items": get_access_logs_items(),
+    })
+
+
+@app.route("/api/register/validate-image", methods=["POST"])
+@require_role("admin")
+def validate_register_image():
+    image_file = request.files.get("image")
+    exclude_student_id = str(request.form.get("exclude_student_id", "")).strip()
+    if image_file is None or not image_file.filename:
+        return jsonify({"error": "image is required"}), 400
+
+    try:
+        frame = decode_image_bytes(image_file.read())
+        embedding, bbox = validate_registration_face(frame)
+        duplicate = find_duplicate_face(embedding, exclude_student_id=exclude_student_id)
+        if duplicate:
+            return jsonify({
+                "valid": False,
+                "error": "Face already registered for another student.",
+                "duplicate": duplicate,
+            }), 409
+    except Exception as error:
+        return jsonify({"valid": False, "error": str(error)}), 400
+
+    x, y, w, h = bbox
+    return jsonify({
+        "valid": True,
+        "message": "Image is clear and ready for registration.",
+        "face": {"x": x, "y": y, "w": w, "h": h},
+    })
+
+
 @app.route("/api/register", methods=["POST"])
 @require_role("admin")
 def register():
@@ -1144,7 +2150,13 @@ def register():
             frame = decode_image_bytes(image_file.read())
         else:
             frame = processor.capture_current_frame()
-        embedding, _ = extract_embedding(frame)
+        embedding, _ = validate_registration_face(frame)
+        duplicate = find_duplicate_face(embedding, exclude_student_id=student_id)
+        if duplicate:
+            return jsonify({
+                "error": "Face already registered for another student.",
+                "duplicate": duplicate,
+            }), 409
     except Exception as error:
         return jsonify({"error": str(error)}), 400
 
@@ -1164,11 +2176,19 @@ def register():
 
 
 if __name__ == "__main__":
+    access_host = os.environ.get("ACCESS_HOST", "127.0.0.1")
+    access_port = int(os.environ.get("ACCESS_PORT", "5000"))
+    local_host = access_host in {"127.0.0.1", "localhost", "::1"}
+    browser_host = "127.0.0.1" if access_host == "0.0.0.0" else access_host
+    browser_url = f"http://{browser_host}:{access_port}"
+    if env_flag("ACCESS_OPEN_BROWSER", True):
+        threading.Timer(1.0, lambda: webbrowser.open_new_tab(browser_url)).start()
+
     socketio.run(
         app,
-        host="0.0.0.0",
-        port=5000,
-        debug=True,
+        host=access_host,
+        port=access_port,
+        debug=env_flag("ACCESS_DEBUG", False),
         use_reloader=False,
-        allow_unsafe_werkzeug=True,
+        allow_unsafe_werkzeug=env_flag("ACCESS_ALLOW_UNSAFE_WERKZEUG", local_host),
     )
