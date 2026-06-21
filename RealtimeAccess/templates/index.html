@@ -164,10 +164,10 @@
             position: fixed;
             z-index: 1;
             inset-block-start: 38px;
-            right: 42px;
+            right: 50px;
             left: auto;
-            width: 178px;
-            height: 126px;
+            width: 226px;
+            height: 160px;
             direction: ltr;
             pointer-events: none;
             transform-origin: center;
@@ -178,10 +178,10 @@
 
         .camera-arm {
             position: absolute;
-            top: 18px;
-            left: 8px;
-            width: 82px;
-            height: 16px;
+            top: 23px;
+            left: 10px;
+            width: 104px;
+            height: 20px;
             border: 1px solid rgba(255, 255, 255, 0.34);
             border-radius: 999px;
             background: linear-gradient(180deg, rgba(228, 242, 255, 0.72), rgba(108, 151, 190, 0.52));
@@ -191,10 +191,10 @@
         .camera-arm::before {
             content: "";
             position: absolute;
-            width: 34px;
-            height: 34px;
-            top: -10px;
-            left: -14px;
+            width: 43px;
+            height: 43px;
+            top: -13px;
+            left: -18px;
             border: 1px solid rgba(255, 255, 255, 0.32);
             border-radius: 50%;
             background: radial-gradient(circle at 35% 35%, #e8f7ff, #42739f 72%);
@@ -202,10 +202,10 @@
 
         .camera-body {
             position: absolute;
-            top: 28px;
-            left: 58px;
-            width: 104px;
-            height: 56px;
+            top: 36px;
+            left: 74px;
+            width: 132px;
+            height: 71px;
             border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 12px 28px 28px 12px;
             background:
@@ -218,10 +218,10 @@
         .camera-body::before {
             content: "";
             position: absolute;
-            top: 12px;
-            right: 9px;
-            width: 32px;
-            height: 32px;
+            top: 15px;
+            right: 12px;
+            width: 41px;
+            height: 41px;
             border-radius: 50%;
             background:
                 radial-gradient(circle at 42% 38%, #8ee8ff 0 16%, #10243b 18% 46%, #07131f 48% 100%);
@@ -231,10 +231,10 @@
         .camera-body::after {
             content: "";
             position: absolute;
-            top: 17px;
-            left: 14px;
-            width: 28px;
-            height: 5px;
+            top: 22px;
+            left: 18px;
+            width: 36px;
+            height: 6px;
             border-radius: 999px;
             background: rgba(14, 45, 77, 0.42);
             box-shadow: 0 11px 0 rgba(14, 45, 77, 0.26);
@@ -242,10 +242,10 @@
 
         .camera-beam {
             position: absolute;
-            top: 50px;
-            left: 132px;
-            width: 118px;
-            height: 72px;
+            top: 64px;
+            left: 168px;
+            width: 150px;
+            height: 92px;
             opacity: 0.28;
             clip-path: polygon(0 36%, 100% 0, 100% 100%, 0 64%);
             background: linear-gradient(90deg, rgba(142, 232, 255, 0.48), transparent);
@@ -1496,6 +1496,16 @@
             align-items: start;
         }
 
+        .admin-page .neural-cells {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            opacity: 0.62;
+            filter: drop-shadow(0 0 10px rgba(140, 232, 241, 0.18));
+            mix-blend-mode: screen;
+            mask-image: linear-gradient(180deg, transparent 0, rgba(0, 0, 0, 0.9) 16%, rgba(0, 0, 0, 0.75) 80%, transparent 100%);
+        }
+
         .admin-page .stack {
             display: grid;
             gap: 22px;
@@ -1790,6 +1800,26 @@
             background: #fff;
             padding: 12px;
             object-fit: contain;
+        }
+
+        .qr-media-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            gap: 16px;
+            margin: 14px 0 8px;
+        }
+
+        .qr-media-row .student-photo,
+        .qr-media-row .qr-code-preview {
+            width: min(220px, 100%);
+            height: auto;
+            aspect-ratio: 1;
+            border-radius: 16px;
+        }
+
+        .qr-media-row .student-photo {
+            object-fit: cover;
         }
 
         .access-log-student-button {
@@ -2869,6 +2899,345 @@
             padding-inline: 24px;
         }
 
+        /* Demo polish: stronger first-screen visual, clearer text, buttons, status, tables, and role signal. */
+        .login-shell {
+            background:
+                radial-gradient(circle at 9% 14%, rgba(31, 159, 192, 0.38), transparent 32%),
+                radial-gradient(circle at 86% 20%, rgba(226, 170, 69, 0.24), transparent 30%),
+                radial-gradient(circle at 52% 92%, rgba(91, 224, 189, 0.16), transparent 34%),
+                linear-gradient(135deg, #041326 0%, #082946 48%, #05182d 100%);
+        }
+
+        .neural-cells {
+            opacity: 1;
+            filter: drop-shadow(0 0 10px rgba(140, 232, 241, 0.28));
+        }
+
+        .login-shell::before {
+            opacity: 0.56;
+        }
+
+        .role-button,
+        .primary-button,
+        .secondary-button,
+        .danger-button,
+        .ghost-button,
+        .admin-tab {
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        .primary-button,
+        .image-choice-actions .primary-button,
+        .media-scan-form .primary-button,
+        #syncNowButton {
+            border-color: rgba(140, 232, 241, 0.34);
+            background: linear-gradient(135deg, #1f9fc0, #15839b);
+            box-shadow: 0 16px 34px rgba(31, 159, 192, 0.28);
+        }
+
+        .secondary-button {
+            border-color: rgba(140, 232, 241, 0.28);
+            background: rgba(245, 251, 255, 0.1);
+            color: var(--text);
+        }
+
+        .danger-button {
+            border-color: rgba(255, 107, 127, 0.48);
+            background: linear-gradient(135deg, #ff6b7f, #b92745);
+            box-shadow: 0 16px 34px rgba(255, 107, 127, 0.2);
+        }
+
+        .ghost-button {
+            border-color: rgba(140, 232, 241, 0.2);
+            background: rgba(245, 251, 255, 0.07);
+            color: rgba(245, 251, 255, 0.88);
+        }
+
+        .header-title .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            margin-bottom: 8px;
+            border: 1px solid rgba(140, 232, 241, 0.38);
+            border-radius: 8px;
+            padding: 7px 11px;
+            background: rgba(31, 159, 192, 0.16);
+            color: #bffdf7;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .header-title .eyebrow::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #5be0bd;
+            box-shadow: 0 0 14px rgba(91, 224, 189, 0.9);
+        }
+
+        .user-badge {
+            border-color: rgba(226, 170, 69, 0.42);
+            background: rgba(226, 170, 69, 0.14);
+            color: #fff3d4;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .status-text {
+            min-height: 30px;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 16px;
+            font-weight: 800;
+            color: rgba(232, 245, 250, 0.78);
+        }
+
+        .status-text:empty {
+            padding: 0;
+        }
+
+        .status-text.success {
+            border: 1px solid rgba(91, 224, 189, 0.36);
+            background: rgba(91, 224, 189, 0.12);
+            color: #bffdf7;
+        }
+
+        .status-text.warning {
+            border: 1px solid rgba(226, 170, 69, 0.36);
+            background: rgba(226, 170, 69, 0.12);
+            color: #ffe0a8;
+        }
+
+        .status-text.danger {
+            border: 1px solid rgba(255, 107, 127, 0.38);
+            background: rgba(255, 107, 127, 0.13);
+            color: #ffd1d8;
+        }
+
+        .pill {
+            min-height: 34px;
+            border-radius: 8px;
+            padding: 8px 13px;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .pill.success {
+            background: rgba(91, 224, 189, 0.18);
+            border-color: rgba(91, 224, 189, 0.5);
+            color: #c9fff8;
+        }
+
+        .pill.warning {
+            background: rgba(226, 170, 69, 0.18);
+            border-color: rgba(226, 170, 69, 0.5);
+            color: #ffe5b2;
+        }
+
+        .pill.danger {
+            background: rgba(255, 107, 127, 0.18);
+            border-color: rgba(255, 107, 127, 0.52);
+            color: #ffd1d8;
+        }
+
+        .alert-card {
+            border-inline-start-width: 7px;
+            padding: 16px;
+        }
+
+        .alert-card.red {
+            background:
+                linear-gradient(145deg, rgba(52, 21, 36, 0.92), rgba(23, 64, 72, 0.78)),
+                radial-gradient(circle at top right, rgba(255, 107, 127, 0.2), transparent 34%);
+        }
+
+        .alert-card.orange {
+            background:
+                linear-gradient(145deg, rgba(56, 42, 18, 0.9), rgba(23, 64, 72, 0.78)),
+                radial-gradient(circle at top right, rgba(226, 170, 69, 0.22), transparent 34%);
+        }
+
+        .table-wrap {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            padding: 15px 16px;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        td {
+            padding: 15px 16px;
+            font-size: 15px;
+        }
+
+        tbody tr:hover td {
+            background: rgba(31, 159, 192, 0.18);
+        }
+
+        .main {
+            width: min(1680px, 100%);
+            padding-inline: clamp(24px, 2.4vw, 38px);
+        }
+
+        .admin-page {
+            grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+            gap: 24px;
+        }
+
+        .admin-page .stack {
+            width: 100%;
+        }
+
+        .admin-panel.active {
+            min-height: min(560px, calc(100vh - 230px));
+        }
+
+        .admin-panel[data-admin-panel="sync"].active {
+            min-height: min(500px, calc(100vh - 230px));
+        }
+
+        .admin-panel[data-admin-panel="register"].active,
+        .admin-panel[data-admin-panel="graduates"].active,
+        .admin-panel[data-admin-panel="accessLogs"].active {
+            padding: clamp(26px, 2vw, 34px);
+        }
+
+        .admin-panel[data-admin-panel="register"].active .form-grid {
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .admin-panel[data-admin-panel="register"].active .image-choice-panel,
+        .admin-panel[data-admin-panel="register"].active .image-choice-actions {
+            min-height: 100%;
+        }
+
+        .admin-panel[data-admin-panel="graduates"].active .table-wrap,
+        .admin-panel[data-admin-panel="accessLogs"].active .table-wrap {
+            min-height: 360px;
+            max-height: calc(100vh - 390px);
+        }
+
+        .registered-students-list.active {
+            min-height: min(540px, calc(100vh - 230px));
+        }
+
+        .admin-panel[data-admin-panel="graduates"].active .table-wrap {
+            min-height: 360px;
+        }
+
+        .admin-page[data-active-panel="graduates"],
+        .admin-page[data-active-panel="accessLogs"] {
+            grid-template-columns: 1fr;
+        }
+
+        .admin-page[data-active-panel="graduates"] > .stack:first-of-type,
+        .admin-page[data-active-panel="accessLogs"] > .stack:first-of-type {
+            display: none;
+        }
+
+        .admin-page[data-active-panel="graduates"] > .stack:last-of-type,
+        .admin-page[data-active-panel="accessLogs"] > .stack:last-of-type {
+            width: min(1440px, 100%);
+            justify-self: center;
+        }
+
+        .admin-panel[data-admin-panel="graduates"].active,
+        .admin-panel[data-admin-panel="accessLogs"].active {
+            width: 100%;
+            min-height: auto;
+            justify-self: center;
+            padding: clamp(24px, 1.8vw, 32px);
+        }
+
+        .admin-panel[data-admin-panel="graduates"].active .filter-bar,
+        .admin-panel[data-admin-panel="accessLogs"].active .filter-bar {
+            max-width: 680px;
+            margin-inline: 0;
+        }
+
+        .admin-panel[data-admin-panel="graduates"].active .table-wrap,
+        .admin-panel[data-admin-panel="accessLogs"].active .table-wrap {
+            width: 100%;
+            min-height: 300px;
+            max-height: 430px;
+            margin-inline: auto;
+        }
+
+        .admin-panel[data-admin-panel="accessLogs"].active .table-wrap {
+            min-height: 420px;
+            max-height: calc(100vh - 270px);
+            overflow-x: auto;
+            overflow-y: auto;
+            scrollbar-color: rgba(140, 232, 241, 0.72) rgba(5, 24, 39, 0.64);
+            scrollbar-width: thin;
+        }
+
+        .admin-panel[data-admin-panel="accessLogs"].active .table-wrap::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .admin-panel[data-admin-panel="accessLogs"].active .table-wrap::-webkit-scrollbar-track {
+            background: rgba(5, 24, 39, 0.64);
+            border-radius: 999px;
+        }
+
+        .admin-panel[data-admin-panel="accessLogs"].active .table-wrap::-webkit-scrollbar-thumb {
+            border: 2px solid rgba(5, 24, 39, 0.64);
+            border-radius: 999px;
+            background: rgba(140, 232, 241, 0.72);
+        }
+
+        .admin-panel[data-admin-panel="accessLogs"].active th {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+        }
+
+        .grid-security {
+            grid-template-columns: minmax(0, 1.52fr) minmax(340px, 0.72fr);
+        }
+
+        .grid-security .card {
+            padding: clamp(24px, 1.8vw, 32px);
+        }
+
+        .live-panel {
+            min-height: min(640px, calc(100vh - 210px));
+        }
+
+        .toast {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .toast.success {
+            background: rgba(10, 50, 48, 0.96);
+            color: #c9fff8;
+        }
+
+        .toast.warning {
+            background: rgba(58, 43, 17, 0.96);
+            color: #ffe5b2;
+        }
+
+        .toast.danger {
+            background: rgba(56, 20, 32, 0.96);
+            color: #ffd1d8;
+        }
+
         .toast.success { border-inline-start-color: var(--success); }
         .toast.warning { border-inline-start-color: var(--warning); }
         .toast.danger { border-inline-start-color: var(--danger); }
@@ -2889,6 +3258,27 @@
 
             .admin-page {
                 grid-template-columns: 1fr;
+            }
+
+            .admin-panel.active,
+            .registered-students-list.active,
+            .live-panel {
+                min-height: auto;
+            }
+
+            .admin-panel[data-admin-panel="register"].active .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-panel[data-admin-panel="graduates"].active .table-wrap,
+            .admin-panel[data-admin-panel="accessLogs"].active .table-wrap {
+                min-height: 320px;
+                max-height: none;
+            }
+
+            .admin-page[data-active-panel="graduates"] > .stack:first-of-type,
+            .admin-page[data-active-panel="accessLogs"] > .stack:first-of-type {
+                display: grid;
             }
 
             .login-intro {
@@ -3073,6 +3463,7 @@
 
         <main class="main">
             <section id="adminView" class="admin-page hidden">
+                <canvas id="adminNeuralCellsCanvas" class="neural-cells" aria-hidden="true"></canvas>
                 <nav class="admin-tabs" aria-label="Admissions sections">
                     <button class="admin-tab active" type="button" data-admin-tab="sync" data-i18n="tabSync">المزامنة</button>
                     <button class="admin-tab" type="button" data-admin-tab="register" data-i18n="tabRegister">تسجيل طالب جديد</button>
@@ -3929,6 +4320,20 @@
             window.setTimeout(() => toast.remove(), 3600);
         }
 
+        function setStatus(element, message = "", tone = "") {
+            if (!element) return;
+            element.textContent = message;
+            element.classList.remove("success", "warning", "danger");
+            if (tone) element.classList.add(tone);
+        }
+
+        function refreshNeuralCanvases() {
+            window.requestAnimationFrame(() => {
+                window.dispatchEvent(new Event("resize"));
+                window.requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+            });
+        }
+
         function normalized(value) {
             return String(value || "").trim().toLowerCase();
         }
@@ -3995,6 +4400,7 @@
             elements.mediaScanForm.reset();
             elements.mediaScanStatus.textContent = "";
             renderMediaScanResults();
+            refreshNeuralCanvases();
             if (state.statusTimer) {
                 clearInterval(state.statusTimer);
                 state.statusTimer = null;
@@ -4028,6 +4434,7 @@
             elements.adminSecurityButton.disabled = false;
             elements.areaEyebrow.textContent = t("adminRole");
             elements.areaTitle.textContent = t("adminTitle");
+            refreshNeuralCanvases();
             setAdminPanel("sync");
             await refreshAdminData();
         }
@@ -4148,6 +4555,7 @@
 
         function setAdminPanel(panel) {
             state.adminPanel = panel;
+            elements.adminView.dataset.activePanel = panel;
             document.querySelectorAll(".admin-tab").forEach((button) => {
                 button.classList.toggle("active", button.dataset.adminTab === panel);
             });
@@ -4447,8 +4855,10 @@
                         <span>${t("qrVerified")}</span>
                         <span class="pill success">${escapeHtml(event.event_type || "QR Verified")}</span>
                     </div>
-                    ${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}?t=${Date.now()}" alt="">` : ""}
-                    ${payload.qr_image_url ? `<img class="qr-code-preview" src="${escapeHtml(payload.qr_image_url)}?t=${Date.now()}" alt="QR">` : ""}
+                    <div class="qr-media-row">
+                        ${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}?t=${Date.now()}" alt="">` : ""}
+                        ${payload.qr_image_url ? `<img class="qr-code-preview" src="${escapeHtml(payload.qr_image_url)}?t=${Date.now()}" alt="QR">` : ""}
+                    </div>
                     ${renderDetailItems([
                         { label: t("studentName"), value: student.name },
                         { label: t("studentId"), value: student.id },
@@ -4616,14 +5026,14 @@
 
         elements.syncNowButton.addEventListener("click", async () => {
             elements.syncNowButton.disabled = true;
-            elements.syncStatus.textContent = "";
+            setStatus(elements.syncStatus);
             try {
                 const payload = await fetchJson("/api/admissions/sync", { method: "POST" });
                 renderAdmissions(payload.status);
-                elements.syncStatus.textContent = `${t("synced")} ${payload.imported} / ${payload.failed}`;
+                setStatus(elements.syncStatus, `${t("synced")} ${payload.imported} / ${payload.failed}`, payload.failed ? "warning" : "success");
                 await refreshAdminData();
             } catch (error) {
-                elements.syncStatus.textContent = error.message;
+                setStatus(elements.syncStatus, error.message, "danger");
             } finally {
                 elements.syncNowButton.disabled = false;
             }
@@ -4702,7 +5112,7 @@
 
         elements.registerForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            elements.registerStatus.textContent = "";
+            setStatus(elements.registerStatus);
             elements.studentImageSelectionStatus.textContent = "";
             const formData = new FormData(elements.registerForm);
             const studentId = String(formData.get("student_id") || "").trim();
@@ -4710,12 +5120,12 @@
                 (elements.studentImageInput.files && elements.studentImageInput.files[0]) ||
                 state.capturedStudentImage;
             if (!selectedImage) {
-                elements.registerStatus.textContent = t("studentImageRequired");
+                setStatus(elements.registerStatus, t("studentImageRequired"), "warning");
                 return;
             }
             formData.set("image", selectedImage);
             try {
-                elements.registerStatus.textContent = t("imageChecking");
+                setStatus(elements.registerStatus, t("imageChecking"), "warning");
                 await validateStudentImage(selectedImage, studentId);
                 const payload = await fetchJson("/api/register", {
                     method: "POST",
@@ -4728,27 +5138,27 @@
                 elements.registerForm.reset();
                 clearCapturedStudentImage();
                 elements.studentImageSelectionStatus.textContent = "";
-                elements.registerStatus.textContent = t("saved");
+                setStatus(elements.registerStatus, t("saved"), "success");
                 showToast(t("saved"), "success");
             } catch (error) {
-                elements.registerStatus.textContent = localizeErrorMessage(error.message);
+                setStatus(elements.registerStatus, localizeErrorMessage(error.message), "danger");
                 showToast(localizeErrorMessage(error.message), "danger");
             }
         });
 
         elements.mediaScanForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            elements.mediaScanStatus.textContent = "";
+            setStatus(elements.mediaScanStatus);
             const selectedFile = elements.mediaScanInput.files && elements.mediaScanInput.files[0];
             if (!selectedFile) {
-                elements.mediaScanStatus.textContent = t("selectMediaFile");
+                setStatus(elements.mediaScanStatus, t("selectMediaFile"), "warning");
                 return;
             }
 
             const formData = new FormData();
             formData.set("media", selectedFile);
             elements.mediaScanButton.disabled = true;
-            elements.mediaScanStatus.textContent = t("processingMedia");
+            setStatus(elements.mediaScanStatus, t("processingMedia"), "warning");
             try {
                 const payload = await fetchJson("/api/security/media-scan", {
                     method: "POST",
@@ -4756,13 +5166,17 @@
                 });
                 state.mediaScanResult = payload;
                 renderMediaScanResults();
-                elements.mediaScanStatus.textContent =
-                    (payload.detected_faces ?? 0) > 0 ? t("mediaScanComplete") : t("mediaNoFacesDetected");
+                const mediaTone = (payload.missing_count || 0) > 0 || (payload.alert_count || 0) > 0 ? "danger" : "success";
+                setStatus(
+                    elements.mediaScanStatus,
+                    (payload.detected_faces ?? 0) > 0 ? t("mediaScanComplete") : t("mediaNoFacesDetected"),
+                    (payload.detected_faces ?? 0) > 0 ? mediaTone : "warning"
+                );
                 if ((payload.missing_count || 0) > 0 || (payload.alert_count || 0) > 0) {
                     playAlarm();
                 }
             } catch (error) {
-                elements.mediaScanStatus.textContent = localizeErrorMessage(error.message);
+                setStatus(elements.mediaScanStatus, localizeErrorMessage(error.message), "danger");
             } finally {
                 elements.mediaScanButton.disabled = false;
             }
@@ -4770,11 +5184,11 @@
 
         elements.qrStudentIdForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            elements.qrStatus.textContent = "";
+            setStatus(elements.qrStatus);
             elements.qrResult.classList.add("hidden");
             const studentId = elements.qrStudentIdInput.value.trim();
             if (!studentId) {
-                elements.qrStatus.textContent = t("studentIdRequired");
+                setStatus(elements.qrStatus, t("studentIdRequired"), "warning");
                 return;
             }
 
@@ -4785,11 +5199,11 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ student_id: studentId })
                 });
-                elements.qrStatus.textContent = t("qrVerified");
+                setStatus(elements.qrStatus, t("qrVerified"), "success");
                 renderQrResult(payload);
                 elements.qrStudentIdForm.reset();
             } catch (error) {
-                elements.qrStatus.textContent = localizeErrorMessage(error.message);
+                setStatus(elements.qrStatus, localizeErrorMessage(error.message), "danger");
             } finally {
                 elements.qrStudentIdButton.disabled = false;
             }
@@ -4985,7 +5399,10 @@
         }
 
         function startNeuralCellsBackground() {
-            const canvas = document.getElementById("neuralCellsCanvas");
+            document.querySelectorAll("canvas.neural-cells").forEach(startNeuralCellsCanvas);
+        }
+
+        function startNeuralCellsCanvas(canvas) {
             if (!canvas) return;
 
             const context = canvas.getContext("2d");
@@ -5003,7 +5420,7 @@
                 canvas.height = Math.floor(height * ratio);
                 context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-                const pointCount = Math.max(42, Math.min(92, Math.floor((width * height) / 14500)));
+                const pointCount = Math.max(34, Math.min(72, Math.floor((width * height) / 19000)));
                 points = Array.from({ length: pointCount }, (_, index) => {
                     const band = index / pointCount;
                     return {
@@ -5011,7 +5428,7 @@
                         y: (band * height + (index * 83 % 180)) % Math.max(height, 1),
                         vx: (Math.sin(index * 3.7) * 0.18) || 0.08,
                         vy: (Math.cos(index * 2.9) * 0.16) || -0.07,
-                        r: 1.8 + (index % 4) * 0.35,
+                        r: 3.4 + (index % 4) * 0.7,
                         phase: index * 0.64
                     };
                 });
@@ -5021,7 +5438,7 @@
                 context.clearRect(0, 0, width, height);
 
                 const time = timestamp * 0.001;
-                const maxDistance = Math.min(185, Math.max(125, width * 0.14));
+                const maxDistance = Math.min(245, Math.max(165, width * 0.18));
 
                 for (const point of points) {
                     if (!reducedMotion) {
@@ -5046,22 +5463,22 @@
                         const distance = Math.hypot(dx, dy);
                         if (distance > maxDistance) continue;
 
-                        const alpha = (1 - distance / maxDistance) * 0.62;
+                        const alpha = (1 - distance / maxDistance) * 0.82;
                         context.beginPath();
                         context.moveTo(a.x, a.y);
                         context.lineTo(b.x, b.y);
                         context.strokeStyle = `rgba(140, 232, 241, ${alpha})`;
-                        context.lineWidth = 1;
+                        context.lineWidth = 1.6;
                         context.stroke();
                     }
                 }
 
                 for (const point of points) {
                     const pulse = reducedMotion ? 0.5 : (Math.sin(time * 1.4 + point.phase) + 1) / 2;
-                    const radius = point.r + pulse * 1.1;
+                    const radius = point.r + pulse * 1.8;
                     const glow = context.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius * 6);
-                    glow.addColorStop(0, "rgba(140, 232, 241, 0.68)");
-                    glow.addColorStop(0.28, "rgba(31, 159, 192, 0.34)");
+                    glow.addColorStop(0, "rgba(170, 246, 255, 0.9)");
+                    glow.addColorStop(0.28, "rgba(31, 183, 216, 0.48)");
                     glow.addColorStop(1, "rgba(31, 159, 192, 0)");
 
                     context.fillStyle = glow;
@@ -5069,7 +5486,7 @@
                     context.arc(point.x, point.y, radius * 6, 0, Math.PI * 2);
                     context.fill();
 
-                    context.fillStyle = "rgba(140, 232, 241, 0.9)";
+                    context.fillStyle = "rgba(186, 250, 255, 0.98)";
                     context.beginPath();
                     context.arc(point.x, point.y, radius, 0, Math.PI * 2);
                     context.fill();
