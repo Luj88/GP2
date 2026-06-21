@@ -160,57 +160,6 @@
             animation: securitySweep 8s ease-in-out infinite;
         }
 
-        .login-geometry {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-            direction: ltr;
-        }
-
-        .login-geometry span {
-            position: absolute;
-            display: block;
-            border: 1px solid rgba(255, 255, 255, 0.36);
-            background:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
-                repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.1) 19px, transparent 20px);
-            box-shadow: 0 22px 56px rgba(8, 40, 68, 0.13);
-            backdrop-filter: blur(8px);
-            opacity: 0.68;
-        }
-
-        .geo-frame {
-            display: none;
-            width: 190px;
-            height: 190px;
-            inset-block-start: 9%;
-            inset-inline-end: 7%;
-            clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
-            animation: geometricFloat 10s ease-in-out infinite;
-        }
-
-        .geo-chip {
-            width: 150px;
-            height: 82px;
-            inset-block-end: 13%;
-            left: 7%;
-            border-radius: 8px;
-            animation: geometricFloat 12s ease-in-out infinite reverse;
-        }
-
-        .geo-line {
-            width: 280px;
-            height: 2px;
-            inset-block-start: 67%;
-            right: 13%;
-            border: 0;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.82), transparent);
-            box-shadow: 0 0 24px rgba(255, 255, 255, 0.42);
-            animation: signalLine 5s ease-in-out infinite;
-        }
-
         .corner-camera {
             position: fixed;
             z-index: 1;
@@ -363,6 +312,165 @@
 
         .login-form-panel::before {
             content: none;
+        }
+
+        .role-choice-panel,
+        .login-detail-panel {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            animation: loginPanelIn .46s cubic-bezier(.16, 1, .3, 1);
+        }
+
+        .role-choice-heading {
+            margin: 0 auto 22px;
+            max-width: 620px;
+            color: #f4fbff;
+            text-align: center;
+            text-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+        }
+
+        .role-choice-heading h1 {
+            margin: 0 0 10px;
+            font-size: clamp(30px, 4vw, 48px);
+            line-height: 1.08;
+            letter-spacing: 0;
+        }
+
+        .role-choice-heading p {
+            margin: 0;
+            color: rgba(235, 247, 255, 0.78);
+            line-height: 1.7;
+        }
+
+        .role-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .role-choice-card {
+            position: relative;
+            min-height: 248px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 8px;
+            padding: 22px;
+            background:
+                linear-gradient(145deg, rgba(244, 250, 255, 0.92), rgba(225, 241, 255, 0.78)),
+                repeating-linear-gradient(90deg, transparent 0 58px, rgba(21, 82, 143, 0.08) 59px, transparent 60px);
+            color: #132436;
+            text-align: start;
+            box-shadow: 0 24px 70px rgba(0, 12, 28, 0.22);
+            isolation: isolate;
+        }
+
+        .role-choice-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.84;
+            background: linear-gradient(115deg, transparent 0 42%, rgba(255, 255, 255, 0.42) 48%, transparent 54%);
+            transform: translateX(-70%);
+            transition: transform .58s ease;
+        }
+
+        .role-choice-card:hover,
+        .role-choice-card:focus-visible {
+            transform: translateY(-4px);
+            outline: none;
+            box-shadow: 0 30px 82px rgba(0, 12, 28, 0.3);
+        }
+
+        .role-choice-card:hover::before,
+        .role-choice-card:focus-visible::before {
+            transform: translateX(68%);
+        }
+
+        .role-choice-card.security {
+            background:
+                linear-gradient(145deg, rgba(232, 247, 255, 0.92), rgba(199, 230, 245, 0.78)),
+                repeating-linear-gradient(0deg, transparent 0 42px, rgba(15, 159, 154, 0.1) 43px, transparent 44px);
+        }
+
+        .role-choice-card:not(.active) {
+            opacity: 0.72;
+            transform: scale(0.98);
+        }
+
+        .role-choice-icon {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 74px;
+            height: 74px;
+            margin-bottom: 18px;
+            border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border) 76%);
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-size: 24px;
+            font-weight: 900;
+            box-shadow: 0 18px 36px color-mix(in srgb, var(--primary) 22%, transparent);
+        }
+
+        .role-choice-icon::after {
+            content: "";
+            position: absolute;
+            inset: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.58);
+            border-radius: 6px;
+            animation: roleIconPulse 2.8s ease-in-out infinite;
+        }
+
+        .role-choice-card h2 {
+            margin: 0 0 8px;
+            font-size: 24px;
+            line-height: 1.2;
+        }
+
+        .role-choice-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .role-entry-action {
+            width: min(360px, 100%);
+            margin: 18px auto 0;
+        }
+
+        .login-detail-panel {
+            width: min(460px, 100%);
+            margin: 0 auto;
+        }
+
+        .selected-role-header {
+            position: relative;
+            margin-bottom: 14px;
+            padding: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(244, 250, 255, 0.86);
+            box-shadow: 0 18px 44px rgba(0, 20, 40, 0.16);
+        }
+
+        .selected-role-header h2 {
+            margin: 0 0 4px;
+            font-size: 24px;
+            line-height: 1.2;
+        }
+
+        .selected-role-header p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .login-back-button {
+            margin-bottom: 12px;
         }
 
         .brand-row, .app-header, .row, .toolbar, .summary-grid {
@@ -712,26 +820,6 @@
             }
         }
 
-        @keyframes geometricFloat {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-            }
-            50% {
-                transform: translateY(-18px) rotate(3deg);
-            }
-        }
-
-        @keyframes signalLine {
-            0%, 100% {
-                opacity: 0.18;
-                transform: scaleX(0.62);
-            }
-            48% {
-                opacity: 0.82;
-                transform: scaleX(1);
-            }
-        }
-
         @keyframes cameraPatrol {
             0%, 100% {
                 transform: rotate(-12deg) translateX(0);
@@ -1058,7 +1146,7 @@
             border: 1px solid var(--border);
             border-radius: 18px;
             background: color-mix(in srgb, var(--surface-muted) 88%, white 12%);
-            direction: rtl;
+            direction: ltr;
         }
 
         .role-button {
@@ -2681,6 +2769,106 @@
             pointer-events: auto;
         }
 
+        /* Demo readability: keep dashboard text and controls clear on screen recordings. */
+        .app-shell {
+            font-size: 17px;
+        }
+
+        .app-header {
+            padding: 18px 30px;
+        }
+
+        .header-title h2 {
+            font-size: 24px;
+            line-height: 1.2;
+        }
+
+        .header-title .eyebrow,
+        .eyebrow {
+            font-size: 14px;
+        }
+
+        .main {
+            width: min(1640px, 100%);
+            padding: 32px 28px 42px;
+        }
+
+        .admin-page,
+        .grid-security {
+            gap: 24px;
+        }
+
+        .admin-tabs {
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .admin-tab {
+            min-height: 48px;
+            padding: 13px 18px;
+            font-size: 15px;
+        }
+
+        .card,
+        .camera-modal-card {
+            padding: 26px;
+        }
+
+        .card-header h3 {
+            font-size: 22px;
+            line-height: 1.35;
+        }
+
+        .summary-grid {
+            gap: 16px;
+        }
+
+        .metric {
+            min-width: 150px;
+            padding: 20px 18px 22px;
+        }
+
+        .metric-value {
+            font-size: 38px;
+            line-height: 1.05;
+        }
+
+        .metric-label,
+        .muted,
+        .note-text,
+        .status-text,
+        td {
+            font-size: 15px;
+        }
+
+        .note-text {
+            line-height: 1.8;
+            margin: 18px 0;
+        }
+
+        label,
+        th,
+        .user-badge,
+        .compact-select {
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea,
+        .primary-button,
+        .secondary-button,
+        .danger-button,
+        .ghost-button {
+            min-height: 48px;
+            font-size: 15px;
+        }
+
+        #syncNowButton {
+            min-width: 190px;
+            padding-inline: 24px;
+        }
+
         .toast.success { border-inline-start-color: var(--success); }
         .toast.warning { border-inline-start-color: var(--warning); }
         .toast.danger { border-inline-start-color: var(--danger); }
@@ -2688,10 +2876,6 @@
         @media (max-width: 980px) {
             .login-panel, .grid-admin, .grid-security {
                 grid-template-columns: 1fr;
-            }
-
-            .login-geometry {
-                opacity: 0.46;
             }
 
             .corner-camera {
@@ -2716,6 +2900,10 @@
                 display: none;
             }
 
+            .role-choice-grid {
+                grid-template-columns: 1fr;
+            }
+
             .app-header {
                 align-items: flex-start;
                 flex-direction: column;
@@ -2725,10 +2913,6 @@
         @media (max-width: 640px) {
             .main, .login-shell {
                 padding: 14px;
-            }
-
-            .login-geometry {
-                display: none;
             }
 
             .corner-camera {
@@ -2741,6 +2925,15 @@
 
             .login-intro {
                 padding: 0;
+            }
+
+            .role-choice-heading h1 {
+                font-size: 30px;
+            }
+
+            .role-choice-card {
+                min-height: 190px;
+                padding: 18px;
             }
 
             .admin-tabs {
@@ -2793,7 +2986,6 @@
             .scan-line,
             .scan-radar::before,
             .scan-radar::after,
-            .login-geometry span,
             .corner-camera,
             .camera-beam,
             .primary-button::after {
@@ -2809,11 +3001,6 @@
             <button class="language-option" type="button" data-language="ar" aria-label="Arabic">AR</button>
             <button class="language-option" type="button" data-language="en" aria-label="English">EN</button>
         </div>
-        <div class="login-geometry" aria-hidden="true">
-            <span class="geo-frame"></span>
-            <span class="geo-chip"></span>
-            <span class="geo-line"></span>
-        </div>
         <div class="corner-camera" aria-hidden="true">
             <span class="camera-arm"></span>
             <span class="camera-body"></span>
@@ -2821,38 +3008,41 @@
         </div>
         <section class="login-panel">
             <div class="login-form-panel">
-                <div class="face-scan-visual" aria-hidden="true">
-                    <div class="secure-visual-frame">
-                        <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.hidden=true;">
-                    </div>
-                    <strong class="just-secure-caption">JUST Secure</strong>
-                </div>
-                <div class="role-switch" aria-label="Role">
-                    <button class="role-button active" type="button" data-role="admin">موظف القبول والتسجيل</button>
-                    <button class="role-button" type="button" data-role="security">موظف الأمن</button>
-                </div>
+                <section id="roleChoicePanel" class="hidden"></section>
 
-                <form id="loginForm">
-                    <div class="field">
-                        <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
-                        <input id="usernameInput" type="text" autocomplete="username" required>
+                <section id="loginDetailPanel" class="login-detail-panel">
+                    <div class="face-scan-visual" aria-hidden="true">
+                        <div class="secure-visual-frame">
+                            <img src="{{ url_for('static', filename='just-secure-visual.png') }}?v=20260607" alt="" onerror="this.hidden=true;">
+                        </div>
+                        <strong class="just-secure-caption">JUST Secure</strong>
                     </div>
-                    <div class="field">
-                        <label for="passwordInput" data-i18n="password">كلمة المرور</label>
-                        <input id="passwordInput" type="password" autocomplete="current-password" required>
+                    <div class="role-switch" aria-label="Role">
+                        <button class="role-button" type="button" data-role="security" data-i18n="loginSecurityRole">موظف الأمن</button>
+                        <button class="role-button active" type="button" data-role="admin" data-i18n="loginAdminRole">موظف القبول والتسجيل</button>
                     </div>
-                    <button id="forgotPasswordButton" class="inline-link" type="button" data-i18n="forgotPassword">هل نسيت كلمة السر؟</button>
-                    <button class="primary-button block-full" type="submit" data-i18n="signIn">دخول</button>
-                    <p id="loginStatus" class="status-text"></p>
-                </form>
 
-                <section id="forgotPasswordPanel" class="help-panel hidden">
-                    <p class="eyebrow" data-i18n="forgotPassword">هل نسيت كلمة السر؟</p>
-                    <p data-i18n="forgotPasswordHelp">
-                        إذا نسيت كلمة المرور، راجع مسؤول القبول والتسجيل أو أنشئ حسابًا جديدًا إذا كانت هذه أول مرة تستخدم النظام.
-                    </p>
+                    <form id="loginForm">
+                        <div class="field">
+                            <label for="usernameInput" data-i18n="username">اسم المستخدم</label>
+                            <input id="usernameInput" type="text" autocomplete="username" required>
+                        </div>
+                        <div class="field">
+                            <label for="passwordInput" data-i18n="password">كلمة المرور</label>
+                            <input id="passwordInput" type="password" autocomplete="current-password" required>
+                        </div>
+                        <button id="forgotPasswordButton" class="inline-link" type="button" data-i18n="forgotPassword">هل نسيت كلمة السر؟</button>
+                        <button class="primary-button block-full" type="submit" data-i18n="signIn">دخول</button>
+                        <p id="loginStatus" class="status-text"></p>
+                    </form>
+
+                    <section id="forgotPasswordPanel" class="help-panel hidden">
+                        <p class="eyebrow" data-i18n="forgotPassword">هل نسيت كلمة السر؟</p>
+                        <p data-i18n="forgotPasswordHelp">
+                            إذا نسيت كلمة المرور، راجع مسؤول القبول والتسجيل أو أنشئ حسابًا جديدًا إذا كانت هذه أول مرة تستخدم النظام.
+                        </p>
+                    </section>
                 </section>
-
             </div>
         </section>
     </div>
@@ -3163,6 +3353,14 @@
                 dark: "داكن",
                 adminRole: "القبول والتسجيل",
                 securityRole: "الأمن الجامعي",
+                chooseEntryTitle: "اختر طريقة الدخول",
+                chooseEntryHint: "حدد بوابة العمل المناسبة لفتح شاشة دخول مهيأة لطبيعة دورك.",
+                loginAdminRole: "موظف القبول والتسجيل",
+                loginSecurityRole: "موظف الأمن",
+                loginAdminHint: "إدارة بيانات الطلبة، المزامنة، التسجيل، وسجلات الدخول.",
+                loginSecurityHint: "مراقبة الدخول المباشر، قراءة الوجوه، والتحقق الأمني السريع.",
+                continueToLogin: "متابعة الدخول",
+                changeRole: "تغيير الدور",
                 adminLoginHint: "سيتم فتح لوحة القبول بعد تسجيل الدخول.",
                 securityLoginHint: "سيتم فتح شاشة الأمن المباشرة بعد تسجيل الدخول.",
                 admissionsArea: "لوحة القبول",
@@ -3317,6 +3515,14 @@
                 dark: "Dark",
                 adminRole: "Admissions",
                 securityRole: "Campus Security",
+                chooseEntryTitle: "Choose Entry Mode",
+                chooseEntryHint: "Select the workspace that matches your role to open a tailored sign-in screen.",
+                loginAdminRole: "Admissions Employee",
+                loginSecurityRole: "Security Employee",
+                loginAdminHint: "Manage students, sync admissions records, registrations, and access logs.",
+                loginSecurityHint: "Monitor live entry, face recognition, and fast security verification.",
+                continueToLogin: "Continue To Sign In",
+                changeRole: "Change Role",
                 adminLoginHint: "Signing in opens the admissions dashboard.",
                 securityLoginHint: "Signing in opens the live security screen.",
                 admissionsArea: "Admissions Area",
@@ -3470,6 +3676,7 @@
             language: localStorage.getItem("accessLanguage") || "ar",
             theme: initialTheme,
             selectedRole: "admin",
+            loginMode: "choice",
             adminPanel: "sync",
             user: null,
             students: [],
@@ -3497,6 +3704,8 @@
         const elements = {
             loginScreen: document.getElementById("loginScreen"),
             appShell: document.getElementById("appShell"),
+            roleChoicePanel: document.getElementById("roleChoicePanel"),
+            loginDetailPanel: document.getElementById("loginDetailPanel"),
             loginForm: document.getElementById("loginForm"),
             loginStatus: document.getElementById("loginStatus"),
             forgotPasswordButton: document.getElementById("forgotPasswordButton"),
@@ -3688,6 +3897,7 @@
                 button.textContent = labels[state.language][button.dataset.role] || button.textContent;
             });
 
+            renderLoginRole();
             setAdminPanel(state.adminPanel);
 
             renderAdmin();
@@ -3698,6 +3908,16 @@
 
         function toggleForgotPasswordPanel() {
             elements.forgotPasswordPanel.classList.toggle("hidden");
+        }
+
+        function renderLoginRole() {
+            elements.roleChoicePanel.classList.add("hidden");
+            elements.loginDetailPanel.classList.remove("hidden");
+            elements.loginScreen.dataset.loginRole = state.selectedRole || "";
+
+            document.querySelectorAll(".role-choice-card, .role-button").forEach((button) => {
+                button.classList.toggle("active", button.dataset.role === state.selectedRole);
+            });
         }
 
         function showToast(message, tone = "success") {
@@ -3766,11 +3986,8 @@
             elements.appShell.classList.add("hidden");
             elements.adminView.classList.add("hidden");
             elements.securityView.classList.add("hidden");
-            state.selectedRole = "admin";
-            elements.loginForm.classList.remove("hidden");
-            document.querySelectorAll(".role-button").forEach((button) => {
-                button.classList.toggle("active", button.dataset.role === state.selectedRole);
-            });
+            state.selectedRole = state.selectedRole || "admin";
+            state.loginMode = "form";
             elements.loginStatus.textContent = "";
             elements.forgotPasswordPanel.classList.add("hidden");
             applyPreferences();
@@ -4267,10 +4484,8 @@
         document.querySelectorAll(".role-button").forEach((button) => {
             button.addEventListener("click", () => {
                 state.selectedRole = button.dataset.role;
-                document.querySelectorAll(".role-button").forEach((roleButton) => {
-                    roleButton.classList.toggle("active", roleButton === button);
-                });
                 elements.loginStatus.textContent = "";
+                renderLoginRole();
             });
         });
 
