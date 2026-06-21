@@ -323,24 +323,32 @@ def evaluate_face_candidate(
         return _make_decision(
             bbox=(x, y, w, h),
             now=resolved_now,
-            outcome="allowed",
-            label="Mask Only - Access Allowed",
-            color=(0, 255, 0),
+            outcome="denied",
+            label="Mask Only - Face Not Recognized - Access Denied",
+            color=(0, 0, 255),
             accessory_state=accessory_state,
-            log_status="Allowed",
-            cooldown_key="allowed:mask_only",
+            log_status="Denied",
+            event_type="Intruder Alert",
+            should_alert=True,
+            should_alarm=True,
+            should_capture=True,
+            cooldown_key="denied:mask_only_unrecognized",
         )
 
     if accessory_state == "sunglasses_only":
         return _make_decision(
             bbox=(x, y, w, h),
             now=resolved_now,
-            outcome="allowed",
-            label="Sunglasses Only - Access Allowed",
-            color=(0, 255, 0),
+            outcome="denied",
+            label="Sunglasses Only - Face Not Recognized - Access Denied",
+            color=(0, 0, 255),
             accessory_state=accessory_state,
-            log_status="Allowed",
-            cooldown_key="allowed:sunglasses_only",
+            log_status="Denied",
+            event_type="Intruder Alert",
+            should_alert=True,
+            should_alarm=True,
+            should_capture=True,
+            cooldown_key="denied:sunglasses_only_unrecognized",
         )
 
     return _make_decision(
