@@ -1235,18 +1235,21 @@ def scan_uploaded_media(media_file: Any) -> dict[str, Any]:
         frame = decode_image_bytes(media_file.read())
         return scan_image_media(frame, filename, students)
 
-    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
     suffix = Path(filename).suffix.lower()
     if suffix not in MEDIA_SCAN_VIDEO_EXTENSIONS:
         suffix = ".mp4"
-    with tempfile.NamedTemporaryFile(dir=SCREENSHOT_DIR, suffix=suffix, delete=False) as temp_file:
-        media_file.save(temp_file)
-        temp_path = Path(temp_file.name)
+    temp_fd, temp_name = tempfile.mkstemp(prefix="gp2_media_scan_", suffix=suffix)
+    os.close(temp_fd)
+    temp_path = Path(temp_name)
+    media_file.save(temp_path)
 
     try:
         return scan_video_media(temp_path, filename, students)
     finally:
-        temp_path.unlink(missing_ok=True)
+        try:
+            temp_path.unlink(missing_ok=True)
+        except PermissionError:
+            logger.warning("Temporary media file is still locked and could not be removed: %s", temp_path)
 
 
 class WebFaceProcessor:

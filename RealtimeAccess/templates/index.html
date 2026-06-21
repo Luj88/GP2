@@ -1791,6 +1791,29 @@
             object-fit: cover;
         }
 
+        .privacy-photo-placeholder {
+            width: 48px;
+            height: 36px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
+                repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.16) 0 6px, transparent 6px 12px),
+                linear-gradient(135deg, var(--primary), var(--accent));
+            color: #fff;
+            font-size: 18px;
+            font-weight: 900;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        }
+
+        .student-name-avatar.privacy-photo-placeholder {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+        }
+
         .student-name-info,
         .student-name-info strong,
         .student-name-info span {
@@ -2956,7 +2979,7 @@
                                 </div>
                             </div>
                             <div class="full">
-                                <button class="primary-button" type="submit" data-i18n="saveStudent">حفظ الطالب</button>
+                                <button id="saveStudentButton" class="primary-button" type="submit" data-i18n="saveStudent">حفظ الطالب</button>
                                 <p id="registerStatus" class="status-text"></p>
                             </div>
                         </form>
@@ -3301,6 +3324,9 @@
                 confirmRemoveArchive: "هل تريد إزالة السجل من الأرشيف؟",
                 imageChecking: "جاري فحص الصورة...",
                 imageReady: "الصورة واضحة وجاهزة للتسجيل.",
+                imageReadyToSave: "تم فحص الصورة. يمكنك الآن حفظ الطالب.",
+                savingStudent: "جاري حفظ الطالب...",
+                studentSaved: "تم حفظ الطالب بنجاح.",
                 unclearFace: "الصورة غير مناسبة. استخدم صورة وجه واضحة لشخص واحد فقط.",
                 testCamera: "اختبار الكاميرا",
                 cameraTestReady: "الكاميرا تعمل وتم فحص الوجه.",
@@ -3455,6 +3481,9 @@
                 confirmRemoveArchive: "Remove selected records from the archive?",
                 imageChecking: "Checking image...",
                 imageReady: "Image is clear and ready for registration.",
+                imageReadyToSave: "Image checked. You can save the student now.",
+                savingStudent: "Saving student...",
+                studentSaved: "Student saved successfully.",
                 unclearFace: "The image is not suitable. Use one clear face photo.",
                 testCamera: "Test Camera",
                 cameraTestReady: "Camera is working and face check completed.",
@@ -3491,6 +3520,10 @@
             statusTimer: null,
             registerCameraStream: null,
             capturedStudentImage: null,
+            registrationImageCheckId: 0,
+            isRegistrationImageChecking: false,
+            isRegistrationSaving: false,
+            isRegistrationImageReady: false,
             mediaScanResult: null
         };
 
@@ -3518,6 +3551,7 @@
             registerForm: document.getElementById("registerForm"),
             uploadImageButton: document.getElementById("uploadImageButton"),
             openCameraButton: document.getElementById("openCameraButton"),
+            saveStudentButton: document.getElementById("saveStudentButton"),
             studentImageInput: document.getElementById("studentImageInput"),
             studentImageSelectionStatus: document.getElementById("studentImageSelectionStatus"),
             cameraModal: document.getElementById("cameraModal"),
@@ -3604,6 +3638,46 @@
 
         function clearCapturedStudentImage() {
             state.capturedStudentImage = null;
+            state.isRegistrationImageReady = false;
+        }
+
+        function updateRegistrationButtons() {
+            const busy = state.isRegistrationImageChecking || state.isRegistrationSaving;
+            const hasSelectedImage = Boolean(
+                state.capturedStudentImage ||
+                (elements.studentImageInput.files && elements.studentImageInput.files.length > 0)
+            );
+            elements.saveStudentButton.disabled = busy || (hasSelectedImage && !state.isRegistrationImageReady);
+            elements.uploadImageButton.disabled = busy;
+            elements.openCameraButton.disabled = busy;
+        }
+
+        async function checkRegistrationImage(imageFile, successMessageKey = "imageReadyToSave") {
+            const checkId = ++state.registrationImageCheckId;
+            state.isRegistrationImageChecking = true;
+            state.isRegistrationImageReady = false;
+            updateRegistrationButtons();
+            elements.studentImageSelectionStatus.textContent = t("imageChecking");
+            try {
+                await validateStudentImage(imageFile);
+                if (checkId === state.registrationImageCheckId) {
+                    state.isRegistrationImageReady = true;
+                    elements.studentImageSelectionStatus.textContent = t(successMessageKey);
+                    showToast(t("imageReady"), "success");
+                }
+            } catch (error) {
+                if (checkId === state.registrationImageCheckId) {
+                    state.isRegistrationImageReady = false;
+                    const message = localizeErrorMessage(error.message) || t("unclearFace");
+                    elements.studentImageSelectionStatus.textContent = message;
+                    showToast(message, "danger");
+                }
+            } finally {
+                if (checkId === state.registrationImageCheckId) {
+                    state.isRegistrationImageChecking = false;
+                    updateRegistrationButtons();
+                }
+            }
         }
 
         function stopRegisterCamera() {
@@ -3637,10 +3711,7 @@
             elements.studentImageInput.value = "";
             state.capturedStudentImage = new File([blob], `captured-student-${Date.now()}.jpg`, { type: "image/jpeg" });
             closeCameraModal();
-            elements.studentImageSelectionStatus.textContent = t("imageChecking");
-            await validateStudentImage(state.capturedStudentImage);
-            elements.studentImageSelectionStatus.textContent = t("imageCaptured");
-            showToast(t("imageReady"), "success");
+            await checkRegistrationImage(state.capturedStudentImage, "imageReadyToSave");
         }
 
         async function fetchJson(url, options = {}) {
@@ -3887,7 +3958,7 @@
 
             elements.registeredStudentDetails.innerHTML = `
                 <h3>${t("selectedDetails")}</h3>
-                ${student.image_path ? `<img class="student-photo" src="${escapeHtml(student.image_path)}" alt="">` : ""}
+                <div class="privacy-photo-placeholder" aria-label="Private photo">🔒</div>
                 ${renderDetailItems([
                     { label: t("studentName"), value: student.name },
                     { label: t("studentId"), value: student.id },
@@ -3953,9 +4024,7 @@
             } else {
                 elements.registeredStudentsList.innerHTML = visibleStudents.map((student) => `
                     <button class="student-name-item registered-student-item ${state.selectedStudentId === student.id ? "active" : ""}" type="button" data-id="${escapeHtml(student.id)}">
-                        <span class="student-name-avatar">
-                            ${student.image_path ? `<img src="${escapeHtml(student.image_path)}" alt="">` : escapeHtml((student.name || "?").slice(0, 1))}
-                        </span>
+                        <span class="student-name-avatar privacy-photo-placeholder" aria-label="Private photo">🔒</span>
                         <span class="student-name-info">
                             <strong>${escapeHtml(student.name)}</strong>
                             <span class="muted meta-text">${escapeHtml(student.id)}</span>
@@ -4418,16 +4487,7 @@
             if (elements.studentImageInput.files && elements.studentImageInput.files.length > 0) {
                 clearCapturedStudentImage();
                 const selectedFile = elements.studentImageInput.files[0];
-                elements.studentImageSelectionStatus.textContent = t("imageChecking");
-                validateStudentImage(selectedFile)
-                    .then(() => {
-                        elements.studentImageSelectionStatus.textContent = t("imageReady");
-                        showToast(t("imageReady"), "success");
-                    })
-                    .catch((error) => {
-                        elements.studentImageSelectionStatus.textContent = localizeErrorMessage(error.message) || t("unclearFace");
-                        showToast(localizeErrorMessage(error.message) || t("unclearFace"), "danger");
-                    });
+                checkRegistrationImage(selectedFile);
             }
         });
 
@@ -4487,6 +4547,7 @@
 
         elements.registerForm.addEventListener("submit", async (event) => {
             event.preventDefault();
+            if (state.isRegistrationImageChecking || state.isRegistrationSaving) return;
             elements.registerStatus.textContent = "";
             elements.studentImageSelectionStatus.textContent = "";
             const formData = new FormData(elements.registerForm);
@@ -4500,7 +4561,10 @@
             }
             formData.set("image", selectedImage);
             try {
-                elements.registerStatus.textContent = t("imageChecking");
+                state.isRegistrationSaving = true;
+                updateRegistrationButtons();
+                elements.registerStatus.textContent = t("savingStudent");
+                elements.saveStudentButton.textContent = t("savingStudent");
                 await validateStudentImage(selectedImage, studentId);
                 const payload = await fetchJson("/api/register", {
                     method: "POST",
@@ -4513,11 +4577,15 @@
                 elements.registerForm.reset();
                 clearCapturedStudentImage();
                 elements.studentImageSelectionStatus.textContent = "";
-                elements.registerStatus.textContent = t("saved");
-                showToast(t("saved"), "success");
+                elements.registerStatus.textContent = t("studentSaved");
+                showToast(t("studentSaved"), "success");
             } catch (error) {
                 elements.registerStatus.textContent = localizeErrorMessage(error.message);
                 showToast(localizeErrorMessage(error.message), "danger");
+            } finally {
+                state.isRegistrationSaving = false;
+                elements.saveStudentButton.textContent = t("saveStudent");
+                updateRegistrationButtons();
             }
         });
 
